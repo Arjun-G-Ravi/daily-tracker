@@ -1,43 +1,23 @@
 {
-  "2025-06-02": {
-    "53w5": true,
-    "test3": true,
-    "cow": true
+  "2025-06-18": {
+    "Leetcoding": true
   },
-  "2025-06-04": {
-    "53w5": true
-  },
-  "2025-06-06": {
-    "53w5": true
-  },
-  "2025-06-01": {
-    "journ 3": false,
-    "cow": true
-  },
-  "2025-06-08": {
-    "test3": true
-  },
-  "2025-06-09": {
-    "journ 3": true,
-    "test3": true
-  },
-  "2025-06-11": {
-    "journ 3": true,
-    "cow": true,
-    "53w5": true,
-    "king bob": true,
-    "teset": true,
-    "test3": true
-  },
-  "2025-06-03": {
-    "journ 3": true,
-    "cow": true
-  },
-  "2025-06-10": {
-    "test3": true,
-    "teset": true
+  "2025-06-16": {
+    "Leetcoding": true
   },
   "2025-06-12": {
-    "journ 3": true
+    "Leetcoding": true
+  },
+  "2025-06-13": {
+    "Leetcoding": true
+  },
+  "2025-06-14": {
+    "Leetcoding": true
+  },
+  "2025-06-15": {
+    "Leetcoding": true
+  },
+  "2025-06-10": {
+    "Leetcoding": true
   }
 }

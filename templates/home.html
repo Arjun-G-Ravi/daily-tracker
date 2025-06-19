@@ -15,7 +15,10 @@
         <button type="submit" class="btn btn-small">Add Journey</button>
     </form>
     
-    <a href="{{ url_for('journeys') }}" class="btn btn-secondary btn-small">View All Journeys</a>
+    <div style="display: flex; gap: 10px;">
+        <a href="{{ url_for('journeys') }}" class="btn btn-secondary btn-small">View All Journeys</a>
+        <button type="button" id="reorderBtn" class="btn btn-small btn-secondary">Reorder</button>
+    </div>
 </div>
 
 <div class="calendar-container">
@@ -28,10 +31,11 @@
                 {% endfor %}
             </tr>
         </thead>
-        <tbody>
+        <tbody id="journeyTableBody">
             {% for journey in all_journeys %}
-            <tr>
+            <tr class="journey-row" data-journey="{{ journey }}">
                 <td class="journey-name">
+                    <span class="drag-handle" style="display: none; cursor: move; margin-right: 5px;">⋮⋮</span>
                     <a href="{{ url_for('journey_detail', journey_name=journey) }}" class="journey-link">
                         {{ journey }}
                     </a>
@@ -40,8 +44,11 @@
                 {% set date_key = "{}-{:02d}-{:02d}".format(year, month, day) %}
                 <td>
                     {% if day <= days_in_month %}
-                    <div class="day-cell {% if journeys.get(date_key, {}).get(journey) %}completed{% endif %}"
-                         title="{{ journey }} - {{ day }}/{{ month }}"
+                    {% set is_completed = journeys.get(date_key, {}).get(journey) %}
+                    {% set is_missed = day in missed_days.get(journey, []) %}
+                    
+                    <div class="day-cell {% if is_completed %}completed{% elif is_missed %}missed{% endif %}"
+                         title="{{ journey }} - {{ day }}/{{ month }}{% if is_missed %} (Missed){% endif %}"
                          data-journey="{{ journey }}"
                          data-day="{{ day }}"
                          data-month="{{ month }}"

@@ -246,6 +246,10 @@
             background: #39d353;
         }
         
+        .day-cell.missed {
+            background: #f85149;
+        }
+        
         .day-cell:hover {
             border-color: #58a6ff;
         }
@@ -542,13 +546,19 @@
             color: #c9d1d9;
         }
         
-        .month-day.has-contribution {
+        .month-day.completed {
             background: #39d353;
             border-color: #39d353;
             color: #000;
         }
         
-        .month-day.empty {
+        .month-day.empty:not(.month-day:first-child) {
+            background: #161b22;
+            color: #c9d1d9;
+            opacity: 1;
+        }
+        
+        .month-day.empty:first-child {
             opacity: 0;
         }
         
@@ -613,7 +623,12 @@
             color: #0d1117;
         }
         
-        .calendar-day.empty {
+        .calendar-day.empty:not(.calendar-day:first-child) {
+            background: #21262d;
+            color: #c9d1d9;
+        }
+        
+        .calendar-day.empty:first-child {
             background: transparent;
         }
         
@@ -689,6 +704,151 @@
             border-radius: 4px;
             width: 200px;
         }
+        
+        /* Drag and Drop Styles */
+        .journey-row {
+            transition: background-color 0.2s ease;
+        }
+        
+        .journey-row:hover {
+            background-color: #21262d;
+        }
+        
+        .journey-row.dragging {
+            opacity: 0.5;
+        }
+        
+        .drag-handle {
+            color: #8b949e;
+            font-weight: bold;
+            user-select: none;
+        }
+        
+        .drag-handle:hover {
+            color: #c9d1d9;
+        }
+        
+        .reorder-mode .journey-name {
+            cursor: move;
+            border: 2px dashed #58a6ff;
+            background: #21262d;
+        }
+        
+        .reorder-mode .journey-name:hover {
+            background: #30363d;
+        }
+        
+        .reorder-mode .day-cell {
+            pointer-events: none;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: #161b22;
+            margin: 10% auto;
+            padding: 0;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            width: 500px;
+            max-width: 90%;
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            color: #f0f6fc;
+        }
+        
+        .close {
+            color: #8b949e;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #f0f6fc;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #30363d;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .day-checkboxes {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .day-checkboxes label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #c9d1d9;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .day-checkboxes label:hover {
+            background-color: #21262d;
+        }
+        
+        .day-checkboxes input[type="checkbox"] {
+            margin: 0;
+        }
+        
+        /* Missed Days Styles */
+        .calendar-day.missed,
+        .month-day.missed {
+            background-color: #f85149;
+            color: white;
+            position: relative;
+        }
+        
+        .missed-mark {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .missed-mark-small {
+            position: absolute;
+            top: 1px;
+            right: 1px;
+            color: white;
+            font-size: 8px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -716,6 +876,7 @@
                 element.classList.remove('completed');
             } else {
                 element.classList.add('completed');
+                element.classList.remove('missed');
             }
             
             // Send the toggle request to the server
@@ -768,6 +929,133 @@
                     }
                 }
             });
+
+            // Journey reordering functionality
+            const reorderBtn = document.getElementById('reorderBtn');
+            const journeyTableBody = document.getElementById('journeyTableBody');
+            let isReorderMode = false;
+
+            if (reorderBtn && journeyTableBody) {
+                reorderBtn.addEventListener('click', function() {
+                    isReorderMode = !isReorderMode;
+                    
+                    if (isReorderMode) {
+                        enterReorderMode();
+                    } else {
+                        exitReorderMode();
+                    }
+                });
+            }
+
+            function enterReorderMode() {
+                reorderBtn.textContent = 'Save Order';
+                reorderBtn.classList.remove('btn-secondary');
+                reorderBtn.classList.add('btn');
+                
+                // Show drag handles
+                const dragHandles = document.querySelectorAll('.drag-handle');
+                dragHandles.forEach(handle => {
+                    handle.style.display = 'inline';
+                });
+                
+                // Make rows draggable
+                const journeyRows = document.querySelectorAll('.journey-row');
+                journeyRows.forEach(row => {
+                    row.draggable = true;
+                    row.style.cursor = 'move';
+                });
+                
+                // Add drag event listeners
+                journeyTableBody.addEventListener('dragstart', handleDragStart);
+                journeyTableBody.addEventListener('dragover', handleDragOver);
+                journeyTableBody.addEventListener('drop', handleDrop);
+                journeyTableBody.addEventListener('dragend', handleDragEnd);
+            }
+
+            function exitReorderMode() {
+                reorderBtn.textContent = 'Reorder';
+                reorderBtn.classList.remove('btn');
+                reorderBtn.classList.add('btn-secondary');
+                
+                // Hide drag handles
+                const dragHandles = document.querySelectorAll('.drag-handle');
+                dragHandles.forEach(handle => {
+                    handle.style.display = 'none';
+                });
+                
+                // Make rows non-draggable
+                const journeyRows = document.querySelectorAll('.journey-row');
+                journeyRows.forEach(row => {
+                    row.draggable = false;
+                    row.style.cursor = 'default';
+                });
+                
+                // Remove drag event listeners
+                journeyTableBody.removeEventListener('dragstart', handleDragStart);
+                journeyTableBody.removeEventListener('dragover', handleDragOver);
+                journeyTableBody.removeEventListener('drop', handleDrop);
+                journeyTableBody.removeEventListener('dragend', handleDragEnd);
+                
+                // Save the new order
+                saveJourneyOrder();
+            }
+
+            let draggedElement = null;
+
+            function handleDragStart(e) {
+                if (e.target.classList.contains('journey-row')) {
+                    draggedElement = e.target;
+                    e.target.style.opacity = '0.5';
+                }
+            }
+
+            function handleDragOver(e) {
+                e.preventDefault();
+            }
+
+            function handleDrop(e) {
+                e.preventDefault();
+                if (e.target.closest('.journey-row') && draggedElement) {
+                    const targetRow = e.target.closest('.journey-row');
+                    const tbody = targetRow.parentNode;
+                    
+                    // Insert before target row
+                    tbody.insertBefore(draggedElement, targetRow);
+                }
+            }
+
+            function handleDragEnd(e) {
+                if (e.target.classList.contains('journey-row')) {
+                    e.target.style.opacity = '1';
+                }
+                draggedElement = null;
+            }
+
+            function saveJourneyOrder() {
+                const journeyRows = document.querySelectorAll('.journey-row');
+                const order = Array.from(journeyRows).map(row => row.getAttribute('data-journey'));
+                
+                fetch('/save_journey_order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        order: order
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Journey order saved successfully');
+                    } else {
+                        console.error('Failed to save journey order:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving journey order:', error);
+                });
+            }
         });
     </script>
 </body>

@@ -9,6 +9,8 @@ app = Flask(__name__)
 # Simple file-based storage for journeys
 JOURNEYS_FILE = 'journeys.json'
 JOURNEY_TEMPLATES_FILE = 'journey_templates.json'
+JOURNEY_ORDER_FILE = 'journey_order.json'
+JOURNEY_SCHEDULES_FILE = 'journey_schedules.json'
 
 def load_journeys():
     if os.path.exists(JOURNEYS_FILE):
@@ -29,6 +31,26 @@ def load_journey_templates():
 def save_journey_templates(templates):
     with open(JOURNEY_TEMPLATES_FILE, 'w') as f:
         json.dump(templates, f, indent=2)
+
+def load_journey_order():
+    if os.path.exists(JOURNEY_ORDER_FILE):
+        with open(JOURNEY_ORDER_FILE, 'r') as f:
+            return json.load(f)
+    return []
+
+def save_journey_order(order):
+    with open(JOURNEY_ORDER_FILE, 'w') as f:
+        json.dump(order, f, indent=2)
+
+def load_journey_schedules():
+    if os.path.exists(JOURNEY_SCHEDULES_FILE):
+        with open(JOURNEY_SCHEDULES_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_journey_schedules(schedules):
+    with open(JOURNEY_SCHEDULES_FILE, 'w') as f:
+        json.dump(schedules, f, indent=2)
 
 def get_current_month_days():
     now = datetime.now()
@@ -59,7 +81,12 @@ def home(year=None, month=None):
     days_in_month = calendar.monthrange(year, month)[1]
     
     journeys = load_journeys()
+    schedules = load_journey_schedules()
     month_name = calendar.month_name[month]
+    
+    # Calculate missed days for each journey
+    missed_days = {}
+    today = date.today()
     
     # Get unique journey names from both daily data and templates
     all_journeys = set()
@@ -69,6 +96,38 @@ def home(year=None, month=None):
     # Add journey templates
     templates = load_journey_templates()
     all_journeys.update(templates)
+    
+    # Calculate missed days for each journey
+    for journey in all_journeys:
+        journey_schedule = schedules.get(journey, [])
+        missed_days[journey] = set()
+        
+        for day in range(1, days_in_month + 1):
+            current_date = date(year, month, day)
+            day_of_week = current_date.weekday()
+            date_key = f"{year}-{month:02d}-{day:02d}"
+            
+            is_scheduled = day_of_week in journey_schedule
+            is_completed = journeys.get(date_key, {}).get(journey, False)
+            is_past = current_date < today
+            
+            if is_past and is_scheduled and not is_completed:
+                missed_days[journey].add(day)
+    
+    # Apply saved journey order
+    journey_order = load_journey_order()
+    if journey_order:
+        # Sort journeys according to saved order, with new journeys at the end
+        ordered_journeys = []
+        for journey in journey_order:
+            if journey in all_journeys:
+                ordered_journeys.append(journey)
+                all_journeys.discard(journey)
+        # Add any new journeys that weren't in the saved order
+        ordered_journeys.extend(sorted(all_journeys))
+        all_journeys = ordered_journeys
+    else:
+        all_journeys = sorted(all_journeys)
     
     # Calculate previous and next month/year
     if month == 1:
@@ -92,8 +151,10 @@ def home(year=None, month=None):
                          prev_year=prev_year,
                          next_month=next_month,
                          next_year=next_year,
-                         all_journeys=sorted(all_journeys),
-                         templates=templates)
+                         all_journeys=all_journeys,  # Use ordered journeys instead of sorted
+                         templates=templates,
+                         schedules=schedules,
+                         missed_days=missed_days)
 
 @app.route('/journeys')
 def journeys():
@@ -122,6 +183,11 @@ def add_template():
     if journey_name not in templates:
         templates.append(journey_name)
         save_journey_templates(templates)
+        
+        # Set schedule to all days (Monday=0 to Sunday=6)
+        schedules = load_journey_schedules()
+        schedules[journey_name] = [0, 1, 2, 3, 4, 5, 6]
+        save_journey_schedules(schedules)
     
     return redirect(url_for('home'))
 
@@ -129,6 +195,7 @@ def add_template():
 @app.route('/journey/<journey_name>/<view_type>')
 def journey_detail(journey_name, view_type='yearly'):
     journeys = load_journeys()
+    schedules = load_journey_schedules()
     
     # Get all data for this specific journey
     journey_data = {}
@@ -136,8 +203,11 @@ def journey_detail(journey_name, view_type='yearly'):
         if journey_name in day_data and day_data[journey_name]:
             journey_data[date_key] = True
     
-    now = datetime.now()
+    # Get schedule for this journey
+    journey_schedule = schedules.get(journey_name, [])
     
+    now = datetime.now()
+
     if view_type == 'monthly':
         # Generate current month calendar view
         current_month = now.month
@@ -158,10 +228,20 @@ def journey_detail(journey_name, view_type='yearly'):
             date_key = f"{current_year}-{current_month:02d}-{day:02d}"
             has_contribution = journey_data.get(date_key, False)
             
+            # Check if this day should be scheduled
+            day_of_week = date(current_year, current_month, day).weekday()
+            is_scheduled = day_of_week in journey_schedule
+            
+            # Check if this is a past day that was missed
+            is_past = date(current_year, current_month, day) < date.today()
+            is_missed = is_past and is_scheduled and not has_contribution
+            
             current_week.append({
                 'date': date_key,
                 'has_contribution': has_contribution,
-                'day': day
+                'day': day,
+                'is_scheduled': is_scheduled,
+                'is_missed': is_missed
             })
             
             # If we've filled a week (7 days), start a new week
@@ -178,6 +258,7 @@ def journey_detail(journey_name, view_type='yearly'):
         return render_template('journey_detail.html', 
                              journey_name=journey_name,
                              journey_data=journey_data,
+                             journey_schedule=journey_schedule,
                              current_month_data={
                                  'month': current_month,
                                  'month_name': month_name,
@@ -208,10 +289,20 @@ def journey_detail(journey_name, view_type='yearly'):
                 date_key = f"{now.year}-{month:02d}-{day:02d}"
                 has_contribution = journey_data.get(date_key, False)
                 
+                # Check if this day should be scheduled
+                day_of_week = date(now.year, month, day).weekday()
+                is_scheduled = day_of_week in journey_schedule
+                
+                # Check if this is a past day that was missed
+                is_past = date(now.year, month, day) < date.today()
+                is_missed = is_past and is_scheduled and not has_contribution
+                
                 current_week.append({
                     'date': date_key,
                     'has_contribution': has_contribution,
-                    'day': day
+                    'day': day,
+                    'is_scheduled': is_scheduled,
+                    'is_missed': is_missed
                 })
                 
                 # If we've filled a week (7 days), start a new week
@@ -234,6 +325,7 @@ def journey_detail(journey_name, view_type='yearly'):
         return render_template('journey_detail.html', 
                              journey_name=journey_name,
                              journey_data=journey_data,
+                             journey_schedule=journey_schedule,
                              monthly_data=monthly_data,
                              view_type='yearly',
                              year=now.year)
@@ -296,6 +388,72 @@ def toggle_journey():
                 del journeys[date_key]
         
         save_journeys(journeys)
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/save_journey_order', methods=['POST'])
+def save_journey_order_route():
+    try:
+        data = request.get_json()
+        order = data.get('order')
+        
+        if not order:
+            return jsonify({'success': False, 'error': 'Missing order data'})
+        
+        save_journey_order(order)
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/set_schedule/<journey_name>', methods=['POST'])
+def set_schedule(journey_name):
+    try:
+        data = request.get_json()
+        days = data.get('days', [])  # List of weekday numbers (0=Monday, 6=Sunday)
+        
+        schedules = load_journey_schedules()
+        schedules[journey_name] = days
+        save_journey_schedules(schedules)
+        
+        return jsonify({'success': True, 'message': 'Schedule updated successfully'})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/delete_journey/<journey_name>', methods=['POST'])
+def delete_journey(journey_name):
+    try:
+        # Remove from all journey data
+        journeys = load_journeys()
+        for date_key in list(journeys.keys()):
+            if journey_name in journeys[date_key]:
+                del journeys[date_key][journey_name]
+                # Clean up empty date entries
+                if not journeys[date_key]:
+                    del journeys[date_key]
+        save_journeys(journeys)
+        
+        # Remove from templates
+        templates = load_journey_templates()
+        if journey_name in templates:
+            templates.remove(journey_name)
+            save_journey_templates(templates)
+        
+        # Remove from order
+        order = load_journey_order()
+        if journey_name in order:
+            order.remove(journey_name)
+            save_journey_order(order)
+        
+        # Remove from schedules
+        schedules = load_journey_schedules()
+        if journey_name in schedules:
+            del schedules[journey_name]
+            save_journey_schedules(schedules)
+        
         return jsonify({'success': True})
     
     except Exception as e:

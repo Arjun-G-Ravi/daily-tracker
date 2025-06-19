@@ -12,6 +12,52 @@
            class="btn btn-small {% if view_type == 'monthly' %}btn-active{% else %}btn-secondary{% endif %}">
             Monthly
         </a>
+        <button onclick="showScheduleModal()" class="btn btn-small btn-secondary">Set Days</button>
+        <button onclick="showDeleteModal()" class="btn btn-small" style="background: #d73a49;">Delete Task</button>
+    </div>
+</div>
+
+<!-- Schedule Setting Modal -->
+<div id="scheduleModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Set Schedule for {{ journey_name }}</h3>
+            <span class="close" onclick="hideScheduleModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>Select the days when you want to do this task:</p>
+            <div class="day-checkboxes">
+                <label><input type="checkbox" value="0" {% if 0 in journey_schedule %}checked{% endif %}> Monday</label>
+                <label><input type="checkbox" value="1" {% if 1 in journey_schedule %}checked{% endif %}> Tuesday</label>
+                <label><input type="checkbox" value="2" {% if 2 in journey_schedule %}checked{% endif %}> Wednesday</label>
+                <label><input type="checkbox" value="3" {% if 3 in journey_schedule %}checked{% endif %}> Thursday</label>
+                <label><input type="checkbox" value="4" {% if 4 in journey_schedule %}checked{% endif %}> Friday</label>
+                <label><input type="checkbox" value="5" {% if 5 in journey_schedule %}checked{% endif %}> Saturday</label>
+                <label><input type="checkbox" value="6" {% if 6 in journey_schedule %}checked{% endif %}> Sunday</label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="saveSchedule()" class="btn">Save Schedule</button>
+            <button onclick="hideScheduleModal()" class="btn btn-secondary">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Delete Task</h3>
+            <span class="close" onclick="hideDeleteModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete "{{ journey_name }}"?</p>
+            <p><strong>This action cannot be undone.</strong> All data for this task will be permanently deleted.</p>
+        </div>
+        <div class="modal-footer">
+            <button onclick="deleteTask()" class="btn" style="background: #d73a49;">Delete</button>
+            <button onclick="hideDeleteModal()" class="btn btn-secondary">Cancel</button>
+        </div>
     </div>
 </div>
 
@@ -45,7 +91,7 @@
                     <div class="week-row">
                         {% for day in week %}
                             {% if day %}
-                                <div class="calendar-day {{ 'completed' if day.has_contribution else '' }}">
+                                <div class="calendar-day {{ 'completed' if day.has_contribution else 'missed' if day.is_missed else '' }}">
                                     {{ day.day }}
                                 </div>
                             {% else %}
@@ -78,7 +124,7 @@
                             <div class="week-row">
                                 {% for day in week %}
                                     {% if day %}
-                                        <div class="month-day {{ 'completed' if day.has_contribution else '' }}" title="{{ month_data.month_name }} {{ day.day }}">
+                                        <div class="month-day {{ 'completed' if day.has_contribution else 'missed' if day.is_missed else '' }}" title="{{ month_data.month_name }} {{ day.day }}">
                                             {{ day.day }}
                                         </div>
                                     {% else %}
@@ -94,21 +140,89 @@
     </div>
 {% endif %}
 
-<div class="recent-activity">
-    <h3>Recent Activity</h3>
-    {% if journey_data %}
-        <ul class="activity-list">
-            {% for date_key in journey_data.keys()|list|sort(reverse=True) %}
-            {% if loop.index <= 10 %}
-            <li>
-                <span class="activity-date">{{ date_key }}</span>
-                <span class="activity-status completed">Completed</span>
-            </li>
-            {% endif %}
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p class="no-activity">No activity recorded for this journey yet.</p>
-    {% endif %}
-</div>
+<script>
+function showScheduleModal() {
+    document.getElementById('scheduleModal').style.display = 'block';
+}
+
+function hideScheduleModal() {
+    document.getElementById('scheduleModal').style.display = 'none';
+}
+
+function showDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'block';
+}
+
+function hideDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+}
+
+function saveSchedule() {
+    const checkboxes = document.querySelectorAll('#scheduleModal input[type="checkbox"]');
+    const selectedDays = [];
+    
+    checkboxes.forEach(checkbox => {
+        if (checkbox.checked) {
+            selectedDays.push(parseInt(checkbox.value));
+        }
+    });
+    
+    fetch(`/set_schedule/{{ journey_name }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            days: selectedDays
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            hideScheduleModal();
+            location.reload(); // Refresh to show updated schedule
+        } else {
+            alert('Failed to save schedule: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error saving schedule: ' + error);
+    });
+}
+
+function deleteTask() {
+    fetch(`/delete_journey/{{ journey_name }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Task deleted successfully');
+            window.location.href = '/journeys';
+        } else {
+            alert('Failed to delete task: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error deleting task: ' + error);
+    });
+}
+
+// Close modal when clicking outside of it
+window.onclick = function(event) {
+    const scheduleModal = document.getElementById('scheduleModal');
+    const deleteModal = document.getElementById('deleteModal');
+    
+    if (event.target == scheduleModal) {
+        hideScheduleModal();
+    }
+    if (event.target == deleteModal) {
+        hideDeleteModal();
+    }
+}
+</script>
+
 {% endblock %}
