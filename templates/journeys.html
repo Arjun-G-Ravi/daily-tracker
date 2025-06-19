@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="journeys-header">
+    <h2>All Journeys</h2>
+    <a href="{{ url_for('home') }}" class="btn btn-secondary">Back to Calendar</a>
+</div>
+
+<div class="journeys-list">
+    {% if all_journeys %}
+        {% for journey in all_journeys %}
+        <div class="journey-card">
+            <h3>{{ journey }}</h3>
+            <p>Click to view detailed progress and yearly chart</p>
+            <a href="{{ url_for('journey_detail', journey_name=journey) }}" class="btn">View Details</a>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <h3>No journeys yet</h3>
+            <p>Start tracking your habits and goals by adding your first journey!</p>
+            <a href="{{ url_for('home') }}" class="btn">Add Journey</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

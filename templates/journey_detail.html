@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="journey-detail-header">
+    <h1>{{ journey_name }}</h1>
+    <div class="nav-links">
+        <a href="{{ url_for('journey_detail', journey_name=journey_name, view_type='yearly') }}" 
+           class="btn btn-small {% if view_type == 'yearly' %}btn-active{% else %}btn-secondary{% endif %}">
+            Yearly
+        </a>
+        <a href="{{ url_for('journey_detail', journey_name=journey_name, view_type='monthly') }}" 
+           class="btn btn-small {% if view_type == 'monthly' %}btn-active{% else %}btn-secondary{% endif %}">
+            Monthly
+        </a>
+    </div>
+</div>
+
+<div class="journey-stats">
+    <div class="stat-box">
+        <h3>{{ journey_data|length }}</h3>
+        <p>Total Contributions</p>
+    </div>
+    <div class="stat-box">
+        <h3>{{ year }}</h3>
+        <p>Year</p>
+    </div>
+</div>
+
+{% if view_type == 'monthly' %}
+    <!-- Current Month Calendar View -->
+    <div class="monthly-calendar-container">
+        <h3>{{ current_month_data.month_name }} {{ current_month_data.year }}</h3>
+        <div class="calendar-grid">
+            <div class="weekdays">
+                <div class="weekday">Sun</div>
+                <div class="weekday">Mon</div>
+                <div class="weekday">Tue</div>
+                <div class="weekday">Wed</div>
+                <div class="weekday">Thu</div>
+                <div class="weekday">Fri</div>
+                <div class="weekday">Sat</div>
+            </div>
+            <div class="calendar-days">
+                {% for week in current_month_data.weeks %}
+                    <div class="week-row">
+                        {% for day in week %}
+                            {% if day %}
+                                <div class="calendar-day {{ 'completed' if day.has_contribution else '' }}">
+                                    {{ day.day }}
+                                </div>
+                            {% else %}
+                                <div class="calendar-day empty"></div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% else %}
+    <!-- Yearly View - All Months Grid -->
+    <div class="yearly-months-container">
+        {% for month_data in monthly_data %}
+            <div class="month-section">
+                <h4>{{ month_data.month_name }}</h4>
+                <div class="month-grid">
+                    <div class="weekdays-small">
+                        <div class="weekday-small">S</div>
+                        <div class="weekday-small">M</div>
+                        <div class="weekday-small">T</div>
+                        <div class="weekday-small">W</div>
+                        <div class="weekday-small">T</div>
+                        <div class="weekday-small">F</div>
+                        <div class="weekday-small">S</div>
+                    </div>
+                    <div class="month-days">
+                        {% for week in month_data.weeks %}
+                            <div class="week-row">
+                                {% for day in week %}
+                                    {% if day %}
+                                        <div class="month-day {{ 'completed' if day.has_contribution else '' }}" title="{{ month_data.month_name }} {{ day.day }}">
+                                            {{ day.day }}
+                                        </div>
+                                    {% else %}
+                                        <div class="month-day empty"></div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="recent-activity">
+    <h3>Recent Activity</h3>
+    {% if journey_data %}
+        <ul class="activity-list">
+            {% for date_key in journey_data.keys()|list|sort(reverse=True) %}
+            {% if loop.index <= 10 %}
+            <li>
+                <span class="activity-date">{{ date_key }}</span>
+                <span class="activity-status completed">Completed</span>
+            </li>
+            {% endif %}
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="no-activity">No activity recorded for this journey yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
