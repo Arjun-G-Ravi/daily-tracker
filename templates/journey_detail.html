@@ -13,6 +13,7 @@
             Monthly
         </a>
         <button onclick="showScheduleModal()" class="btn btn-small btn-secondary">Set Days</button>
+        <button onclick="showStartDateModal()" class="btn btn-small btn-secondary">Set Start Date</button>
         <button onclick="showDeleteModal()" class="btn btn-small" style="background: #d73a49;">Delete Task</button>
     </div>
 </div>
@@ -39,6 +40,31 @@
         <div class="modal-footer">
             <button onclick="saveSchedule()" class="btn">Save Schedule</button>
             <button onclick="hideScheduleModal()" class="btn btn-secondary">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Start Date Setting Modal -->
+<div id="startDateModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Set Start Date for {{ journey_name }}</h3>
+            <span class="close" onclick="hideStartDateModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>Set the date from which tracking should begin:</p>
+            <div class="form-group">
+                <label for="startDateInput">Start Date:</label>
+                <input type="date" id="startDateInput" value="{{ journey_start_date or '' }}" 
+                       style="background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 8px 12px; border-radius: 4px; width: 200px;">
+            </div>
+            <p style="font-size: 14px; color: #8b949e; margin-top: 10px;">
+                Days before this date will not show as missed or count towards your streak.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button onclick="saveStartDate()" class="btn">Save Start Date</button>
+            <button onclick="hideStartDateModal()" class="btn btn-secondary">Cancel</button>
         </div>
     </div>
 </div>
@@ -161,6 +187,14 @@ function hideScheduleModal() {
     document.getElementById('scheduleModal').style.display = 'none';
 }
 
+function showStartDateModal() {
+    document.getElementById('startDateModal').style.display = 'block';
+}
+
+function hideStartDateModal() {
+    document.getElementById('startDateModal').style.display = 'none';
+}
+
 function showDeleteModal() {
     document.getElementById('deleteModal').style.display = 'block';
 }
@@ -202,6 +236,37 @@ function saveSchedule() {
     });
 }
 
+function saveStartDate() {
+    const startDate = document.getElementById('startDateInput').value;
+    
+    if (!startDate) {
+        alert('Please select a start date');
+        return;
+    }
+    
+    fetch(`/set_start_date/{{ journey_name }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            start_date: startDate
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            hideStartDateModal();
+            location.reload(); // Refresh to show updated calendar
+        } else {
+            alert('Failed to save start date: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error saving start date: ' + error);
+    });
+}
+
 function deleteTask() {
     fetch(`/delete_journey/{{ journey_name }}`, {
         method: 'POST',
@@ -226,10 +291,14 @@ function deleteTask() {
 // Close modal when clicking outside of it
 window.onclick = function(event) {
     const scheduleModal = document.getElementById('scheduleModal');
+    const startDateModal = document.getElementById('startDateModal');
     const deleteModal = document.getElementById('deleteModal');
     
     if (event.target == scheduleModal) {
         hideScheduleModal();
+    }
+    if (event.target == startDateModal) {
+        hideStartDateModal();
     }
     if (event.target == deleteModal) {
         hideDeleteModal();

@@ -11,6 +11,7 @@ JOURNEYS_FILE = 'journeys.json'
 JOURNEY_TEMPLATES_FILE = 'journey_templates.json'
 JOURNEY_ORDER_FILE = 'journey_order.json'
 JOURNEY_SCHEDULES_FILE = 'journey_schedules.json'
+JOURNEY_START_DATES_FILE = 'journey_start_dates.json'
 SETTINGS_FILE = 'settings.json'
 
 def load_journeys():
@@ -53,6 +54,16 @@ def save_journey_schedules(schedules):
     with open(JOURNEY_SCHEDULES_FILE, 'w') as f:
         json.dump(schedules, f, indent=2)
 
+def load_journey_start_dates():
+    if os.path.exists(JOURNEY_START_DATES_FILE):
+        with open(JOURNEY_START_DATES_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_journey_start_dates(start_dates):
+    with open(JOURNEY_START_DATES_FILE, 'w') as f:
+        json.dump(start_dates, f, indent=2)
+
 def load_settings():
     if os.path.exists(SETTINGS_FILE):
         with open(SETTINGS_FILE, 'r') as f:
@@ -93,6 +104,7 @@ def home(year=None, month=None):
     
     journeys = load_journeys()
     schedules = load_journey_schedules()
+    start_dates = load_journey_start_dates()
     settings = load_settings()
     month_name = calendar.month_name[month]
     
@@ -113,13 +125,28 @@ def home(year=None, month=None):
     # Calculate missed days and scheduled days for each journey
     for journey in all_journeys:
         journey_schedule = schedules.get(journey, [])
+        journey_start_date = start_dates.get(journey)
         missed_days[journey] = set()
         scheduled_days[journey] = set()
+        
+        # Parse start date if it exists
+        start_date_obj = None
+        if journey_start_date:
+            try:
+                start_date_obj = datetime.strptime(journey_start_date, '%Y-%m-%d').date()
+            except:
+                start_date_obj = None
         
         for day in range(1, days_in_month + 1):
             current_date = date(year, month, day)
             day_of_week = current_date.weekday()
             date_key = f"{year}-{month:02d}-{day:02d}"
+            
+            # Only consider dates from start date onwards and up to today
+            if start_date_obj and current_date < start_date_obj:
+                continue
+            if current_date > today:
+                continue
             
             is_scheduled = day_of_week in journey_schedule
             is_completed = journeys.get(date_key, {}).get(journey, False)
@@ -171,8 +198,10 @@ def home(year=None, month=None):
                          all_journeys=all_journeys,  # Use ordered journeys instead of sorted
                          templates=templates,
                          schedules=schedules,
+                         start_dates=start_dates,
                          missed_days=missed_days,
                          scheduled_days=scheduled_days,
+                         today=today.strftime('%Y-%m-%d'),
                          settings=settings)
 
 @app.route('/journeys')
@@ -188,7 +217,10 @@ def journeys():
     templates = load_journey_templates()
     all_journeys.update(templates)
     
-    return render_template('journeys.html', all_journeys=sorted(all_journeys))
+    # Load start dates
+    start_dates = load_journey_start_dates()
+    
+    return render_template('journeys.html', all_journeys=sorted(all_journeys), start_dates=start_dates)
 
 @app.route('/add_template', methods=['POST'])
 def add_template():
@@ -207,6 +239,11 @@ def add_template():
         schedules = load_journey_schedules()
         schedules[journey_name] = [0, 1, 2, 3, 4, 5, 6]
         save_journey_schedules(schedules)
+        
+        # Set start date to today
+        start_dates = load_journey_start_dates()
+        start_dates[journey_name] = date.today().strftime('%Y-%m-%d')
+        save_journey_start_dates(start_dates)
     
     return redirect(url_for('home'))
 
@@ -215,6 +252,7 @@ def add_template():
 def journey_detail(journey_name, view_type='yearly'):
     journeys = load_journeys()
     schedules = load_journey_schedules()
+    start_dates = load_journey_start_dates()
     
     # Get all data for this specific journey
     journey_data = {}
@@ -222,8 +260,17 @@ def journey_detail(journey_name, view_type='yearly'):
         if journey_name in day_data and day_data[journey_name]:
             journey_data[date_key] = True
     
-    # Get schedule for this journey
+    # Get schedule and start date for this journey
     journey_schedule = schedules.get(journey_name, [])
+    journey_start_date = start_dates.get(journey_name)
+    
+    # Parse start date
+    start_date_obj = None
+    if journey_start_date:
+        try:
+            start_date_obj = datetime.strptime(journey_start_date, '%Y-%m-%d').date()
+        except:
+            start_date_obj = None
     
     now = datetime.now()
 
@@ -246,13 +293,22 @@ def journey_detail(journey_name, view_type='yearly'):
         for day in range(1, days_in_month + 1):
             date_key = f"{current_year}-{current_month:02d}-{day:02d}"
             has_contribution = journey_data.get(date_key, False)
+            current_date = date(current_year, current_month, day)
+            
+            # Only consider dates from start date onwards and up to today
+            if start_date_obj and current_date < start_date_obj:
+                current_week.append(None)
+                continue
+            if current_date > date.today():
+                current_week.append(None)
+                continue
             
             # Check if this day should be scheduled
-            day_of_week = date(current_year, current_month, day).weekday()
+            day_of_week = current_date.weekday()
             is_scheduled = day_of_week in journey_schedule
             
             # Check if this is a past day that was missed
-            is_past = date(current_year, current_month, day) < date.today()
+            is_past = current_date < date.today()
             is_missed = is_past and is_scheduled and not has_contribution
             
             current_week.append({
@@ -278,6 +334,7 @@ def journey_detail(journey_name, view_type='yearly'):
                              journey_name=journey_name,
                              journey_data=journey_data,
                              journey_schedule=journey_schedule,
+                             journey_start_date=journey_start_date,
                              current_month_data={
                                  'month': current_month,
                                  'month_name': month_name,
@@ -308,13 +365,22 @@ def journey_detail(journey_name, view_type='yearly'):
             for day in range(1, days_in_month + 1):
                 date_key = f"{now.year}-{month:02d}-{day:02d}"
                 has_contribution = journey_data.get(date_key, False)
+                current_date = date(now.year, month, day)
+                
+                # Only consider dates from start date onwards and up to today
+                if start_date_obj and current_date < start_date_obj:
+                    current_week.append(None)
+                    continue
+                if current_date > date.today():
+                    current_week.append(None)
+                    continue
                 
                 # Check if this day should be scheduled
-                day_of_week = date(now.year, month, day).weekday()
+                day_of_week = current_date.weekday()
                 is_scheduled = day_of_week in journey_schedule
                 
                 # Check if this is a past day that was missed
-                is_past = date(now.year, month, day) < date.today()
+                is_past = current_date < date.today()
                 is_missed = is_past and is_scheduled and not has_contribution
                 
                 current_week.append({
@@ -346,6 +412,7 @@ def journey_detail(journey_name, view_type='yearly'):
                              journey_name=journey_name,
                              journey_data=journey_data,
                              journey_schedule=journey_schedule,
+                             journey_start_date=journey_start_date,
                              monthly_data=monthly_data,
                              view_type='yearly',
                              year=now.year,
@@ -429,6 +496,30 @@ def save_journey_order_route():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/set_start_date/<journey_name>', methods=['POST'])
+def set_start_date(journey_name):
+    try:
+        data = request.get_json()
+        start_date = data.get('start_date')
+        
+        if not start_date:
+            return jsonify({'success': False, 'error': 'Missing start date'})
+        
+        # Validate date format
+        try:
+            datetime.strptime(start_date, '%Y-%m-%d')
+        except:
+            return jsonify({'success': False, 'error': 'Invalid date format'})
+        
+        start_dates = load_journey_start_dates()
+        start_dates[journey_name] = start_date
+        save_journey_start_dates(start_dates)
+        
+        return jsonify({'success': True, 'message': 'Start date updated successfully'})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/set_schedule/<journey_name>', methods=['POST'])
 def set_schedule(journey_name):
     try:
@@ -474,6 +565,12 @@ def delete_journey(journey_name):
         if journey_name in schedules:
             del schedules[journey_name]
             save_journey_schedules(schedules)
+        
+        # Remove from start dates
+        start_dates = load_journey_start_dates()
+        if journey_name in start_dates:
+            del start_dates[journey_name]
+            save_journey_start_dates(start_dates)
         
         return jsonify({'success': True})
     

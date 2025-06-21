@@ -44,11 +44,18 @@
                 {% set date_key = "{}-{:02d}-{:02d}".format(year, month, day) %}
                 <td>
                     {% if day <= days_in_month %}
+                    {% set current_date = "{}-{:02d}-{:02d}".format(year, month, day) %}
+                    {% set journey_start_date = start_dates.get(journey) %}
+                    {% set is_before_start = journey_start_date and current_date < journey_start_date %}
+                    {% set is_after_today = current_date > today %}
                     {% set is_completed = journeys.get(date_key, {}).get(journey) %}
                     {% set is_missed = day in missed_days.get(journey, []) %}
                     {% set is_scheduled = day in scheduled_days.get(journey, []) %}
                     
-                    {% if settings.display_mode == 'schedule' %}
+                    {% if is_before_start or is_after_today %}
+                        <div class="day-cell invalid-day" title="{% if is_before_start %}Before start date{% else %}Future date{% endif %}">
+                        </div>
+                    {% elif settings.display_mode == 'schedule' %}
                         <div class="day-cell 
                              {% if is_completed %}completed
                              {% elif not is_scheduled %}unscheduled

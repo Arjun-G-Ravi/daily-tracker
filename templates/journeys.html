@@ -12,6 +12,13 @@
         <div class="journey-card">
             <h3>{{ journey }}</h3>
             <p>Click to view detailed progress and yearly chart</p>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #8b949e;">Start Date:</label>
+                <input type="date" 
+                       value="{{ start_dates.get(journey, '') }}" 
+                       onchange="updateStartDate('{{ journey }}', this.value)"
+                       style="background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 10px; border-radius: 4px; font-size: 14px;">
+            </div>
             <a href="{{ url_for('journey_detail', journey_name=journey) }}" class="btn">View Details</a>
         </div>
         {% endfor %}
@@ -23,4 +30,40 @@
         </div>
     {% endif %}
 </div>
+
+<script>
+function updateStartDate(journeyName, startDate) {
+    if (!startDate) {
+        alert('Please select a valid date');
+        return;
+    }
+    
+    fetch(`/set_start_date/${encodeURIComponent(journeyName)}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            start_date: startDate
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message briefly
+            const card = event.target.closest('.journey-card');
+            const originalBorder = card.style.borderColor;
+            card.style.borderColor = '#39d353';
+            setTimeout(() => {
+                card.style.borderColor = originalBorder;
+            }, 1000);
+        } else {
+            alert('Failed to update start date: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error updating start date: ' + error);
+    });
+}
+</script>
 {% endblock %}
