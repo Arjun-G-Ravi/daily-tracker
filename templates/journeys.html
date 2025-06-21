@@ -19,7 +19,10 @@
                        onchange="updateStartDate('{{ journey }}', this.value)"
                        style="background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 10px; border-radius: 4px; font-size: 14px;">
             </div>
-            <a href="{{ url_for('journey_detail', journey_name=journey) }}" class="btn">View Details</a>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <a href="{{ url_for('journey_detail', journey_name=journey) }}" class="btn">View Details</a>
+                <button onclick="showRenameModal('{{ journey }}')" class="btn btn-secondary btn-small">Rename</button>
+            </div>
         </div>
         {% endfor %}
     {% else %}
@@ -31,7 +34,88 @@
     {% endif %}
 </div>
 
+<!-- Rename Task Modal -->
+<div id="renameModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Rename Task</h3>
+            <span class="close" onclick="hideRenameModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>Enter a new name for this task:</p>
+            <div class="form-group">
+                <label for="newTaskName">New Task Name:</label>
+                <input type="text" id="newTaskName" 
+                       style="background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 8px 12px; border-radius: 4px; width: 300px;">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="renameTask()" class="btn">Rename Task</button>
+            <button onclick="hideRenameModal()" class="btn btn-secondary">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <script>
+let currentJourneyToRename = '';
+
+function showRenameModal(journeyName) {
+    currentJourneyToRename = journeyName;
+    document.getElementById('newTaskName').value = journeyName;
+    document.getElementById('renameModal').style.display = 'block';
+    document.getElementById('newTaskName').focus();
+    document.getElementById('newTaskName').select();
+}
+
+function hideRenameModal() {
+    document.getElementById('renameModal').style.display = 'none';
+    currentJourneyToRename = '';
+}
+
+function renameTask() {
+    const newName = document.getElementById('newTaskName').value.trim();
+    
+    if (!newName) {
+        alert('Please enter a task name');
+        return;
+    }
+    
+    if (newName === currentJourneyToRename) {
+        alert('New name must be different from current name');
+        return;
+    }
+    
+    fetch(`/rename_journey/${encodeURIComponent(currentJourneyToRename)}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            new_name: newName
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            hideRenameModal();
+            location.reload(); // Refresh the page to show the updated name
+        } else {
+            alert('Failed to rename task: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error renaming task: ' + error);
+    });
+}
+
+// Close modal when clicking outside of it
+window.onclick = function(event) {
+    const renameModal = document.getElementById('renameModal');
+    if (event.target == renameModal) {
+        hideRenameModal();
+    }
+}
+
 function updateStartDate(journeyName, startDate) {
     if (!startDate) {
         alert('Please select a valid date');

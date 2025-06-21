@@ -613,5 +613,60 @@ def save_theme():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/rename_journey/<journey_name>', methods=['POST'])
+def rename_journey(journey_name):
+    try:
+        data = request.get_json()
+        new_name = data.get('new_name', '').strip()
+        
+        if not new_name:
+            return jsonify({'success': False, 'error': 'New name cannot be empty'})
+        
+        if new_name == journey_name:
+            return jsonify({'success': False, 'error': 'New name must be different from current name'})
+        
+        # Check if new name already exists
+        templates = load_journey_templates()
+        if new_name in templates:
+            return jsonify({'success': False, 'error': 'A journey with this name already exists'})
+        
+        # Update all journey data
+        journeys = load_journeys()
+        for date_key in journeys:
+            if journey_name in journeys[date_key]:
+                journeys[date_key][new_name] = journeys[date_key][journey_name]
+                del journeys[date_key][journey_name]
+        save_journeys(journeys)
+        
+        # Update templates
+        if journey_name in templates:
+            templates = [new_name if j == journey_name else j for j in templates]
+            save_journey_templates(templates)
+        
+        # Update order
+        order = load_journey_order()
+        if journey_name in order:
+            order = [new_name if j == journey_name else j for j in order]
+            save_journey_order(order)
+        
+        # Update schedules
+        schedules = load_journey_schedules()
+        if journey_name in schedules:
+            schedules[new_name] = schedules[journey_name]
+            del schedules[journey_name]
+            save_journey_schedules(schedules)
+        
+        # Update start dates
+        start_dates = load_journey_start_dates()
+        if journey_name in start_dates:
+            start_dates[new_name] = start_dates[journey_name]
+            del start_dates[journey_name]
+            save_journey_start_dates(start_dates)
+        
+        return jsonify({'success': True, 'new_name': new_name})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001)

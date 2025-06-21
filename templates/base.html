@@ -1063,8 +1063,11 @@
         
         // Toggle journey completion on click
         function toggleJourney(element, journey, day, month, year) {
+            console.log('toggleJourney called with:', {element, journey, day, month, year});
             const dateKey = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
             const isCompleted = element.classList.contains('completed');
+            
+            console.log('Date key:', dateKey, 'Is completed:', isCompleted);
             
             // Toggle the visual state immediately for responsiveness
             if (isCompleted) {
@@ -1111,17 +1114,24 @@
 
         // Add event listeners when the page loads
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, setting up click listeners');
             document.addEventListener('click', function(event) {
+                console.log('Click detected on:', event.target);
                 if (event.target.classList.contains('day-cell') && !event.target.classList.contains('invalid-day')) {
+                    console.log('Valid day-cell clicked');
                     const element = event.target;
                     const journey = element.getAttribute('data-journey');
                     const day = parseInt(element.getAttribute('data-day'));
                     const month = parseInt(element.getAttribute('data-month'));
                     const year = parseInt(element.getAttribute('data-year'));
                     
+                    console.log('Journey:', journey, 'Day:', day, 'Month:', month, 'Year:', year);
+                    
                     if (journey && day && month && year) {
                         toggleJourney(element, journey, day, month, year);
                     }
+                } else {
+                    console.log('Not a valid day-cell or is invalid-day');
                 }
             });
 

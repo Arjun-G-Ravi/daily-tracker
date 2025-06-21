@@ -14,6 +14,7 @@
         </a>
         <button onclick="showScheduleModal()" class="btn btn-small btn-secondary">Set Days</button>
         <button onclick="showStartDateModal()" class="btn btn-small btn-secondary">Set Start Date</button>
+        <button onclick="showRenameModal()" class="btn btn-small btn-secondary">Rename Task</button>
         <button onclick="showDeleteModal()" class="btn btn-small" style="background: #d73a49;">Delete Task</button>
     </div>
 </div>
@@ -65,6 +66,28 @@
         <div class="modal-footer">
             <button onclick="saveStartDate()" class="btn">Save Start Date</button>
             <button onclick="hideStartDateModal()" class="btn btn-secondary">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Rename Task Modal -->
+<div id="renameModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Rename Task</h3>
+            <span class="close" onclick="hideRenameModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>Enter a new name for this task:</p>
+            <div class="form-group">
+                <label for="newTaskName">New Task Name:</label>
+                <input type="text" id="newTaskName" value="{{ journey_name }}" 
+                       style="background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 8px 12px; border-radius: 4px; width: 300px;">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="renameTask()" class="btn">Rename Task</button>
+            <button onclick="hideRenameModal()" class="btn btn-secondary">Cancel</button>
         </div>
     </div>
 </div>
@@ -195,6 +218,16 @@ function hideStartDateModal() {
     document.getElementById('startDateModal').style.display = 'none';
 }
 
+function showRenameModal() {
+    document.getElementById('renameModal').style.display = 'block';
+    document.getElementById('newTaskName').focus();
+    document.getElementById('newTaskName').select();
+}
+
+function hideRenameModal() {
+    document.getElementById('renameModal').style.display = 'none';
+}
+
 function showDeleteModal() {
     document.getElementById('deleteModal').style.display = 'block';
 }
@@ -267,6 +300,43 @@ function saveStartDate() {
     });
 }
 
+function renameTask() {
+    const newName = document.getElementById('newTaskName').value.trim();
+    
+    if (!newName) {
+        alert('Please enter a task name');
+        return;
+    }
+    
+    if (newName === '{{ journey_name }}') {
+        alert('New name must be different from current name');
+        return;
+    }
+    
+    fetch(`/rename_journey/{{ journey_name }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            new_name: newName
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Task renamed successfully');
+            // Redirect to the renamed task's page
+            window.location.href = `/journey/${encodeURIComponent(data.new_name)}`;
+        } else {
+            alert('Failed to rename task: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error renaming task: ' + error);
+    });
+}
+
 function deleteTask() {
     fetch(`/delete_journey/{{ journey_name }}`, {
         method: 'POST',
@@ -292,6 +362,7 @@ function deleteTask() {
 window.onclick = function(event) {
     const scheduleModal = document.getElementById('scheduleModal');
     const startDateModal = document.getElementById('startDateModal');
+    const renameModal = document.getElementById('renameModal');
     const deleteModal = document.getElementById('deleteModal');
     
     if (event.target == scheduleModal) {
@@ -299,6 +370,9 @@ window.onclick = function(event) {
     }
     if (event.target == startDateModal) {
         hideStartDateModal();
+    }
+    if (event.target == renameModal) {
+        hideRenameModal();
     }
     if (event.target == deleteModal) {
         hideDeleteModal();
