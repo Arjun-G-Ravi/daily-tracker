@@ -2,9 +2,11 @@
 
 {% block content %}
 <div class="month-header">
-    <a href="{{ url_for('home', year=prev_year, month=prev_month) }}" class="nav-arrow">‹</a>
-    <a href="{{ url_for('home') }}" class="month-title">{{ month_name }} {{ year }}</a>
-    <a href="{{ url_for('home', year=next_year, month=next_month) }}" class="nav-arrow">›</a>
+    <div class="month-nav">
+        <a href="{{ url_for('home', year=prev_year, month=prev_month) }}" class="nav-arrow prev">‹</a>
+        <a href="{{ url_for('home') }}" class="month-title">{{ month_name }} {{ year }}</a>
+        <a href="{{ url_for('home', year=next_year, month=next_month) }}" class="nav-arrow next">›</a>
+    </div>
 </div>
 
 <!-- Add Journey Form -->
@@ -16,7 +18,6 @@
     </form>
     
     <div style="display: flex; gap: 10px;">
-        <a href="{{ url_for('journeys') }}" class="btn btn-secondary btn-small">View All Journeys</a>
         <button type="button" id="reorderBtn" class="btn btn-small btn-secondary">Reorder</button>
     </div>
 </div>
