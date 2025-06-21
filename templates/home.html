@@ -46,14 +46,31 @@
                     {% if day <= days_in_month %}
                     {% set is_completed = journeys.get(date_key, {}).get(journey) %}
                     {% set is_missed = day in missed_days.get(journey, []) %}
+                    {% set is_scheduled = day in scheduled_days.get(journey, []) %}
                     
-                    <div class="day-cell {% if is_completed %}completed{% elif is_missed %}missed{% endif %}"
-                         title="{{ journey }} - {{ day }}/{{ month }}{% if is_missed %} (Missed){% endif %}"
-                         data-journey="{{ journey }}"
-                         data-day="{{ day }}"
-                         data-month="{{ month }}"
-                         data-year="{{ year }}">
-                    </div>
+                    {% if settings.display_mode == 'schedule' %}
+                        <div class="day-cell 
+                             {% if is_completed %}completed
+                             {% elif not is_scheduled %}unscheduled
+                             {% endif %}"
+                             title="{{ journey }} - {{ day }}/{{ month }}"
+                             data-journey="{{ journey }}"
+                             data-day="{{ day }}"
+                             data-month="{{ month }}"
+                             data-year="{{ year }}">
+                        </div>
+                    {% else %}
+                        <div class="day-cell 
+                             {% if is_completed %}completed
+                             {% elif is_missed %}missed
+                             {% endif %}"
+                             title="{{ journey }} - {{ day }}/{{ month }}{% if is_missed %} (Missed){% endif %}"
+                             data-journey="{{ journey }}"
+                             data-day="{{ day }}"
+                             data-month="{{ month }}"
+                             data-year="{{ year }}">
+                        </div>
+                    {% endif %}
                     {% else %}
                     <div class="day-cell invalid-day" title="Invalid date">
                     </div>

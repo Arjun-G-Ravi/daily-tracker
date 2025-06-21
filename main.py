@@ -11,6 +11,7 @@ JOURNEYS_FILE = 'journeys.json'
 JOURNEY_TEMPLATES_FILE = 'journey_templates.json'
 JOURNEY_ORDER_FILE = 'journey_order.json'
 JOURNEY_SCHEDULES_FILE = 'journey_schedules.json'
+SETTINGS_FILE = 'settings.json'
 
 def load_journeys():
     if os.path.exists(JOURNEYS_FILE):
@@ -52,6 +53,16 @@ def save_journey_schedules(schedules):
     with open(JOURNEY_SCHEDULES_FILE, 'w') as f:
         json.dump(schedules, f, indent=2)
 
+def load_settings():
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, 'r') as f:
+            return json.load(f)
+    return {"display_mode": "missed"}
+
+def save_settings(settings):
+    with open(SETTINGS_FILE, 'w') as f:
+        json.dump(settings, f, indent=2)
+
 def get_current_month_days():
     now = datetime.now()
     cal = calendar.monthcalendar(now.year, now.month)
@@ -82,10 +93,12 @@ def home(year=None, month=None):
     
     journeys = load_journeys()
     schedules = load_journey_schedules()
+    settings = load_settings()
     month_name = calendar.month_name[month]
     
     # Calculate missed days for each journey
     missed_days = {}
+    scheduled_days = {}  # New: track which days are scheduled for each journey
     today = date.today()
     
     # Get unique journey names from both daily data and templates
@@ -97,10 +110,11 @@ def home(year=None, month=None):
     templates = load_journey_templates()
     all_journeys.update(templates)
     
-    # Calculate missed days for each journey
+    # Calculate missed days and scheduled days for each journey
     for journey in all_journeys:
         journey_schedule = schedules.get(journey, [])
         missed_days[journey] = set()
+        scheduled_days[journey] = set()
         
         for day in range(1, days_in_month + 1):
             current_date = date(year, month, day)
@@ -110,6 +124,9 @@ def home(year=None, month=None):
             is_scheduled = day_of_week in journey_schedule
             is_completed = journeys.get(date_key, {}).get(journey, False)
             is_past = current_date < today
+            
+            if is_scheduled:
+                scheduled_days[journey].add(day)
             
             if is_past and is_scheduled and not is_completed:
                 missed_days[journey].add(day)
@@ -154,7 +171,9 @@ def home(year=None, month=None):
                          all_journeys=all_journeys,  # Use ordered journeys instead of sorted
                          templates=templates,
                          schedules=schedules,
-                         missed_days=missed_days)
+                         missed_days=missed_days,
+                         scheduled_days=scheduled_days,
+                         settings=settings)
 
 @app.route('/journeys')
 def journeys():
@@ -266,7 +285,8 @@ def journey_detail(journey_name, view_type='yearly'):
                                  'year': current_year
                              },
                              view_type='monthly',
-                             year=now.year)
+                             year=now.year,
+                             settings=load_settings())
     
     else:  # yearly view - show all months in grid
         # Generate monthly data for all 12 months
@@ -328,7 +348,8 @@ def journey_detail(journey_name, view_type='yearly'):
                              journey_schedule=journey_schedule,
                              monthly_data=monthly_data,
                              view_type='yearly',
-                             year=now.year)
+                             year=now.year,
+                             settings=load_settings())
 
 @app.route('/journey')
 def journey():
@@ -458,6 +479,18 @@ def delete_journey(journey_name):
     
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/settings', methods=['GET', 'POST'])
+def settings():
+    if request.method == 'POST':
+        display_mode = request.form.get('display_mode', 'missed')
+        settings_data = load_settings()
+        settings_data['display_mode'] = display_mode
+        save_settings(settings_data)
+        return redirect(url_for('home'))
+    
+    settings_data = load_settings()
+    return render_template('settings.html', settings=settings_data)
 
 if __name__ == '__main__':
     app.run(debug=True)

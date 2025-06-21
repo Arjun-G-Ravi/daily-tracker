@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Settings</h2>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="display_mode">Display Mode:</label>
+            <select name="display_mode" id="display_mode">
+                <option value="missed" {% if settings.display_mode == 'missed' %}selected{% endif %}>
+                    Missed Mode - Red for missed scheduled tasks
+                </option>
+                <option value="schedule" {% if settings.display_mode == 'schedule' %}selected{% endif %}>
+                    Schedule Mode - Light green for unscheduled days
+                </option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <button type="submit" class="btn">Save Settings</button>
+            <a href="{{ url_for('home') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+    
+    <div style="margin-top: 30px; padding: 15px; background: #21262d; border-radius: 6px;">
+        <h4>Mode Descriptions:</h4>
+        <ul style="margin: 10px 0; padding-left: 20px; color: #8b949e;">
+            <li><strong>Missed Mode:</strong> Days you were supposed to do a task but didn't are shown in red</li>
+            <li><strong>Schedule Mode:</strong> Days you're not scheduled to do a task are shown in light green, scheduled but not done days are empty</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

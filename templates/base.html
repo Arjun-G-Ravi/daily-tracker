@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily Tracker</title>
     <style>
+        /* =========================
+           CUSTOM COLOR SETTINGS
+           ========================= */
+        /* Change the unscheduled color here: */
+        :root {
+            --unscheduled-color: #9ac59c; /* Replace this hex color with your preferred color */
+        }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
             margin: 0;
@@ -17,11 +25,8 @@
             max-width: 95%;
             margin: 0 auto;
             padding: 0 10px;
-              .month-day.completed {
-            background: #39d353;
-            border-color: #39d353;
-            color: #fff;
-        }       
+        }
+        
         /* App Header */
         .app-header {
             text-align: center;
@@ -248,6 +253,10 @@
         
         .day-cell.missed {
             background: #f85149;
+        }
+        
+        .day-cell.unscheduled {
+            background: var(--unscheduled-color);
         }
         
         .day-cell:hover {
@@ -552,6 +561,18 @@
             color: #000;
         }
         
+        .month-day.unscheduled {
+            background: var(--unscheduled-color);
+            border-color: var(--unscheduled-color);
+            color: #000;
+        }
+        
+        .month-day.missed {
+            background: #f85149;
+            border-color: #f85149;
+            color: #fff;
+        }
+        
         .month-day.empty:not(.month-day:first-child) {
             background: #161b22;
             color: #c9d1d9;
@@ -621,6 +642,16 @@
         .calendar-day.completed {
             background: #39d353;
             color: #0d1117;
+        }
+        
+        .calendar-day.unscheduled {
+            background: var(--unscheduled-color);
+            color: #0d1117;
+        }
+        
+        .calendar-day.missed {
+            background: #f85149;
+            color: #fff;
         }
         
         .calendar-day.empty:not(.calendar-day:first-child) {
@@ -860,6 +891,7 @@
         <nav class="nav">
             <a href="{{ url_for('home') }}">Home</a>
             <a href="{{ url_for('journeys') }}">All Journeys</a>
+            <a href="{{ url_for('settings') }}">Settings</a>
         </nav>
         
         {% block content %}{% endblock %}

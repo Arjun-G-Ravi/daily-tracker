@@ -91,9 +91,15 @@
                     <div class="week-row">
                         {% for day in week %}
                             {% if day %}
-                                <div class="calendar-day {{ 'completed' if day.has_contribution else 'missed' if day.is_missed else '' }}">
-                                    {{ day.day }}
-                                </div>
+                                {% if settings.display_mode == 'schedule' %}
+                                    <div class="calendar-day {{ 'completed' if day.has_contribution else 'unscheduled' if not day.is_scheduled else '' }}">
+                                        {{ day.day }}
+                                    </div>
+                                {% else %}
+                                    <div class="calendar-day {{ 'completed' if day.has_contribution else 'missed' if day.is_missed else '' }}">
+                                        {{ day.day }}
+                                    </div>
+                                {% endif %}
                             {% else %}
                                 <div class="calendar-day empty"></div>
                             {% endif %}
@@ -124,9 +130,15 @@
                             <div class="week-row">
                                 {% for day in week %}
                                     {% if day %}
-                                        <div class="month-day {{ 'completed' if day.has_contribution else 'missed' if day.is_missed else '' }}" title="{{ month_data.month_name }} {{ day.day }}">
-                                            {{ day.day }}
-                                        </div>
+                                        {% if settings.display_mode == 'schedule' %}
+                                            <div class="month-day {{ 'completed' if day.has_contribution else 'unscheduled' if not day.is_scheduled else '' }}" title="{{ month_data.month_name }} {{ day.day }}">
+                                                {{ day.day }}
+                                            </div>
+                                        {% else %}
+                                            <div class="month-day {{ 'completed' if day.has_contribution else 'missed' if day.is_missed else '' }}" title="{{ month_data.month_name }} {{ day.day }}">
+                                                {{ day.day }}
+                                            </div>
+                                        {% endif %}
                                     {% else %}
                                         <div class="month-day empty"></div>
                                     {% endif %}
