@@ -68,7 +68,7 @@ def load_settings():
     if os.path.exists(SETTINGS_FILE):
         with open(SETTINGS_FILE, 'r') as f:
             return json.load(f)
-    return {"display_mode": "missed"}
+    return {"display_mode": "missed", "theme": "dark"}
 
 def save_settings(settings):
     with open(SETTINGS_FILE, 'w') as f:
@@ -220,7 +220,10 @@ def journeys():
     # Load start dates
     start_dates = load_journey_start_dates()
     
-    return render_template('journeys.html', all_journeys=sorted(all_journeys), start_dates=start_dates)
+    # Load settings for theme
+    settings = load_settings()
+    
+    return render_template('journeys.html', all_journeys=sorted(all_journeys), start_dates=start_dates, settings=settings)
 
 @app.route('/add_template', methods=['POST'])
 def add_template():
@@ -421,7 +424,8 @@ def journey_detail(journey_name, view_type='yearly'):
 @app.route('/journey')
 def journey():
     today = datetime.now().day
-    return render_template('journey.html', today=today)
+    settings = load_settings()
+    return render_template('journey.html', today=today, settings=settings)
 
 @app.route('/add_journey', methods=['POST'])
 def add_journey():
@@ -581,13 +585,33 @@ def delete_journey(journey_name):
 def settings():
     if request.method == 'POST':
         display_mode = request.form.get('display_mode', 'missed')
+        theme = request.form.get('theme', 'dark')
         settings_data = load_settings()
         settings_data['display_mode'] = display_mode
+        settings_data['theme'] = theme
         save_settings(settings_data)
         return redirect(url_for('home'))
     
     settings_data = load_settings()
     return render_template('settings.html', settings=settings_data)
+
+@app.route('/save_theme', methods=['POST'])
+def save_theme():
+    try:
+        data = request.get_json()
+        theme = data.get('theme', 'dark')
+        
+        if theme not in ['dark', 'light']:
+            return jsonify({'success': False, 'error': 'Invalid theme'})
+        
+        settings_data = load_settings()
+        settings_data['theme'] = theme
+        save_settings(settings_data)
+        
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,24 +1,69 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="{{ settings.theme or 'dark' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily Tracker</title>
     <style>
         /* =========================
+           THEME VARIABLES
+           ========================= */
+        :root[data-theme="dark"] {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border-primary: #30363d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --text-bright: #f0f6fc;
+            --accent-primary: #58a6ff;
+            --accent-secondary: #316dca;
+            --success-color: #39d353;
+            --success-hover: #2ea043;
+            --danger-color: #f85149;
+            --warning-color: #d73a49;
+            --unscheduled-color: #9ac59c;
+            --gradient-start: #238636;
+            --gradient-end: #2ea043;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --shadow-strong: rgba(0, 0, 0, 0.4);
+        }
+        
+        :root[data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f6f8fa;
+            --bg-tertiary: #eaeef2;
+            --border-primary: #d0d7de;
+            --text-primary: #1f2328;
+            --text-secondary: #656d76;
+            --text-bright: #0d1117;
+            --accent-primary: #0969da;
+            --accent-secondary: #0550ae;
+            --success-color: #1a7f37;
+            --success-hover: #1f8939;
+            --danger-color: #d1242f;
+            --warning-color: #cf222e;
+            --unscheduled-color: #7fb069;
+            --gradient-start: #1a7f37;
+            --gradient-end: #1f8939;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --shadow-strong: rgba(0, 0, 0, 0.15);
+        }
+        
+        /* =========================
            CUSTOM COLOR SETTINGS
            ========================= */
-        /* Change the unscheduled color here: */
         :root {
-            --unscheduled-color: #9ac59c; /* Replace this hex color with your preferred color */
+            --unscheduled-color: var(--unscheduled-color);
         }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #0d1117;
-            color: #c9d1d9;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         
         .container {
@@ -34,11 +79,11 @@
             align-items: center;
             margin-bottom: 20px;
             padding: 20px 0;
-            border-bottom: 1px solid #30363d;
+            border-bottom: 1px solid var(--border-primary);
         }
         
         .app-title {
-            color: #f0f6fc;
+            color: var(--text-bright);
             font-size: 28px;
             font-weight: 700;
             margin: 0;
@@ -53,7 +98,7 @@
         }
         
         .nav-link {
-            color: #8b949e;
+            color: var(--text-secondary);
             text-decoration: none;
             font-size: 20px;
             padding: 8px;
@@ -62,8 +107,24 @@
         }
         
         .nav-link:hover {
-            color: #c9d1d9;
-            background-color: #21262d;
+            color: var(--text-primary);
+            background-color: var(--bg-tertiary);
+        }
+        
+        .theme-toggle {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+        }
+        
+        .theme-toggle:hover {
+            color: var(--text-primary);
+            background-color: var(--bg-tertiary);
         }
         
         .nav {
@@ -71,7 +132,7 @@
         }
         
         .nav a {
-            color: #58a6ff;
+            color: var(--accent-primary);
             text-decoration: none;
             margin-right: 20px;
             font-weight: 500;
@@ -83,12 +144,12 @@
         
         /* Month Navigation */
         .month-header {
-            background: linear-gradient(135deg, #21262d, #161b22);
-            border: 1px solid #30363d;
+            background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary));
+            border: 1px solid var(--border-primary);
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 24px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 12px var(--shadow-color);
             position: relative;
             overflow: hidden;
         }
@@ -100,7 +161,7 @@
             left: 0;
             right: 0;
             height: 1px;
-            background: linear-gradient(90deg, transparent, #58a6ff, transparent);
+            background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
         }
         
         .month-nav {
@@ -111,51 +172,51 @@
         }
         
         .month-title {
-            color: #f0f6fc;
+            color: var(--text-bright);
             text-decoration: none;
             font-size: 32px;
             font-weight: 800;
             text-align: center;
             padding: 16px 32px;
             border-radius: 10px;
-            background: linear-gradient(135deg, #238636, #2ea043);
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
             transition: all 0.3s ease;
-            box-shadow: 0 4px 16px rgba(35, 134, 54, 0.3);
+            box-shadow: 0 4px 16px var(--shadow-strong);
             letter-spacing: -0.5px;
             grid-column: 2;
         }
         
         .month-title:hover {
-            background: linear-gradient(135deg, #2ea043, #39d353);
+            background: linear-gradient(135deg, var(--gradient-end), var(--success-color));
             text-decoration: none;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(35, 134, 54, 0.4);
+            box-shadow: 0 6px 20px var(--shadow-strong);
         }
         
         .nav-arrow {
-            color: #f0f6fc;
+            color: var(--text-bright);
             text-decoration: none;
             font-size: 28px;
             font-weight: 900;
             padding: 16px;
             border-radius: 10px;
             transition: all 0.3s ease;
-            background: linear-gradient(135deg, #30363d, #21262d);
-            border: 1px solid #30363d;
+            background: linear-gradient(135deg, var(--border-primary), var(--bg-tertiary));
+            border: 1px solid var(--border-primary);
             display: flex;
             align-items: center;
             justify-content: center;
             width: 56px;
             height: 56px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 2px 8px var(--shadow-color);
         }
         
         .nav-arrow:hover {
-            background: linear-gradient(135deg, #58a6ff, #316dca);
-            border-color: #58a6ff;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-color: var(--accent-primary);
             color: #fff;
             transform: translateY(-2px) scale(1.05);
-            box-shadow: 0 4px 16px rgba(88, 166, 255, 0.3);
+            box-shadow: 0 4px 16px var(--shadow-strong);
         }
         
         .nav-arrow.prev {
@@ -168,8 +229,8 @@
         
         /* Add Journey Form */
         .add-journey-form {
-            background: #161b22;
-            border: 1px solid #30363d;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
             border-radius: 6px;
             padding: 15px;
             margin-bottom: 20px;
@@ -188,9 +249,9 @@
         
         .inline-form input,
         .inline-form select {
-            background: #0d1117;
-            border: 1px solid #30363d;
-            color: #c9d1d9;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
             padding: 6px 10px;
             border-radius: 4px;
             font-size: 14px;
@@ -204,7 +265,7 @@
         }
         
         .btn {
-            background: #238636;
+            background: var(--gradient-start);
             color: white;
             border: none;
             padding: 8px 16px;
@@ -214,23 +275,25 @@
             text-decoration: none;
             display: inline-block;
             font-size: 14px;
+            transition: background-color 0.2s ease;
         }
         
         .btn:hover {
-            background: #2ea043;
+            background: var(--gradient-end);
         }
         
         .btn-secondary {
-            background: #21262d;
-            border: 1px solid #30363d;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
         }
         
         .btn-secondary:hover {
-            background: #30363d;
+            background: var(--border-primary);
         }
         
         .btn-active {
-            background: #238636;
+            background: var(--gradient-start);
             color: white;
         }
         
@@ -241,8 +304,8 @@
         
         /* Calendar Styles */
         .calendar-container {
-            background: #161b22;
-            border: 1px solid #30363d;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
             border-radius: 6px;
             padding: 15px;
             overflow-x: auto;
@@ -256,7 +319,7 @@
         
         .calendar-table th,
         .calendar-table td {
-            border: 1px solid #30363d;
+            border: 1px solid var(--border-primary);
             padding: 3px;
             text-align: center;
             vertical-align: middle;
@@ -264,7 +327,7 @@
         }
         
         .calendar-table th {
-            background: #21262d;
+            background: var(--bg-tertiary);
             font-weight: 600;
             position: sticky;
             left: 0;
@@ -280,7 +343,7 @@
         }
         
         .journey-name {
-            background: #21262d;
+            background: var(--bg-tertiary);
             font-weight: 500;
             text-align: left;
             position: sticky;
@@ -294,7 +357,7 @@
         }
         
         .journey-link {
-            color: #58a6ff;
+            color: var(--accent-primary);
             text-decoration: none;
             font-size: 12px;
         }
@@ -306,20 +369,20 @@
         .day-cell {
             width: 20px;
             height: 20px;
-            background: #161b22;
+            background: var(--bg-secondary);
             border-radius: 2px;
             cursor: pointer;
             margin: 1px auto;
             transition: all 0.2s ease;
-            border: 1px solid #30363d;
+            border: 1px solid var(--border-primary);
         }
         
         .day-cell.completed {
-            background: #39d353;
+            background: var(--success-color);
         }
         
         .day-cell.missed {
-            background: #f85149;
+            background: var(--danger-color);
         }
         
         .day-cell.unscheduled {
@@ -327,17 +390,17 @@
         }
         
         .day-cell:hover {
-            border-color: #58a6ff;
+            border-color: var(--accent-primary);
         }
         
         .day-cell.invalid-day {
-            background: #0d1117;
+            background: var(--bg-primary);
             cursor: default;
             opacity: 0.3;
         }
         
         .day-cell.invalid-day:hover {
-            border-color: #30363d;
+            border-color: var(--border-primary);
         }
         
         /* Journeys List Page */
@@ -355,37 +418,37 @@
         }
         
         .journey-card {
-            background: #161b22;
-            border: 1px solid #30363d;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
             border-radius: 6px;
             padding: 20px;
             transition: border-color 0.2s;
         }
         
         .journey-card:hover {
-            border-color: #58a6ff;
+            border-color: var(--accent-primary);
         }
         
         .journey-card h3 {
             margin: 0 0 10px 0;
-            color: #f0f6fc;
+            color: var(--text-bright);
         }
         
         .journey-card p {
             margin: 0 0 15px 0;
-            color: #8b949e;
+            color: var(--text-secondary);
             font-size: 14px;
         }
         
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #8b949e;
+            color: var(--text-secondary);
         }
         
         .empty-state h3 {
             margin-bottom: 10px;
-            color: #f0f6fc;
+            color: var(--text-bright);
         }
         
         /* Journey Detail Page */
@@ -430,15 +493,15 @@
         
         /* GitHub-like Contribution Graph */
         .yearly-chart-container {
-            background: #161b22;
-            border: 1px solid #30363d;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
             border-radius: 6px;
             padding: 20px;
             margin-bottom: 30px;
         }
         
         .chart-subtitle {
-            color: #8b949e;
+            color: var(--text-secondary);
             font-size: 14px;
             margin-bottom: 20px;
         }
@@ -482,15 +545,15 @@
         .contribution-day {
             width: 11px;
             height: 11px;
-            background: #161b22;
+            background: var(--bg-secondary);
             border-radius: 2px;
-            border: 1px solid #30363d;
+            border: 1px solid var(--border-primary);
             cursor: pointer;
         }
         
         .contribution-day.has-contribution {
-            background: #39d353;
-            border-color: #39d353;
+            background: var(--success-color);
+            border-color: var(--success-color);
         }
         
         .contribution-day.empty {
@@ -503,26 +566,26 @@
             gap: 5px;
             margin-top: 10px;
             font-size: 12px;
-            color: #8b949e;
+            color: var(--text-secondary);
         }
         
         .legend-day {
             width: 10px;
             height: 10px;
-            background: #161b22;
-            border: 1px solid #30363d;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
             border-radius: 2px;
         }
         
         .legend-day.has-contribution {
-            background: #39d353;
-            border-color: #39d353;
+            background: var(--success-color);
+            border-color: var(--success-color);
         }
         
         /* Recent Activity */
         .recent-activity {
-            background: #161b22;
-            border: 1px solid #30363d;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
             border-radius: 6px;
             padding: 20px;
         }
@@ -538,7 +601,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 10px 0;
-            border-bottom: 1px solid #30363d;
+            border-bottom: 1px solid var(--border-primary);
         }
         
         .activity-list li:last-child {
@@ -546,12 +609,12 @@
         }
         
         .activity-date {
-            color: #8b949e;
+            color: var(--text-secondary);
             font-family: monospace;
         }
         
         .activity-status.completed {
-            color: #39d353;
+            color: var(--success-color);
             font-size: 14px;
         }
         
@@ -598,7 +661,7 @@
         
         .weekday {
             font-size: 11px;
-            color: #8b949e;
+            color: var(--text-secondary);
             text-align: center;
             padding: 2px;
         }
@@ -612,37 +675,37 @@
         .month-day {
             width: 24px;
             height: 24px;
-            background: #161b22;
-            border: 1px solid #30363d;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
             border-radius: 2px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 10px;
-            color: #c9d1d9;
+            color: var(--text-primary);
         }
         
         .month-day.completed {
-            background: #39d353;
-            border-color: #39d353;
-            color: #000;
+            background: var(--success-color);
+            border-color: var(--success-color);
+            color: var(--bg-primary);
         }
         
         .month-day.unscheduled {
             background: var(--unscheduled-color);
             border-color: var(--unscheduled-color);
-            color: #000;
+            color: var(--bg-primary);
         }
         
         .month-day.missed {
-            background: #f85149;
-            border-color: #f85149;
+            background: var(--danger-color);
+            border-color: var(--danger-color);
             color: #fff;
         }
         
         .month-day.empty:not(.month-day:first-child) {
-            background: #161b22;
-            color: #c9d1d9;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
             opacity: 1;
         }
         
@@ -652,8 +715,8 @@
         
         /* Monthly Calendar View */
         .monthly-calendar-container {
-            background: #161b22;
-            border: 1px solid #30363d;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
             border-radius: 6px;
             padding: 20px;
             margin-bottom: 30px;
@@ -662,7 +725,7 @@
         .monthly-calendar-container h3 {
             text-align: center;
             margin-bottom: 20px;
-            color: #f0f6fc;
+            color: var(--text-bright);
         }
         
         .calendar-grid {
@@ -680,7 +743,7 @@
         .calendar-grid .weekday {
             text-align: center;
             font-weight: 600;
-            color: #8b949e;
+            color: var(--text-secondary);
             padding: 8px;
             font-size: 12px;
         }
@@ -697,9 +760,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #21262d;
+            background: var(--bg-tertiary);
             border-radius: 4px;
-            color: #c9d1d9;
+            color: var(--text-primary);
             font-size: 14px;
             font-weight: 500;
             transition: all 0.2s ease;
@@ -707,23 +770,23 @@
         }
         
         .calendar-day.completed {
-            background: #39d353;
-            color: #0d1117;
+            background: var(--success-color);
+            color: var(--bg-primary);
         }
         
         .calendar-day.unscheduled {
             background: var(--unscheduled-color);
-            color: #0d1117;
+            color: var(--bg-primary);
         }
         
         .calendar-day.missed {
-            background: #f85149;
+            background: var(--danger-color);
             color: #fff;
         }
         
         .calendar-day.empty:not(.calendar-day:first-child) {
-            background: #21262d;
-            color: #c9d1d9;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
         }
         
         .calendar-day.empty:first-child {
@@ -731,11 +794,11 @@
         }
         
         .calendar-day:hover:not(.empty) {
-            background: #30363d;
+            background: var(--border-primary);
         }
         
         .calendar-day.completed:hover {
-            background: #2ea043;
+            background: var(--success-hover);
         }
         
         /* Yearly Months Container */
@@ -769,15 +832,15 @@
         
         .weekday-small {
             font-size: 10px;
-            color: #8b949e;
+            color: var(--text-secondary);
             text-align: center;
             padding: 2px;
         }
         
         /* Form Styles */
         .form-container {
-            background: #161b22;
-            border: 1px solid #30363d;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
             border-radius: 6px;
             padding: 20px;
             margin-bottom: 20px;
@@ -795,9 +858,9 @@
         
         .form-group input,
         .form-group select {
-            background: #0d1117;
-            border: 1px solid #30363d;
-            color: #c9d1d9;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
             padding: 8px 12px;
             border-radius: 4px;
             width: 200px;
@@ -809,7 +872,7 @@
         }
         
         .journey-row:hover {
-            background-color: #21262d;
+            background-color: var(--bg-tertiary);
         }
         
         .journey-row.dragging {
@@ -817,23 +880,23 @@
         }
         
         .drag-handle {
-            color: #8b949e;
+            color: var(--text-secondary);
             font-weight: bold;
             user-select: none;
         }
         
         .drag-handle:hover {
-            color: #c9d1d9;
+            color: var(--text-primary);
         }
         
         .reorder-mode .journey-name {
             cursor: move;
-            border: 2px dashed #58a6ff;
-            background: #21262d;
+            border: 2px dashed var(--accent-primary);
+            background: var(--bg-tertiary);
         }
         
         .reorder-mode .journey-name:hover {
-            background: #30363d;
+            background: var(--border-primary);
         }
         
         .reorder-mode .day-cell {
@@ -852,10 +915,10 @@
         }
         
         .modal-content {
-            background-color: #161b22;
+            background-color: var(--bg-secondary);
             margin: 10% auto;
             padding: 0;
-            border: 1px solid #30363d;
+            border: 1px solid var(--border-primary);
             border-radius: 6px;
             width: 500px;
             max-width: 90%;
@@ -863,7 +926,7 @@
         
         .modal-header {
             padding: 20px;
-            border-bottom: 1px solid #30363d;
+            border-bottom: 1px solid var(--border-primary);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -871,18 +934,18 @@
         
         .modal-header h3 {
             margin: 0;
-            color: #f0f6fc;
+            color: var(--text-bright);
         }
         
         .close {
-            color: #8b949e;
+            color: var(--text-secondary);
             font-size: 28px;
             font-weight: bold;
             cursor: pointer;
         }
         
         .close:hover {
-            color: #f0f6fc;
+            color: var(--text-bright);
         }
         
         .modal-body {
@@ -891,7 +954,7 @@
         
         .modal-footer {
             padding: 20px;
-            border-top: 1px solid #30363d;
+            border-top: 1px solid var(--border-primary);
             display: flex;
             gap: 10px;
             justify-content: flex-end;
@@ -907,7 +970,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            color: #c9d1d9;
+            color: var(--text-primary);
             cursor: pointer;
             padding: 8px;
             border-radius: 4px;
@@ -915,7 +978,7 @@
         }
         
         .day-checkboxes label:hover {
-            background-color: #21262d;
+            background-color: var(--bg-tertiary);
         }
         
         .day-checkboxes input[type="checkbox"] {
@@ -925,7 +988,7 @@
         /* Missed Days Styles */
         .calendar-day.missed,
         .month-day.missed {
-            background-color: #f85149;
+            background-color: var(--danger-color);
             color: white;
             position: relative;
         }
@@ -954,6 +1017,9 @@
         <header class="app-header">
             <a href="{{ url_for('home') }}" class="app-title" style="text-decoration: none; color: inherit;">Daily Tracker</a>
             <div class="nav-links">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+                    <span id="theme-icon">🌙</span>
+                </button>
                 <a href="{{ url_for('journeys') }}" class="nav-link" title="All Journeys">📊</a>
                 <a href="{{ url_for('settings') }}" class="nav-link" title="Settings">⚙️</a>
             </div>
@@ -963,6 +1029,38 @@
     </div>
 
     <script>
+        // Theme toggle functionality
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            const themeIcon = document.getElementById('theme-icon');
+            
+            html.setAttribute('data-theme', newTheme);
+            themeIcon.textContent = newTheme === 'dark' ? '🌙' : '☀️';
+            
+            // Save theme preference to server
+            fetch('/save_theme', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    theme: newTheme
+                })
+            })
+            .catch(error => {
+                console.error('Error saving theme:', error);
+            });
+        }
+        
+        // Initialize theme icon on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const themeIcon = document.getElementById('theme-icon');
+            themeIcon.textContent = currentTheme === 'dark' ? '🌙' : '☀️';
+        });
+        
         // Toggle journey completion on click
         function toggleJourney(element, journey, day, month, year) {
             const dateKey = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;

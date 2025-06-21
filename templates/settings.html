@@ -6,6 +6,18 @@
     
     <form method="POST">
         <div class="form-group">
+            <label for="theme">Theme:</label>
+            <select name="theme" id="theme">
+                <option value="dark" {% if settings.theme == 'dark' %}selected{% endif %}>
+                    Dark Mode
+                </option>
+                <option value="light" {% if settings.theme == 'light' %}selected{% endif %}>
+                    Light Mode
+                </option>
+            </select>
+        </div>
+        
+        <div class="form-group">
             <label for="display_mode">Display Mode:</label>
             <select name="display_mode" id="display_mode">
                 <option value="missed" {% if settings.display_mode == 'missed' %}selected{% endif %}>
@@ -23,12 +35,14 @@
         </div>
     </form>
     
-    <div style="margin-top: 30px; padding: 15px; background: #21262d; border-radius: 6px;">
-        <h4>Mode Descriptions:</h4>
-        <ul style="margin: 10px 0; padding-left: 20px; color: #8b949e;">
+    <div style="margin-top: 30px; padding: 15px; background: var(--bg-tertiary); border-radius: 6px;">
+        <h4>Settings Descriptions:</h4>
+        <ul style="margin: 10px 0; padding-left: 20px; color: var(--text-secondary);">
+            <li><strong>Theme:</strong> Choose between dark and light appearance modes</li>
             <li><strong>Missed Mode:</strong> Days you were supposed to do a task but didn't are shown in red</li>
             <li><strong>Schedule Mode:</strong> Days you're not scheduled to do a task are shown in light green, scheduled but not done days are empty</li>
         </ul>
+    </div>
     </div>
 </div>
 {% endblock %}
