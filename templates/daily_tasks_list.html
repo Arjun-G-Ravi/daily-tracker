@@ -3,16 +3,6 @@
 {% block content %}
 <div class="task-header">
     <h2>Daily Tasks</h2>
-    <div class="nav-links">
-        <a href="{{ url_for('daily_tasks', view_type='list') }}" 
-           class="btn btn-small {% if view_type == 'list' %}btn-active{% else %}btn-secondary{% endif %}">
-            List View
-        </a>
-        <a href="{{ url_for('daily_tasks', view_type='calendar') }}" 
-           class="btn btn-small {% if view_type == 'calendar' %}btn-active{% else %}btn-secondary{% endif %}">
-            Calendar View
-        </a>
-    </div>
 </div>
 
 <div class="task-form-container">

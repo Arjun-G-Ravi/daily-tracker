@@ -692,9 +692,8 @@ def rename_journey(journey_name):
 
 # Daily Task Tracker Routes
 @app.route('/daily_tasks')
-@app.route('/daily_tasks/<view_type>')
-def daily_tasks(view_type='list'):
-    """Main daily tasks page with list and calendar views"""
+def daily_tasks():
+    """Main daily tasks page with list view only"""
     tasks = load_daily_tasks()
     categories = load_task_categories()
     settings = load_settings()
@@ -702,42 +701,14 @@ def daily_tasks(view_type='list'):
     # Get unique journey names for the class dropdown
     templates = load_journey_templates()
     
-    if view_type == 'calendar':
-        # Generate calendar data for current month
-        now = datetime.now()
-        cal = calendar.monthcalendar(now.year, now.month)
-        month_name = calendar.month_name[now.month]
-        
-        # Group tasks by date
-        tasks_by_date = {}
-        for task in tasks:
-            date_key = task['date']
-            if date_key not in tasks_by_date:
-                tasks_by_date[date_key] = []
-            tasks_by_date[date_key].append(task)
-        
-        return render_template('daily_tasks_calendar.html',
-                             tasks=tasks,
-                             tasks_by_date=tasks_by_date,
-                             calendar_weeks=cal,
-                             month_name=month_name,
-                             year=now.year,
-                             month=now.month,
-                             categories=categories,
-                             journey_classes=templates,
-                             view_type='calendar',
-                             settings=settings)
+    # Sort tasks by date (newest first)
+    sorted_tasks = sorted(tasks, key=lambda x: x['date'], reverse=True)
     
-    else:  # list view
-        # Sort tasks by date (newest first)
-        sorted_tasks = sorted(tasks, key=lambda x: x['date'], reverse=True)
-        
-        return render_template('daily_tasks_list.html',
-                             tasks=sorted_tasks,
-                             categories=categories,
-                             journey_classes=templates,
-                             view_type='list',
-                             settings=settings)
+    return render_template('daily_tasks_list.html',
+                         tasks=sorted_tasks,
+                         categories=categories,
+                         journey_classes=templates,
+                         settings=settings)
 
 @app.route('/add_daily_task', methods=['POST'])
 def add_daily_task():
