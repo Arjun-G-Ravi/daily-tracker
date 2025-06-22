@@ -13,6 +13,8 @@ JOURNEY_ORDER_FILE = 'journey_order.json'
 JOURNEY_SCHEDULES_FILE = 'journey_schedules.json'
 JOURNEY_START_DATES_FILE = 'journey_start_dates.json'
 SETTINGS_FILE = 'settings.json'
+DAILY_TASKS_FILE = 'daily_tasks.json'  # For storing daily tasks
+TASK_CATEGORIES_FILE = 'task_categories.json'  # For storing task categories
 
 def load_journeys():
     if os.path.exists(JOURNEYS_FILE):
@@ -73,6 +75,26 @@ def load_settings():
 def save_settings(settings):
     with open(SETTINGS_FILE, 'w') as f:
         json.dump(settings, f, indent=2)
+
+def load_daily_tasks():
+    if os.path.exists(DAILY_TASKS_FILE):
+        with open(DAILY_TASKS_FILE, 'r') as f:
+            return json.load(f)
+    return []
+
+def save_daily_tasks(tasks):
+    with open(DAILY_TASKS_FILE, 'w') as f:
+        json.dump(tasks, f, indent=2)
+
+def load_task_categories():
+    if os.path.exists(TASK_CATEGORIES_FILE):
+        with open(TASK_CATEGORIES_FILE, 'r') as f:
+            return json.load(f)
+    return []
+
+def save_task_categories(categories):
+    with open(TASK_CATEGORIES_FILE, 'w') as f:
+        json.dump(categories, f, indent=2)
 
 def get_current_month_days():
     now = datetime.now()
@@ -664,6 +686,175 @@ def rename_journey(journey_name):
             save_journey_start_dates(start_dates)
         
         return jsonify({'success': True, 'new_name': new_name})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+# Daily Task Tracker Routes
+@app.route('/daily_tasks')
+@app.route('/daily_tasks/<view_type>')
+def daily_tasks(view_type='list'):
+    """Main daily tasks page with list and calendar views"""
+    tasks = load_daily_tasks()
+    categories = load_task_categories()
+    settings = load_settings()
+    
+    # Get unique journey names for the class dropdown
+    templates = load_journey_templates()
+    
+    if view_type == 'calendar':
+        # Generate calendar data for current month
+        now = datetime.now()
+        cal = calendar.monthcalendar(now.year, now.month)
+        month_name = calendar.month_name[now.month]
+        
+        # Group tasks by date
+        tasks_by_date = {}
+        for task in tasks:
+            date_key = task['date']
+            if date_key not in tasks_by_date:
+                tasks_by_date[date_key] = []
+            tasks_by_date[date_key].append(task)
+        
+        return render_template('daily_tasks_calendar.html',
+                             tasks=tasks,
+                             tasks_by_date=tasks_by_date,
+                             calendar_weeks=cal,
+                             month_name=month_name,
+                             year=now.year,
+                             month=now.month,
+                             categories=categories,
+                             journey_classes=templates,
+                             view_type='calendar',
+                             settings=settings)
+    
+    else:  # list view
+        # Sort tasks by date (newest first)
+        sorted_tasks = sorted(tasks, key=lambda x: x['date'], reverse=True)
+        
+        return render_template('daily_tasks_list.html',
+                             tasks=sorted_tasks,
+                             categories=categories,
+                             journey_classes=templates,
+                             view_type='list',
+                             settings=settings)
+
+@app.route('/add_daily_task', methods=['POST'])
+def add_daily_task():
+    """Add a new daily task"""
+    try:
+        data = request.get_json()
+        task_name = data.get('task', '').strip()
+        category = data.get('category', '').strip()
+        journey_class = data.get('journey_class', '').strip()
+        task_date = data.get('date', date.today().strftime('%Y-%m-%d'))
+        
+        if not task_name:
+            return jsonify({'success': False, 'error': 'Task name is required'})
+        
+        tasks = load_daily_tasks()
+        categories = load_task_categories()
+        
+        # Add new category if it doesn't exist
+        if category and category not in categories:
+            categories.append(category)
+            save_task_categories(categories)
+        
+        # Create new task
+        new_task = {
+            'id': len(tasks) + 1,  # Simple ID system
+            'task': task_name,
+            'category': category,
+            'journey_class': journey_class,
+            'date': task_date,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        tasks.append(new_task)
+        save_daily_tasks(tasks)
+        
+        # If journey_class is specified, also mark it as completed in the main journey tracker
+        if journey_class:
+            journeys = load_journeys()
+            if task_date not in journeys:
+                journeys[task_date] = {}
+            journeys[task_date][journey_class] = True
+            save_journeys(journeys)
+        
+        return jsonify({'success': True, 'task': new_task})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/delete_daily_task/<int:task_id>', methods=['POST'])
+def delete_daily_task(task_id):
+    """Delete a daily task"""
+    try:
+        tasks = load_daily_tasks()
+        
+        # Find and remove the task
+        task_to_remove = None
+        for i, task in enumerate(tasks):
+            if task['id'] == task_id:
+                task_to_remove = tasks.pop(i)
+                break
+        
+        if not task_to_remove:
+            return jsonify({'success': False, 'error': 'Task not found'})
+        
+        save_daily_tasks(tasks)
+        
+        # If this task was linked to a journey class, we might want to unmark it
+        # For now, we'll leave the journey completion as is since other tasks might have contributed
+        
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/edit_daily_task/<int:task_id>', methods=['POST'])
+def edit_daily_task(task_id):
+    """Edit a daily task"""
+    try:
+        data = request.get_json()
+        task_name = data.get('task', '').strip()
+        category = data.get('category', '').strip()
+        journey_class = data.get('journey_class', '').strip()
+        
+        if not task_name:
+            return jsonify({'success': False, 'error': 'Task name is required'})
+        
+        tasks = load_daily_tasks()
+        categories = load_task_categories()
+        
+        # Find and update the task
+        task_updated = False
+        for task in tasks:
+            if task['id'] == task_id:
+                old_journey_class = task.get('journey_class', '')
+                task['task'] = task_name
+                task['category'] = category
+                task['journey_class'] = journey_class
+                task_updated = True
+                
+                # Handle journey class changes
+                if old_journey_class != journey_class:
+                    # This is complex - for now we'll leave journey completions as is
+                    pass
+                
+                break
+        
+        if not task_updated:
+            return jsonify({'success': False, 'error': 'Task not found'})
+        
+        # Add new category if it doesn't exist
+        if category and category not in categories:
+            categories.append(category)
+            save_task_categories(categories)
+        
+        save_daily_tasks(tasks)
+        
+        return jsonify({'success': True})
     
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
