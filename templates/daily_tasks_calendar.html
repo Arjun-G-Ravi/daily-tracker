@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ settings.theme or 'dark' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Tasks Calendar - Daily Tracker</title>
+    <style>
+        /* Theme variables */
+        :root[data-theme="dark"] {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border-primary: #30363d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --text-bright: #f0f6fc;
+            --accent-primary: #58a6ff;
+            --success-color: #39d353;
+            --danger-color: #f85149;
+        }
+        
+        :root[data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f6f8fa;
+            --bg-tertiary: #f1f3f4;
+            --border-primary: #d0d7de;
+            --text-primary: #24292f;
+            --text-secondary: #656d76;
+            --text-bright: #1f2328;
+            --accent-primary: #0969da;
+            --success-color: #1a7f37;
+            --danger-color: #d1242f;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            width: 100vw;
+            height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* App Header */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-primary);
+            width: 100%;
+        }
+        
+        .app-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-bright);
+            text-decoration: none;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 16px;
+            transition: color 0.2s;
+        }
+        
+        .nav-link:hover {
+            color: var(--accent-primary);
+        }
+        
+        .btn {
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .btn:hover {
+            opacity: 0.8;
+        }
+        
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
+        }
+        
+        .btn-active {
+            background: var(--accent-primary);
+            color: white;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+
+        /* Full width container */
+        .fullwidth-container {
+            width: 100vw;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 0 15px;
+        }
+
+        .calendar-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 6px;
+            padding: 15px;
+            height: calc(100vh - 140px);
+            overflow: hidden;
+            width: calc(100vw - 30px);
+            margin: 0 auto;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .calendar-header h3 {
+            margin: 0;
+            color: var(--text-bright);
+            font-size: 18px;
+        }
+
+        .calendar-grid {
+            height: calc(100% - 50px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            margin-bottom: 5px;
+            flex-shrink: 0;
+        }
+
+        .weekday {
+            text-align: center;
+            font-weight: 600;
+            color: var(--text-secondary);
+            padding: 5px;
+            font-size: 11px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+        }
+
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 2px;
+            flex: 1;
+            height: 100%;
+        }
+
+        .calendar-day {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: 4px;
+            padding: 4px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .calendar-day.empty {
+            background: transparent;
+            border: none;
+        }
+
+        .day-number {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+            flex-shrink: 0;
+            text-align: center;
+            line-height: 1;
+        }
+
+        .day-tasks {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .task-item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-primary);
+            border-radius: 2px;
+            padding: 1px 3px;
+            font-size: 8px;
+            line-height: 1.1;
+            position: relative;
+            word-wrap: break-word;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
+            min-height: 10px;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .task-text {
+            color: var(--text-primary);
+            font-weight: 500;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .task-category {
+            color: var(--text-secondary);
+            font-size: 7px;
+            margin-left: 2px;
+            font-style: italic;
+            flex-shrink: 0;
+        }
+
+        .journey-indicator {
+            position: absolute;
+            top: 1px;
+            right: 2px;
+            background: var(--success-color);
+            border-radius: 50%;
+            width: 5px;
+            height: 5px;
+        }
+
+        .task-item:hover {
+            background: var(--bg-secondary);
+            white-space: normal;
+            height: auto;
+            z-index: 10;
+            position: relative;
+            border-color: var(--accent-primary);
+            font-size: 9px;
+            min-height: auto;
+            max-height: none;
+        }
+
+        .more-tasks {
+            background: var(--bg-secondary);
+            border: 1px dashed var(--border-primary);
+            border-radius: 2px;
+            padding: 1px 3px;
+            font-size: 7px;
+            line-height: 1.1;
+            color: var(--text-secondary);
+            text-align: center;
+            font-style: italic;
+            min-height: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .more-tasks:hover {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border-color: var(--accent-primary);
+        }
+
+        /* Responsive design */
+        @media (max-width: 1200px) {
+            .task-item {
+                font-size: 7px;
+                min-height: 9px;
+            }
+            
+            .day-number {
+                font-size: 9px;
+            }
+            
+            .more-tasks {
+                font-size: 6px;
+                min-height: 9px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .calendar-container {
+                height: calc(100vh - 120px);
+                padding: 10px;
+            }
+            
+            .task-item {
+                font-size: 6px;
+                min-height: 8px;
+                padding: 1px 2px;
+            }
+            
+            .day-number {
+                font-size: 8px;
+            }
+            
+            .more-tasks {
+                font-size: 5px;
+                min-height: 8px;
+            }
+            
+            .task-category {
+                font-size: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <a href="{{ url_for('home') }}" class="app-title">Daily Tracker</a>
+        <div class="nav-links">
+            <a href="{{ url_for('daily_tasks') }}" class="nav-link" title="Daily Tasks">📝</a>
+            <a href="{{ url_for('journeys') }}" class="nav-link" title="All Journeys">📊</a>
+            <a href="{{ url_for('settings') }}" class="nav-link" title="Settings">⚙️</a>
+        </div>
+    </header>
+    
+    <div class="fullwidth-container">
+        <div class="task-header">
+            <h2>Daily Tasks - Calendar View</h2>
+            <div class="nav-links">
+                <a href="{{ url_for('daily_tasks', view_type='list') }}" 
+                   class="btn btn-small {% if view_type == 'list' %}btn-active{% else %}btn-secondary{% endif %}">
+                    List View
+                </a>
+                <a href="{{ url_for('daily_tasks', view_type='calendar') }}" 
+                   class="btn btn-small {% if view_type == 'calendar' %}btn-active{% else %}btn-secondary{% endif %}">
+                    Calendar View
+                </a>
+            </div>
+        </div>
+
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <button onclick="changeMonth(-1)" class="btn btn-small btn-secondary">‹ Prev</button>
+                <h3>{{ month_name }} {{ year }}</h3>
+                <button onclick="changeMonth(1)" class="btn btn-small btn-secondary">Next ›</button>
+            </div>
+            
+            <div class="calendar-grid">
+                <div class="calendar-weekdays">
+                    <div class="weekday">Sun</div>
+                    <div class="weekday">Mon</div>
+                    <div class="weekday">Tue</div>
+                    <div class="weekday">Wed</div>
+                    <div class="weekday">Thu</div>
+                    <div class="weekday">Fri</div>
+                    <div class="weekday">Sat</div>
+                </div>
+                
+                <div class="calendar-days">
+                    {% for week in calendar_weeks %}
+                        {% for day in week %}
+                            {% if day == 0 %}
+                                <div class="calendar-day empty"></div>
+                            {% else %}
+                                {% set date_key = "{}-{:02d}-{:02d}".format(year, month, day) %}
+                                {% set day_tasks = tasks_by_date.get(date_key, []) %}
+                                <div class="calendar-day" data-date="{{ date_key }}">
+                                    <div class="day-number">{{ day }}</div>
+                                    <div class="day-tasks">
+                                        {% set visible_tasks = day_tasks[:5] %}
+                                        {% set remaining_count = day_tasks|length - 5 %}
+                                        {% for task in visible_tasks %}
+                                            <div class="task-item" title="{{ task['task'] }}{% if task['category'] %} ({{ task['category'] }}){% endif %}">
+                                                <span class="task-text">{{ task['task'][:25] }}{% if task['task']|length > 25 %}...{% endif %}</span>
+                                                {% if task['category'] %}
+                                                    <span class="task-category">{{ task['category'][:4] }}</span>
+                                                {% endif %}
+                                                {% if task['journey_class'] %}
+                                                    <div class="journey-indicator" title="Journey: {{ task['journey_class'] }}"></div>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                        {% if remaining_count > 0 %}
+                                            <div class="more-tasks" title="{{ remaining_count }} more tasks">
+                                                +{{ remaining_count }} more
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Month navigation
+        function changeMonth(direction) {
+            const currentMonth = {{ month }};
+            const currentYear = {{ year }};
+            
+            let newMonth = currentMonth + direction;
+            let newYear = currentYear;
+            
+            if (newMonth > 12) {
+                newMonth = 1;
+                newYear++;
+            } else if (newMonth < 1) {
+                newMonth = 12;
+                newYear--;
+            }
+            
+            window.location.href = '/daily_tasks?view_type=calendar&month=' + newMonth + '&year=' + newYear;
+        }
+
+        // Click on calendar day to set that date for new tasks
+        document.querySelectorAll('.calendar-day[data-date]').forEach(day => {
+            day.addEventListener('click', function() {
+                const date = this.getAttribute('data-date');
+                console.log('Clicked on date:', date);
+                // Could redirect to add task with this date pre-selected
+                window.location.href = '/daily_tasks?view_type=list&selected_date=' + date;
+            });
+        });
+    </script>
+</body>
+</html>

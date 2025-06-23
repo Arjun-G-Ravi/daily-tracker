@@ -39,44 +39,47 @@
     <h3>Recent Tasks</h3>
     
     {% if tasks %}
-    <div class="tasks-table">
-        <div class="task-header-row">
-            <div class="task-col task-name">Task</div>
-            <div class="task-col task-category">Category</div>
-            <div class="task-col task-class">Journey Class</div>
-            <div class="task-col task-date">Date</div>
-            <div class="task-col task-actions">Actions</div>
+    {% for date in ordered_dates %}
+        <div class="date-section">
+            <h4 class="date-heading">{{ date }}</h4>
+            <div class="tasks-table">
+                <div class="task-header-row">
+                    <div class="task-col task-name">Task</div>
+                    <div class="task-col task-category">Category</div>
+                    <div class="task-col task-class">Journey Class</div>
+                    <div class="task-col task-actions">Actions</div>
+                </div>
+                
+                {% for task in tasks_by_date[date] %}
+                <div class="task-row" data-task-id="{{ task.id }}">
+                    <div class="task-col task-name">
+                        <span class="task-text">{{ task.task }}</span>
+                        <input type="text" class="task-edit-input" value="{{ task.task }}" style="display: none;">
+                    </div>
+                    <div class="task-col task-category">
+                        <span class="task-text">{{ task.category or '-' }}</span>
+                        <input type="text" class="task-edit-input" value="{{ task.category or '' }}" style="display: none;">
+                    </div>
+                    <div class="task-col task-class">
+                        <span class="task-text">{{ task.journey_class or '-' }}</span>
+                        <select class="task-edit-input" style="display: none;">
+                            <option value="">Select Journey Class</option>
+                            {% for journey in journey_classes %}
+                            <option value="{{ journey }}" {% if task.journey_class == journey %}selected{% endif %}>{{ journey }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="task-col task-actions">
+                        <button onclick="editTask({{ task.id }})" class="btn btn-small btn-secondary edit-btn">Edit</button>
+                        <button onclick="saveTask({{ task.id }})" class="btn btn-small save-btn" style="display: none;">Save</button>
+                        <button onclick="cancelEdit({{ task.id }})" class="btn btn-small btn-secondary cancel-btn" style="display: none;">Cancel</button>
+                        <button onclick="deleteTask({{ task.id }})" class="btn btn-small" style="background: #d73a49;">Delete</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
-        
-        {% for task in tasks %}
-        <div class="task-row" data-task-id="{{ task.id }}">
-            <div class="task-col task-name">
-                <span class="task-text">{{ task.task }}</span>
-                <input type="text" class="task-edit-input" value="{{ task.task }}" style="display: none;">
-            </div>
-            <div class="task-col task-category">
-                <span class="task-text">{{ task.category or '-' }}</span>
-                <input type="text" class="task-edit-input" value="{{ task.category or '' }}" style="display: none;">
-            </div>
-            <div class="task-col task-class">
-                <span class="task-text">{{ task.journey_class or '-' }}</span>
-                <select class="task-edit-input" style="display: none;">
-                    <option value="">Select Journey Class</option>
-                    {% for journey in journey_classes %}
-                    <option value="{{ journey }}" {% if task.journey_class == journey %}selected{% endif %}>{{ journey }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="task-col task-date">{{ task.date }}</div>
-            <div class="task-col task-actions">
-                <button onclick="editTask({{ task.id }})" class="btn btn-small btn-secondary edit-btn">Edit</button>
-                <button onclick="saveTask({{ task.id }})" class="btn btn-small save-btn" style="display: none;">Save</button>
-                <button onclick="cancelEdit({{ task.id }})" class="btn btn-small btn-secondary cancel-btn" style="display: none;">Cancel</button>
-                <button onclick="deleteTask({{ task.id }})" class="btn btn-small" style="background: #d73a49;">Delete</button>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
+    {% endfor %}
     {% else %}
     <div class="empty-state">
         <h3>No tasks yet</h3>
@@ -91,6 +94,19 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 30px;
+}
+
+.date-section {
+    margin-bottom: 30px;
+}
+
+.date-heading {
+    color: var(--text-bright);
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    padding: 10px 0;
+    border-bottom: 2px solid var(--border-primary);
 }
 
 .task-form-container {
