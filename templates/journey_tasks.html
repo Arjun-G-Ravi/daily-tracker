@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="journey-tasks-header">
+    <h1>{{ journey_name }} - Tasks</h1>
+    <div class="nav-links">
+        <a href="{{ url_for('journey_detail', journey_name=journey_name) }}" class="btn btn-secondary">View Calendar</a>
+        <a href="{{ url_for('journeys') }}" class="btn btn-secondary">All Journeys</a>
+    </div>
+</div>
+
+<div class="tasks-container">
+    {% if tasks %}
+    <div class="tasks-by-date">
+        {% for date, date_tasks in tasks_by_date.items() %}
+        <div class="date-section">
+            <h4 class="date-heading">{{ date }}</h4>
+            <div class="date-tasks">
+                {% for task in date_tasks %}
+                <div class="task-card">
+                    <div class="task-header">
+                        <h5 class="task-title">{{ task.task }}</h5>
+                    </div>
+                    
+                    {% if task.description %}
+                    <div class="task-description">
+                        {{ task.description }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="task-meta">
+                        <small class="task-time">Added: {{ task.timestamp[:19] }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>No tasks found for {{ journey_name }}</h3>
+        <p>Add some tasks to this journey from the <a href="{{ url_for('daily_tasks') }}">Daily Tasks</a> page!</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.journey-tasks-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--border-primary);
+}
+
+.journey-tasks-header h1 {
+    color: var(--text-bright);
+    margin: 0;
+}
+
+.nav-links {
+    display: flex;
+    gap: 10px;
+}
+
+.tasks-container {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    padding: 20px;
+}
+
+.date-section {
+    margin-bottom: 30px;
+}
+
+.date-heading {
+    color: var(--text-bright);
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    padding: 10px 0;
+    border-bottom: 2px solid var(--border-primary);
+}
+
+.date-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.task-card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    padding: 15px;
+    transition: border-color 0.2s;
+}
+
+.task-card:hover {
+    border-color: var(--accent-primary);
+}
+
+.task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.task-title {
+    color: var(--text-bright);
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.task-category-badge {
+    background: var(--accent-primary);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.task-description {
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.task-meta {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.task-time {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+}
+
+.empty-state a {
+    color: var(--accent-primary);
+    text-decoration: none;
+}
+
+.empty-state a:hover {
+    text-decoration: underline;
+}
+</style>
+{% endblock %}

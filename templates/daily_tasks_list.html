@@ -8,30 +8,29 @@
 <div class="task-form-container">
     <h3>Add New Task</h3>
     <div class="task-form">
-        <input type="text" id="taskInput" placeholder="What did you accomplish today?" 
-               style="flex: 2; background: var(--bg-secondary); border: 1px solid var(--border-primary); color: var(--text-primary); padding: 8px 12px; border-radius: 4px; margin-right: 10px;">
+        <div class="form-row">
+            <input type="text" id="taskInput" placeholder="Task title" 
+                   style="flex: 2; background: var(--bg-secondary); border: 1px solid var(--border-primary); color: var(--text-primary); padding: 8px 12px; border-radius: 4px; margin-right: 10px;">
+            
+            <input type="date" id="taskDate" 
+                   style="background: var(--bg-secondary); border: 1px solid var(--border-primary); color: var(--text-primary); padding: 8px 12px; border-radius: 4px;">
+        </div>
         
-        <select id="categorySelect" style="flex: 1; background: var(--bg-secondary); border: 1px solid var(--border-primary); color: var(--text-primary); padding: 8px 12px; border-radius: 4px; margin-right: 10px;">
-            <option value="">Select Category</option>
-            {% for category in categories %}
-            <option value="{{ category }}">{{ category }}</option>
-            {% endfor %}
-        </select>
+        <div class="form-row" style="margin-top: 10px;">
+            <textarea id="descriptionInput" placeholder="Task description (optional)" 
+                      style="flex: 3; background: var(--bg-secondary); border: 1px solid var(--border-primary); color: var(--text-primary); padding: 8px 12px; border-radius: 4px; margin-right: 10px; resize: vertical; min-height: 60px;"></textarea>
+        </div>
         
-        <input type="text" id="newCategoryInput" placeholder="Or new category" 
-               style="flex: 1; background: var(--bg-secondary); border: 1px solid var(--border-primary); color: var(--text-primary); padding: 8px 12px; border-radius: 4px; margin-right: 10px;">
-        
-        <select id="journeyClassSelect" style="flex: 1; background: var(--bg-secondary); border: 1px solid var(--border-primary); color: var(--text-primary); padding: 8px 12px; border-radius: 4px; margin-right: 10px;">
-            <option value="">Select Journey Class</option>
-            {% for journey in journey_classes %}
-            <option value="{{ journey }}">{{ journey }}</option>
-            {% endfor %}
-        </select>
-        
-        <input type="date" id="taskDate" 
-               style="background: var(--bg-secondary); border: 1px solid var(--border-primary); color: var(--text-primary); padding: 8px 12px; border-radius: 4px; margin-right: 10px;">
-        
-        <button onclick="addTask()" class="btn">Add Task</button>
+        <div class="form-row" style="margin-top: 10px;">
+            <select id="journeyClassSelect" style="flex: 1; background: var(--bg-secondary); border: 1px solid var(--border-primary); color: var(--text-primary); padding: 8px 12px; border-radius: 4px; margin-right: 10px;">
+                <option value="">Select Journey Class</option>
+                {% for journey in journey_classes %}
+                <option value="{{ journey }}">{{ journey }}</option>
+                {% endfor %}
+            </select>
+            
+            <button onclick="addTask()" class="btn">Add Task</button>
+        </div>
     </div>
 </div>
 
@@ -45,7 +44,6 @@
             <div class="tasks-table">
                 <div class="task-header-row">
                     <div class="task-col task-name">Task</div>
-                    <div class="task-col task-category">Category</div>
                     <div class="task-col task-class">Journey Class</div>
                     <div class="task-col task-actions">Actions</div>
                 </div>
@@ -55,10 +53,6 @@
                     <div class="task-col task-name">
                         <span class="task-text">{{ task.task }}</span>
                         <input type="text" class="task-edit-input" value="{{ task.task }}" style="display: none;">
-                    </div>
-                    <div class="task-col task-category">
-                        <span class="task-text">{{ task.category or '-' }}</span>
-                        <input type="text" class="task-edit-input" value="{{ task.category or '' }}" style="display: none;">
                     </div>
                     <div class="task-col task-class">
                         <span class="task-text">{{ task.journey_class or '-' }}</span>
@@ -119,6 +113,12 @@
 
 .task-form {
     display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-row {
+    display: flex;
     gap: 10px;
     align-items: center;
     flex-wrap: wrap;
@@ -139,7 +139,7 @@
 
 .task-header-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 120px 200px;
+    grid-template-columns: 2fr 1fr 200px;
     gap: 15px;
     padding: 12px;
     background: var(--bg-tertiary);
@@ -149,7 +149,7 @@
 
 .task-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 120px 200px;
+    grid-template-columns: 2fr 1fr 200px;
     gap: 15px;
     padding: 12px;
     border: 1px solid var(--border-primary);
@@ -192,15 +192,20 @@
 <script>
 function addTask() {
     const taskInput = document.getElementById('taskInput');
-    const categorySelect = document.getElementById('categorySelect');
-    const newCategoryInput = document.getElementById('newCategoryInput');
+    const descriptionInput = document.getElementById('descriptionInput');
     const journeyClassSelect = document.getElementById('journeyClassSelect');
     const taskDate = document.getElementById('taskDate');
     
     const task = taskInput.value.trim();
-    const category = newCategoryInput.value.trim() || categorySelect.value;
+    const description = descriptionInput.value.trim();
     const journeyClass = journeyClassSelect.value;
-    const date = taskDate.value;
+    let date = taskDate.value;
+    
+    // Convert date from yyyy-mm-dd to dd/mm/yyyy format for storage
+    if (date && date.includes('-')) {
+        const [year, month, day] = date.split('-');
+        date = `${day}/${month}/${year}`;
+    }
     
     if (!task) {
         alert('Please enter a task');
@@ -214,7 +219,7 @@ function addTask() {
         },
         body: JSON.stringify({
             task: task,
-            category: category,
+            description: description,
             journey_class: journeyClass,
             date: date
         })
@@ -252,8 +257,7 @@ function saveTask(taskId) {
     const editInputs = row.querySelectorAll('.task-edit-input');
     
     const task = editInputs[0].value.trim();
-    const category = editInputs[1].value.trim();
-    const journeyClass = editInputs[2].value;
+    const journeyClass = editInputs[1].value;
     
     if (!task) {
         alert('Task name cannot be empty');
@@ -267,7 +271,6 @@ function saveTask(taskId) {
         },
         body: JSON.stringify({
             task: task,
-            category: category,
             journey_class: journeyClass
         })
     })
@@ -312,8 +315,13 @@ function deleteTask(taskId) {
     });
 }
 
-// Set today as default date
-document.getElementById('taskDate').value = new Date().toISOString().split('T')[0];
+// Set today as default date in dd/mm/yyyy format
+const today = new Date();
+const dd = String(today.getDate()).padStart(2, '0');
+const mm = String(today.getMonth() + 1).padStart(2, '0');
+const yyyy = today.getFullYear();
+const todayFormatted = `${yyyy}-${mm}-${dd}`;
+document.getElementById('taskDate').value = todayFormatted;
 
 // Allow Enter key to add task
 document.getElementById('taskInput').addEventListener('keypress', function(e) {

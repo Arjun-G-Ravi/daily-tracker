@@ -19,8 +19,9 @@
                        onchange="updateStartDate('{{ journey }}', this.value)"
                        style="background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 10px; border-radius: 4px; font-size: 14px;">
             </div>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <a href="{{ url_for('journey_detail', journey_name=journey) }}" class="btn">View Details</a>
+            <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                <a href="{{ url_for('journey_detail', journey_name=journey) }}" class="btn">View Calendar</a>
+                <a href="{{ url_for('journey_tasks', journey_name=journey) }}" class="btn btn-secondary">View Tasks</a>
                 <button onclick="showRenameModal('{{ journey }}')" class="btn btn-secondary btn-small">Rename</button>
             </div>
         </div>
