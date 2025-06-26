@@ -113,6 +113,10 @@ def home(year=None, month=None):
     # Get the number of days in the current month
     days_in_month = calendar.monthrange(year, month)[1]
     
+    # Calculate the weekday of the first day of the month (0=Monday, 6=Sunday)
+    first_day = date(year, month, 1)
+    first_day_weekday = first_day.weekday()  # 0=Monday, 6=Sunday
+    
     journeys = load_journeys()
     schedules = load_journey_schedules()
     start_dates = load_journey_start_dates()
@@ -199,6 +203,7 @@ def home(year=None, month=None):
                          journeys=journeys, 
                          days=days, 
                          days_in_month=days_in_month,
+                         first_day_weekday=first_day_weekday,
                          month_name=month_name, 
                          month=month,
                          year=year,

@@ -28,7 +28,13 @@
             <tr>
                 <th class="journey-name">Journey</th>
                 {% for day in range(1, 32) %}
-                <th>{{ day }}</th>
+                {% if day <= days_in_month %}
+                    {% set current_date = "{}-{:02d}-{:02d}".format(year, month, day) %}
+                    {% set day_of_week = (day + first_day_weekday - 1) % 7 %}
+                    <th class="{% if day_of_week == 6 %}sunday-header{% endif %}">{{ day }}</th>
+                {% else %}
+                    <th>{{ day }}</th>
+                {% endif %}
                 {% endfor %}
             </tr>
         </thead>
