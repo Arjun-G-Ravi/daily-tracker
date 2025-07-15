@@ -145,7 +145,7 @@
                                         {{ day.day }}
                                     </div>
                                 {% else %}
-                                    <div class="calendar-day {{ 'completed level-' + day.completion_level|string if day.has_contribution else 'missed' if day.is_missed else '' }}">
+                                    <div class="calendar-day {{ 'completed level-' + day.completion_level|string if day.has_contribution else 'missed-sunday' if day.is_missed_sunday else 'missed' if day.is_missed else '' }}">
                                         {{ day.day }}
                                     </div>
                                 {% endif %}

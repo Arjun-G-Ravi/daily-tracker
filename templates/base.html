@@ -9,45 +9,49 @@
            THEME VARIABLES
            ========================= */
         :root[data-theme="dark"] {
-            --bg-primary: #0d1117;
-            --bg-secondary: #161b22;
-            --bg-tertiary: #21262d;
-            --border-primary: #30363d;
-            --text-primary: #c9d1d9;
-            --text-secondary: #8b949e;
-            --text-bright: #f0f6fc;
-            --accent-primary: #58a6ff;
-            --accent-secondary: #316dca;
-            --success-color: #39d353;
-            --success-hover: #2ea043;
-            --danger-color: #f85149;
-            --warning-color: #d73a49;
-            --unscheduled-color: #9ac59c;
-            --gradient-start: #238636;
-            --gradient-end: #2ea043;
-            --shadow-color: rgba(0, 0, 0, 0.3);
-            --shadow-strong: rgba(0, 0, 0, 0.4);
+            --bg-primary: {{ colors.dark_theme.bg_primary if colors else '#0d1117' }};
+            --bg-secondary: {{ colors.dark_theme.bg_secondary if colors else '#161b22' }};
+            --bg-tertiary: {{ colors.dark_theme.bg_tertiary if colors else '#21262d' }};
+            --border-primary: {{ colors.dark_theme.border_primary if colors else '#30363d' }};
+            --text-primary: {{ colors.dark_theme.text_primary if colors else '#c9d1d9' }};
+            --text-secondary: {{ colors.dark_theme.text_secondary if colors else '#8b949e' }};
+            --text-bright: {{ colors.dark_theme.text_bright if colors else '#f0f6fc' }};
+            --accent-primary: {{ colors.dark_theme.accent_primary if colors else '#58a6ff' }};
+            --accent-secondary: {{ colors.dark_theme.accent_secondary if colors else '#316dca' }};
+            --success-color: {{ colors.dark_theme.success_color if colors else '#39d353' }};
+            --success-hover: {{ colors.dark_theme.success_hover if colors else '#2ea043' }};
+            --danger-color: {{ colors.dark_theme.danger_color if colors else '#f85149' }};
+            --warning-color: {{ colors.dark_theme.warning_color if colors else '#d73a49' }};
+            --unscheduled-color: {{ colors.dark_theme.unscheduled_color if colors else '#9ac59c' }};
+            --gradient-start: {{ colors.dark_theme.gradient_start if colors else '#238636' }};
+            --gradient-end: {{ colors.dark_theme.gradient_end if colors else '#2ea043' }};
+            --shadow-color: {{ colors.dark_theme.shadow_color if colors else 'rgba(0, 0, 0, 0.3)' }};
+            --shadow-strong: {{ colors.dark_theme.shadow_strong if colors else 'rgba(0, 0, 0, 0.4)' }};
+            --missed-sunday-color: {{ colors.dark_theme.missed_sunday_color if colors else '#dc2626' }};
+            --missed-regular-color: {{ colors.dark_theme.missed_regular_color if colors else 'transparent' }};
         }
         
         :root[data-theme="light"] {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f6f8fa;
-            --bg-tertiary: #eaeef2;
-            --border-primary: #d0d7de;
-            --text-primary: #1f2328;
-            --text-secondary: #656d76;
-            --text-bright: #0d1117;
-            --accent-primary: #0969da;
-            --accent-secondary: #0550ae;
-            --success-color: #1a7f37;
-            --success-hover: #1f8939;
-            --danger-color: #d1242f;
-            --warning-color: #cf222e;
-            --unscheduled-color: #7fb069;
-            --gradient-start: #1a7f37;
-            --gradient-end: #1f8939;
-            --shadow-color: rgba(0, 0, 0, 0.1);
-            --shadow-strong: rgba(0, 0, 0, 0.15);
+            --bg-primary: {{ colors.light_theme.bg_primary if colors else '#ffffff' }};
+            --bg-secondary: {{ colors.light_theme.bg_secondary if colors else '#f6f8fa' }};
+            --bg-tertiary: {{ colors.light_theme.bg_tertiary if colors else '#eaeef2' }};
+            --border-primary: {{ colors.light_theme.border_primary if colors else '#d0d7de' }};
+            --text-primary: {{ colors.light_theme.text_primary if colors else '#1f2328' }};
+            --text-secondary: {{ colors.light_theme.text_secondary if colors else '#656d76' }};
+            --text-bright: {{ colors.light_theme.text_bright if colors else '#0d1117' }};
+            --accent-primary: {{ colors.light_theme.accent_primary if colors else '#0969da' }};
+            --accent-secondary: {{ colors.light_theme.accent_secondary if colors else '#0550ae' }};
+            --success-color: {{ colors.light_theme.success_color if colors else '#1a7f37' }};
+            --success-hover: {{ colors.light_theme.success_hover if colors else '#1f8939' }};
+            --danger-color: {{ colors.light_theme.danger_color if colors else '#d1242f' }};
+            --warning-color: {{ colors.light_theme.warning_color if colors else '#cf222e' }};
+            --unscheduled-color: {{ colors.light_theme.unscheduled_color if colors else '#7fb069' }};
+            --gradient-start: {{ colors.light_theme.gradient_start if colors else '#1a7f37' }};
+            --gradient-end: {{ colors.light_theme.gradient_end if colors else '#1f8939' }};
+            --shadow-color: {{ colors.light_theme.shadow_color if colors else 'rgba(0, 0, 0, 0.1)' }};
+            --shadow-strong: {{ colors.light_theme.shadow_strong if colors else 'rgba(0, 0, 0, 0.15)' }};
+            --missed-sunday-color: {{ colors.light_theme.missed_sunday_color if colors else '#dc2626' }};
+            --missed-regular-color: {{ colors.light_theme.missed_regular_color if colors else 'transparent' }};
         }
         
         /* =========================
@@ -400,8 +404,13 @@
         }
         
         .day-cell.missed {
-            background: var(--danger-color);
-            border-color: var(--danger-color);
+            background: var(--missed-regular-color);
+            border-color: var(--missed-regular-color);
+        }
+        
+        .day-cell.missed-sunday {
+            background: var(--missed-sunday-color);
+            border-color: var(--missed-sunday-color);
         }
         
         .day-cell.unscheduled {
@@ -728,8 +737,13 @@
         }
         
         .month-day.missed {
-            background: var(--danger-color);
-            border-color: var(--danger-color);
+            background: var(--missed-regular-color);
+            border-color: var(--missed-regular-color);
+        }
+        
+        .month-day.missed-sunday {
+            background: var(--missed-sunday-color);
+            border-color: var(--missed-sunday-color);
             color: #fff;
         }
         
@@ -1029,7 +1043,12 @@
         /* Missed Days Styles */
         .calendar-day.missed,
         .month-day.missed {
-            background-color: var(--danger-color);
+            background-color: var(--missed-regular-color);
+        }
+        
+        .calendar-day.missed-sunday,
+        .month-day.missed-sunday {
+            background-color: var(--missed-sunday-color);
             color: white;
             position: relative;
         }

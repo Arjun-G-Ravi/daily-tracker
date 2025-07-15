@@ -14,6 +14,7 @@ JOURNEY_SCHEDULES_FILE = 'journey_schedules.json'
 JOURNEY_START_DATES_FILE = 'journey_start_dates.json'
 SETTINGS_FILE = 'settings.json'
 DAILY_TASKS_FILE = 'daily_tasks.json'  # For storing daily tasks
+COLORS_FILE = 'colors.json'  # For storing color configuration
 
 def load_journeys():
     if os.path.exists(JOURNEYS_FILE):
@@ -85,6 +86,19 @@ def save_daily_tasks(tasks):
     with open(DAILY_TASKS_FILE, 'w') as f:
         json.dump(tasks, f, indent=2)
 
+def load_colors():
+    if os.path.exists(COLORS_FILE):
+        with open(COLORS_FILE, 'r') as f:
+            return json.load(f)
+    return {
+        "dark_theme": {"missed_sunday_color": "#dc2626", "missed_regular_color": "transparent"},
+        "light_theme": {"missed_sunday_color": "#dc2626", "missed_regular_color": "transparent"}
+    }
+
+def save_colors(colors):
+    with open(COLORS_FILE, 'w') as f:
+        json.dump(colors, f, indent=2)
+
 def get_current_month_days():
     now = datetime.now()
     cal = calendar.monthcalendar(now.year, now.month)
@@ -125,6 +139,7 @@ def home(year=None, month=None):
     
     # Calculate missed days for each journey
     missed_days = {}
+    missed_sundays = {}  # New: track missed Sundays separately
     scheduled_days = {}  # New: track which days are scheduled for each journey
     today = date.today()
     
@@ -142,6 +157,7 @@ def home(year=None, month=None):
         journey_schedule = schedules.get(journey, [])
         journey_start_date = start_dates.get(journey)
         missed_days[journey] = set()
+        missed_sundays[journey] = set()
         scheduled_days[journey] = set()
         
         # Parse start date if it exists
@@ -154,7 +170,7 @@ def home(year=None, month=None):
         
         for day in range(1, days_in_month + 1):
             current_date = date(year, month, day)
-            day_of_week = current_date.weekday()
+            day_of_week = current_date.weekday()  # Monday=0, Sunday=6
             date_key = f"{year}-{month:02d}-{day:02d}"
             
             # Only consider dates from start date onwards and up to today
@@ -172,7 +188,10 @@ def home(year=None, month=None):
                 scheduled_days[journey].add(day)
             
             if is_past and is_scheduled and not is_completed:
-                missed_days[journey].add(day)
+                if day_of_week == 6:  # Sunday (0=Monday, 6=Sunday)
+                    missed_sundays[journey].add(day)
+                else:
+                    missed_days[journey].add(day)
     
     # Apply saved journey order
     journey_order = load_journey_order()
@@ -200,6 +219,9 @@ def home(year=None, month=None):
     else:
         next_month, next_year = month + 1, year
     
+    # Load colors configuration
+    colors = load_colors()
+    
     return render_template('home.html', 
                          journeys=journeys, 
                          days=days, 
@@ -217,7 +239,9 @@ def home(year=None, month=None):
                          schedules=schedules,
                          start_dates=start_dates,
                          missed_days=missed_days,
+                         missed_sundays=missed_sundays,
                          scheduled_days=scheduled_days,
+                         colors=colors,
                          today=today.strftime('%Y-%m-%d'),
                          settings=settings)
 
@@ -333,6 +357,7 @@ def journey_detail(journey_name, view_type='yearly'):
             # Check if this is a past day that was missed
             is_past = current_date < date.today()
             is_missed = is_past and is_scheduled and not has_contribution
+            is_missed_sunday = is_missed and day_of_week == 6  # Sunday
             
             current_week.append({
                 'date': date_key,
@@ -340,7 +365,8 @@ def journey_detail(journey_name, view_type='yearly'):
                 'completion_level': completion_level,
                 'day': day,
                 'is_scheduled': is_scheduled,
-                'is_missed': is_missed
+                'is_missed': is_missed and not is_missed_sunday,  # Regular missed days (not Sunday)
+                'is_missed_sunday': is_missed_sunday
             })
             
             # If we've filled a week (7 days), start a new week
@@ -367,6 +393,7 @@ def journey_detail(journey_name, view_type='yearly'):
                              },
                              view_type='monthly',
                              year=now.year,
+                             colors=load_colors(),
                              settings=load_settings())
     
     else:  # yearly view - show all months in grid
@@ -407,6 +434,7 @@ def journey_detail(journey_name, view_type='yearly'):
                 # Check if this is a past day that was missed
                 is_past = current_date < date.today()
                 is_missed = is_past and is_scheduled and not has_contribution
+                is_missed_sunday = is_missed and day_of_week == 6  # Sunday
                 
                 current_week.append({
                     'date': date_key,
@@ -414,7 +442,8 @@ def journey_detail(journey_name, view_type='yearly'):
                     'completion_level': completion_level,
                     'day': day,
                     'is_scheduled': is_scheduled,
-                    'is_missed': is_missed
+                    'is_missed': is_missed and not is_missed_sunday,  # Regular missed days (not Sunday)
+                    'is_missed_sunday': is_missed_sunday
                 })
                 
                 # If we've filled a week (7 days), start a new week
@@ -442,6 +471,7 @@ def journey_detail(journey_name, view_type='yearly'):
                              monthly_data=monthly_data,
                              view_type='yearly',
                              year=now.year,
+                             colors=load_colors(),
                              settings=load_settings())
 
 @app.route('/journey')
@@ -617,22 +647,25 @@ def settings():
         return redirect(url_for('home'))
     
     settings_data = load_settings()
-    return render_template('settings.html', settings=settings_data)
+    colors = load_colors()
+    return render_template('settings.html', settings=settings_data, colors=colors)
 
-@app.route('/save_theme', methods=['POST'])
-def save_theme():
+@app.route('/save_colors', methods=['POST'])
+def save_colors_route():
     try:
         data = request.get_json()
-        theme = data.get('theme', 'dark')
+        colors = load_colors()
         
-        if theme not in ['dark', 'light']:
+        # Update colors based on the data received
+        theme = data.get('theme', 'dark_theme')
+        color_updates = data.get('colors', {})
+        
+        if theme in colors:
+            colors[theme].update(color_updates)
+            save_colors(colors)
+            return jsonify({'success': True})
+        else:
             return jsonify({'success': False, 'error': 'Invalid theme'})
-        
-        settings_data = load_settings()
-        settings_data['theme'] = theme
-        save_settings(settings_data)
-        
-        return jsonify({'success': True})
     
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
@@ -860,30 +893,4 @@ def journey_tasks(journey_name):
     # Filter tasks for this journey
     journey_tasks = [task for task in tasks if task.get('journey_class') == journey_name]
     
-    # Sort by date (newest first)
-    journey_tasks = sorted(journey_tasks, key=lambda x: x['date'], reverse=True)
-    
-    # Group by date and convert to dd/mm/yyyy format for display
-    tasks_by_date = {}
-    for task in journey_tasks:
-        date_key = task['date']  # Internal format: yyyy-mm-dd
-        
-        # Convert to dd/mm/yyyy for display
-        try:
-            year, month, day = date_key.split('-')
-            display_date = f"{day}/{month}/{year}"
-        except:
-            display_date = date_key  # Fallback to original
-        
-        if display_date not in tasks_by_date:
-            tasks_by_date[display_date] = []
-        tasks_by_date[display_date].append(task)
-    
-    return render_template('journey_tasks.html',
-                         journey_name=journey_name,
-                         tasks=journey_tasks,
-                         tasks_by_date=tasks_by_date,
-                         settings=settings)
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    # Sort by date (newest

@@ -58,6 +58,7 @@
                     {% set completion_level = journeys.get(date_key, {}).get(journey, 0) %}
                     {% set is_completed = completion_level > 0 %}
                     {% set is_missed = day in missed_days.get(journey, []) %}
+                    {% set is_missed_sunday = day in missed_sundays.get(journey, []) %}
                     {% set is_scheduled = day in scheduled_days.get(journey, []) %}
                     
                     {% if is_before_start or is_after_today %}
@@ -78,9 +79,10 @@
                     {% else %}
                         <div class="day-cell 
                              {% if is_completed %}completed level-{{ completion_level }}
+                             {% elif is_missed_sunday %}missed-sunday
                              {% elif is_missed %}missed
                              {% endif %}"
-                             title="{{ journey }} - {{ day }}/{{ month }}{% if is_missed %} (Missed){% endif %}"
+                             title="{{ journey }} - {{ day }}/{{ month }}{% if is_missed or is_missed_sunday %} (Missed){% endif %}"
                              data-journey="{{ journey }}"
                              data-day="{{ day }}"
                              data-month="{{ month }}"
