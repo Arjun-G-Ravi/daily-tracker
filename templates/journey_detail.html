@@ -140,15 +140,9 @@
                     <div class="week-row">
                         {% for day in week %}
                             {% if day %}
-                                {% if settings.display_mode == 'schedule' %}
-                                    <div class="calendar-day {{ 'completed level-' + day.completion_level|string if day.has_contribution else 'unscheduled' if not day.is_scheduled else '' }}">
-                                        {{ day.day }}
-                                    </div>
-                                {% else %}
-                                    <div class="calendar-day {{ 'completed level-' + day.completion_level|string if day.has_contribution else 'missed' if day.is_missed else '' }}">
-                                        {{ day.day }}
-                                    </div>
-                                {% endif %}
+                                <div class="calendar-day {{ 'completed level-' + day.completion_level|string if day.has_contribution else 'missed' if day.is_missed else '' }}">
+                                    {{ day.day }}
+                                </div>
                             {% else %}
                                 <div class="calendar-day empty"></div>
                             {% endif %}
@@ -179,15 +173,9 @@
                             <div class="week-row">
                                 {% for day in week %}
                                     {% if day %}
-                                        {% if settings.display_mode == 'schedule' %}
-                                            <div class="month-day {{ 'completed level-' + day.completion_level|string if day.has_contribution else 'unscheduled' if not day.is_scheduled else '' }}" title="{{ month_data.month_name }} {{ day.day }}">
-                                                {{ day.day }}
-                                            </div>
-                                        {% else %}
-                                            <div class="month-day {{ 'completed level-' + day.completion_level|string if day.has_contribution else 'missed' if day.is_missed else '' }}" title="{{ month_data.month_name }} {{ day.day }}">
-                                                {{ day.day }}
-                                            </div>
-                                        {% endif %}
+                                        <div class="month-day {{ 'completed level-' + day.completion_level|string if day.has_contribution else 'missed' if day.is_missed else '' }}" title="{{ month_data.month_name }} {{ day.day }}">
+                                            {{ day.day }}
+                                        </div>
                                     {% else %}
                                         <div class="month-day empty"></div>
                                     {% endif %}
