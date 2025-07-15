@@ -18,24 +18,13 @@
         </div>
         
         <div class="form-group">
-            <label for="display_mode">Display Mode:</label>
-            <select name="display_mode" id="display_mode">
-                <option value="missed" {% if settings.display_mode == 'missed' %}selected{% endif %}>
-                    Missed Mode - Red for missed scheduled tasks
-                </option>
-                <option value="schedule" {% if settings.display_mode == 'schedule' %}selected{% endif %}>
-                    Schedule Mode - Light green for unscheduled days
-                </option>
-            </select>
-        </div>
-        
-        <div class="form-group">
             <button type="submit" class="btn">Save Settings</button>
             <a href="{{ url_for('home') }}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
     
     <div style="margin-top: 30px; padding: 15px; background: var(--bg-tertiary); border-radius: 6px;">
+<<<<<<< HEAD
         <h4>Color Configuration:</h4>
         <div class="color-config-section">
             <div class="form-group">
@@ -186,8 +175,28 @@
             <li><strong>Missed Mode:</strong> Days you were supposed to do a task but didn't are shown in red</li>
             <li><strong>Schedule Mode:</strong> Days you're not scheduled to do a task are shown in light green, scheduled but not done days are empty</li>
             <li><strong>Missed Day Color:</strong> Color for all missed scheduled tasks (applies to all days of the week)</li>
+=======
+        <h4>Configuration Info:</h4>
+        <ul style="margin: 10px 0; padding-left: 20px; color: var(--text-secondary);">
+            <li><strong>Theme:</strong> Choose between dark and light appearance modes</li>
+            <li><strong>Colors:</strong> Completion levels and state colors can be customized in config.json</li>
+            <li><strong>App Settings:</strong> Port, debug mode, and file paths are configurable in config.json</li>
+>>>>>>> working
         </ul>
-    </div>
+        
+        {% if config %}
+        <h5 style="margin-top: 20px;">Current Configuration:</h5>
+        <div style="background: var(--bg-secondary); padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; margin-top: 10px;">
+            <strong>App Port:</strong> {{ config.app.port }}<br>
+            <strong>Debug Mode:</strong> {{ config.app.debug }}<br>
+            <strong>Completion Colors:</strong><br>
+            <div style="margin-left: 20px;">
+                <div>Level 1: <span style="color: {{ config.colors.completion_levels.level_1 }}; font-weight: bold;">{{ config.colors.completion_levels.level_1 }}</span></div>
+                <div>Level 2: <span style="color: {{ config.colors.completion_levels.level_2 }}; font-weight: bold;">{{ config.colors.completion_levels.level_2 }}</span></div>
+                <div>Level 3: <span style="color: {{ config.colors.completion_levels.level_3 }}; font-weight: bold;">{{ config.colors.completion_levels.level_3 }}</span></div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

@@ -64,18 +64,6 @@
                     {% if is_before_start or is_after_today %}
                         <div class="day-cell invalid-day" title="{% if is_before_start %}Before start date{% else %}Future date{% endif %}">
                         </div>
-                    {% elif settings.display_mode == 'schedule' %}
-                        <div class="day-cell 
-                             {% if is_completed %}completed level-{{ completion_level }}
-                             {% elif not is_scheduled %}unscheduled
-                             {% endif %}"
-                             title="{{ journey }} - {{ day }}/{{ month }}"
-                             data-journey="{{ journey }}"
-                             data-day="{{ day }}"
-                             data-month="{{ month }}"
-                             data-year="{{ year }}"
-                             data-level="{{ completion_level }}">
-                        </div>
                     {% else %}
                         <div class="day-cell 
                              {% if is_completed %}completed level-{{ completion_level }}

@@ -6,15 +6,45 @@ import os
 
 app = Flask(__name__)
 
-# Simple file-based storage for journeys
-JOURNEYS_FILE = 'journeys.json'
-JOURNEY_TEMPLATES_FILE = 'journey_templates.json'
-JOURNEY_ORDER_FILE = 'journey_order.json'
-JOURNEY_SCHEDULES_FILE = 'journey_schedules.json'
-JOURNEY_START_DATES_FILE = 'journey_start_dates.json'
-SETTINGS_FILE = 'settings.json'
-DAILY_TASKS_FILE = 'daily_tasks.json'  # For storing daily tasks
-COLORS_FILE = 'colors.json'  # For storing color configuration
+# Configuration file
+CONFIG_FILE = 'config.json'
+
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, 'r') as f:
+            return json.load(f)
+    # Default config if file doesn't exist
+    return {
+        "app": {"theme": "dark", "port": 5001, "debug": True},
+        "colors": {
+            "completion_levels": {"level_1": "#4ade80", "level_2": "#22c55e", "level_3": "#16a34a"},
+            "states": {"missed": "#ef4444", "scheduled_empty": "#6b7280", "unscheduled": "#374151"}
+        },
+        "files": {
+            "journeys": "journeys.json",
+            "journey_templates": "journey_templates.json", 
+            "journey_order": "journey_order.json",
+            "journey_schedules": "journey_schedules.json",
+            "journey_start_dates": "journey_start_dates.json",
+            "daily_tasks": "daily_tasks.json"
+        },
+        "defaults": {"journey_schedule": [0, 1, 2, 3, 4, 5, 6], "completion_level": 3}
+    }
+
+def save_config(config):
+    with open(CONFIG_FILE, 'w') as f:
+        json.dump(config, f, indent=2)
+
+# Load configuration
+config = load_config()
+
+# File paths from config
+JOURNEYS_FILE = config['files']['journeys']
+JOURNEY_TEMPLATES_FILE = config['files']['journey_templates']
+JOURNEY_ORDER_FILE = config['files']['journey_order']
+JOURNEY_SCHEDULES_FILE = config['files']['journey_schedules']
+JOURNEY_START_DATES_FILE = config['files']['journey_start_dates']
+DAILY_TASKS_FILE = config['files']['daily_tasks']
 
 def load_journeys():
     if os.path.exists(JOURNEYS_FILE):
@@ -66,15 +96,17 @@ def save_journey_start_dates(start_dates):
     with open(JOURNEY_START_DATES_FILE, 'w') as f:
         json.dump(start_dates, f, indent=2)
 
-def load_settings():
-    if os.path.exists(SETTINGS_FILE):
-        with open(SETTINGS_FILE, 'r') as f:
-            return json.load(f)
-    return {"display_mode": "missed", "theme": "dark"}
+def get_app_settings():
+    """Get app-specific settings from config"""
+    return config.get('app', {"theme": "dark"})
 
-def save_settings(settings):
-    with open(SETTINGS_FILE, 'w') as f:
-        json.dump(settings, f, indent=2)
+def update_app_settings(settings_update):
+    """Update app settings in config"""
+    global config
+    if 'app' not in config:
+        config['app'] = {}
+    config['app'].update(settings_update)
+    save_config(config)
 
 def load_daily_tasks():
     if os.path.exists(DAILY_TASKS_FILE):
@@ -134,7 +166,7 @@ def home(year=None, month=None):
     journeys = load_journeys()
     schedules = load_journey_schedules()
     start_dates = load_journey_start_dates()
-    settings = load_settings()
+    app_settings = get_app_settings()
     month_name = calendar.month_name[month]
     
     # Calculate missed days for each journey
@@ -243,7 +275,8 @@ def home(year=None, month=None):
                          scheduled_days=scheduled_days,
                          colors=colors,
                          today=today.strftime('%Y-%m-%d'),
-                         settings=settings)
+                         settings=app_settings,
+                         config=config)
 
 @app.route('/journeys')
 def journeys():
@@ -261,10 +294,10 @@ def journeys():
     # Load start dates
     start_dates = load_journey_start_dates()
     
-    # Load settings for theme
-    settings = load_settings()
+    # Load app settings for theme
+    app_settings = get_app_settings()
     
-    return render_template('journeys.html', all_journeys=sorted(all_journeys), start_dates=start_dates, settings=settings)
+    return render_template('journeys.html', all_journeys=sorted(all_journeys), start_dates=start_dates, settings=app_settings, config=config)
 
 @app.route('/add_template', methods=['POST'])
 def add_template():
@@ -281,7 +314,7 @@ def add_template():
         
         # Set schedule to all days (Monday=0 to Sunday=6)
         schedules = load_journey_schedules()
-        schedules[journey_name] = [0, 1, 2, 3, 4, 5, 6]
+        schedules[journey_name] = config['defaults']['journey_schedule']
         save_journey_schedules(schedules)
         
         # Set start date to today
@@ -391,8 +424,8 @@ def journey_detail(journey_name, view_type='yearly'):
                              },
                              view_type='monthly',
                              year=now.year,
-                             colors=load_colors(),
-                             settings=load_settings())
+                             settings=get_app_settings(),
+                             config=config)
     
     else:  # yearly view - show all months in grid
         # Generate monthly data for all 12 months
@@ -467,14 +500,14 @@ def journey_detail(journey_name, view_type='yearly'):
                              monthly_data=monthly_data,
                              view_type='yearly',
                              year=now.year,
-                             colors=load_colors(),
-                             settings=load_settings())
+                             settings=get_app_settings(),
+                             config=config)
 
 @app.route('/journey')
 def journey():
     today = datetime.now().day
-    settings = load_settings()
-    return render_template('journey.html', today=today, settings=settings)
+    app_settings = get_app_settings()
+    return render_template('journey.html', today=today, settings=app_settings, config=config)
 
 @app.route('/add_journey', methods=['POST'])
 def add_journey():
@@ -634,34 +667,29 @@ def delete_journey(journey_name):
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
     if request.method == 'POST':
-        display_mode = request.form.get('display_mode', 'missed')
         theme = request.form.get('theme', 'dark')
-        settings_data = load_settings()
-        settings_data['display_mode'] = display_mode
-        settings_data['theme'] = theme
-        save_settings(settings_data)
+        app_settings = get_app_settings()
+        app_settings['theme'] = theme
+        update_app_settings(app_settings)
         return redirect(url_for('home'))
     
-    settings_data = load_settings()
-    colors = load_colors()
-    return render_template('settings.html', settings=settings_data, colors=colors)
+    app_settings = get_app_settings()
+    return render_template('settings.html', settings=app_settings, config=config)
 
 @app.route('/save_colors', methods=['POST'])
 def save_colors_route():
     try:
         data = request.get_json()
-        colors = load_colors()
+        theme = data.get('theme', 'dark')
         
-        # Update colors based on the data received
-        theme = data.get('theme', 'dark_theme')
-        color_updates = data.get('colors', {})
-        
-        if theme in colors:
-            colors[theme].update(color_updates)
-            save_colors(colors)
-            return jsonify({'success': True})
-        else:
+        if theme not in ['dark', 'light']:
             return jsonify({'success': False, 'error': 'Invalid theme'})
+        
+        app_settings = get_app_settings()
+        app_settings['theme'] = theme
+        update_app_settings(app_settings)
+        
+        return jsonify({'success': True})
     
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
@@ -726,7 +754,7 @@ def rename_journey(journey_name):
 def daily_tasks():
     """Main daily tasks page with list view only"""
     tasks = load_daily_tasks()
-    settings = load_settings()
+    app_settings = get_app_settings()
     
     # Get unique journey names for the class dropdown
     templates = load_journey_templates()
@@ -762,7 +790,8 @@ def daily_tasks():
                          tasks_by_date=tasks_by_date,
                          ordered_dates=ordered_dates,
                          journey_classes=templates,
-                         settings=settings)
+                         settings=app_settings,
+                         config=config)
 
 @app.route('/add_daily_task', methods=['POST'])
 def add_daily_task():
@@ -805,7 +834,7 @@ def add_daily_task():
             if internal_date not in journeys:
                 journeys[internal_date] = {}
             # Set to level 3 (dark green) when adding a task
-            journeys[internal_date][journey_class] = 3
+            journeys[internal_date][journey_class] = config['defaults']['completion_level']
             save_journeys(journeys)
         
         return jsonify({'success': True, 'task': new_task})
@@ -884,7 +913,7 @@ def edit_daily_task(task_id):
 def journey_tasks(journey_name):
     """View all tasks for a specific journey"""
     tasks = load_daily_tasks()
-    settings = load_settings()
+    app_settings = get_app_settings()
     
     # Filter tasks for this journey
     journey_tasks = [task for task in tasks if task.get('journey_class') == journey_name]
@@ -912,7 +941,12 @@ def journey_tasks(journey_name):
                          journey_name=journey_name,
                          tasks=journey_tasks,
                          tasks_by_date=tasks_by_date,
-                         settings=settings)
+                         settings=app_settings,
+                         config=config)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5002)
+    app_config = config.get('app', {})
+    app.run(
+        debug=app_config.get('debug', True), 
+        port=app_config.get('port', 5001)
+    )
