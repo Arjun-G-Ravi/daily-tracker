@@ -1,14 +1,14 @@
 {
   "app": {
-    "theme": "dark",
-    "port": 5001,
+    "theme": "light",
+    "port": 5000,
     "debug": true
   },
   "colors": {
     "completion_levels": {
-      "level_1": "#4ade80",
-      "level_2": "#22c55e", 
-      "level_3": "#16a34a"
+      "level_1": "#86efac",
+      "level_2": "#22c55e",
+      "level_3": "#ffffff"
     },
     "states": {
       "missed": "#ef4444",
@@ -17,9 +17,9 @@
     },
     "themes": {
       "dark": {
-        "primary": "#1f2937",
-        "secondary": "#374151",
-        "tertiary": "#4b5563",
+        "primary": "#6ce68c",
+        "secondary": "#30cf5a",
+        "tertiary": "#ffffff",
         "text_primary": "#f9fafb",
         "text_secondary": "#d1d5db",
         "accent": "#3b82f6"
@@ -44,7 +44,15 @@
     "task_categories": "task_categories.json"
   },
   "defaults": {
-    "journey_schedule": [0, 1, 2, 3, 4, 5, 6],
+    "journey_schedule": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
     "completion_level": 3
   }
 }
