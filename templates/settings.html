@@ -37,9 +37,11 @@
             <strong>App Port:</strong> {{ config.app.port }}<br>
             <strong>Debug Mode:</strong> {{ config.app.debug }}<br>
             <strong>Completion Colors:</strong><br>
-            &nbsp;&nbsp;Level 1: <span style="color: {{ config.colors.completion_levels.level_1 }}">{{ config.colors.completion_levels.level_1 }}</span><br>
-            &nbsp;&nbsp;Level 2: <span style="color: {{ config.colors.completion_levels.level_2 }}">{{ config.colors.completion_levels.level_2 }}</span><br>
-            &nbsp;&nbsp;Level 3: <span style="color: {{ config.colors.completion_levels.level_3 }}">{{ config.colors.completion_levels.level_3 }}</span><br>
+            <div style="margin-left: 20px;">
+                <div>Level 1: <span style="color: {{ config.colors.completion_levels.level_1 }}; font-weight: bold;">{{ config.colors.completion_levels.level_1 }}</span></div>
+                <div>Level 2: <span style="color: {{ config.colors.completion_levels.level_2 }}; font-weight: bold;">{{ config.colors.completion_levels.level_2 }}</span></div>
+                <div>Level 3: <span style="color: {{ config.colors.completion_levels.level_3 }}; font-weight: bold;">{{ config.colors.completion_levels.level_3 }}</span></div>
+            </div>
         </div>
         {% endif %}
     </div>
