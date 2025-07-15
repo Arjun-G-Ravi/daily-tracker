@@ -1,14 +1,14 @@
 {
   "app": {
-    "theme": "light",
+    "theme": "dark",
     "port": 5000,
     "debug": true
   },
   "colors": {
     "completion_levels": {
-      "level_1": "#86efac",
-      "level_2": "#22c55e",
-      "level_3": "#ffffff"
+      "level_1": "#74e39c",
+      "level_2": "#44db7b",
+      "level_3": "#04d14e"
     },
     "states": {
       "missed": "#ef4444",
@@ -19,7 +19,7 @@
       "dark": {
         "primary": "#6ce68c",
         "secondary": "#30cf5a",
-        "tertiary": "#ffffff",
+        "tertiary": "#3b82f6",
         "text_primary": "#f9fafb",
         "text_secondary": "#d1d5db",
         "accent": "#3b82f6"
