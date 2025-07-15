@@ -118,19 +118,6 @@ def save_daily_tasks(tasks):
     with open(DAILY_TASKS_FILE, 'w') as f:
         json.dump(tasks, f, indent=2)
 
-def load_colors():
-    if os.path.exists(COLORS_FILE):
-        with open(COLORS_FILE, 'r') as f:
-            return json.load(f)
-    return {
-        "dark_theme": {"missed_sunday_color": "#dc2626", "missed_regular_color": "transparent"},
-        "light_theme": {"missed_sunday_color": "#dc2626", "missed_regular_color": "transparent"}
-    }
-
-def save_colors(colors):
-    with open(COLORS_FILE, 'w') as f:
-        json.dump(colors, f, indent=2)
-
 def get_current_month_days():
     now = datetime.now()
     cal = calendar.monthcalendar(now.year, now.month)
@@ -171,8 +158,7 @@ def home(year=None, month=None):
     
     # Calculate missed days for each journey
     missed_days = {}
-    missed_sundays = {}  # track missed days that fall on Sunday
-    scheduled_days = {}  # track which days are scheduled for each journey
+    scheduled_days = {}  # New: track which days are scheduled for each journey
     today = date.today()
     
     # Get unique journey names from both daily data and templates
@@ -189,7 +175,6 @@ def home(year=None, month=None):
         journey_schedule = schedules.get(journey, [])
         journey_start_date = start_dates.get(journey)
         missed_days[journey] = set()
-        missed_sundays[journey] = set()
         scheduled_days[journey] = set()
         
         # Parse start date if it exists
@@ -202,7 +187,7 @@ def home(year=None, month=None):
         
         for day in range(1, days_in_month + 1):
             current_date = date(year, month, day)
-            day_of_week = current_date.weekday()  # Monday=0, Sunday=6
+            day_of_week = current_date.weekday()
             date_key = f"{year}-{month:02d}-{day:02d}"
             
             # Only consider dates from start date onwards and up to today
@@ -221,9 +206,6 @@ def home(year=None, month=None):
             
             if is_past and is_scheduled and not is_completed:
                 missed_days[journey].add(day)
-                # Track if the missed day is a Sunday (weekday 6)
-                if day_of_week == 6:
-                    missed_sundays[journey].add(day)
     
     # Apply saved journey order
     journey_order = load_journey_order()
@@ -251,9 +233,6 @@ def home(year=None, month=None):
     else:
         next_month, next_year = month + 1, year
     
-    # Load colors configuration
-    colors = load_colors()
-    
     return render_template('home.html', 
                          journeys=journeys, 
                          days=days, 
@@ -271,9 +250,7 @@ def home(year=None, month=None):
                          schedules=schedules,
                          start_dates=start_dates,
                          missed_days=missed_days,
-                         missed_sundays=missed_sundays,
                          scheduled_days=scheduled_days,
-                         colors=colors,
                          today=today.strftime('%Y-%m-%d'),
                          settings=app_settings,
                          config=config)
@@ -676,8 +653,8 @@ def settings():
     app_settings = get_app_settings()
     return render_template('settings.html', settings=app_settings, config=config)
 
-@app.route('/save_colors', methods=['POST'])
-def save_colors_route():
+@app.route('/save_theme', methods=['POST'])
+def save_theme():
     try:
         data = request.get_json()
         theme = data.get('theme', 'dark')

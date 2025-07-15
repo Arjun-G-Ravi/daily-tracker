@@ -311,7 +311,7 @@ function renameTask() {
         })
     })
     .then(response => response.json())
-    .then data => {
+    .then(data => {
         if (data.success) {
             alert('Task renamed successfully');
             // Redirect to the renamed task's page
