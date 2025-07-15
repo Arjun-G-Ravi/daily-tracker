@@ -139,8 +139,8 @@ def home(year=None, month=None):
     
     # Calculate missed days for each journey
     missed_days = {}
-    missed_sundays = {}  # New: track missed Sundays separately
-    scheduled_days = {}  # New: track which days are scheduled for each journey
+    missed_sundays = {}  # track missed days that fall on Sunday
+    scheduled_days = {}  # track which days are scheduled for each journey
     today = date.today()
     
     # Get unique journey names from both daily data and templates
@@ -188,10 +188,10 @@ def home(year=None, month=None):
                 scheduled_days[journey].add(day)
             
             if is_past and is_scheduled and not is_completed:
-                if day_of_week == 6:  # Sunday (0=Monday, 6=Sunday)
+                missed_days[journey].add(day)
+                # Track if the missed day is a Sunday (weekday 6)
+                if day_of_week == 6:
                     missed_sundays[journey].add(day)
-                else:
-                    missed_days[journey].add(day)
     
     # Apply saved journey order
     journey_order = load_journey_order()
@@ -357,7 +357,6 @@ def journey_detail(journey_name, view_type='yearly'):
             # Check if this is a past day that was missed
             is_past = current_date < date.today()
             is_missed = is_past and is_scheduled and not has_contribution
-            is_missed_sunday = is_missed and day_of_week == 6  # Sunday
             
             current_week.append({
                 'date': date_key,
@@ -365,8 +364,7 @@ def journey_detail(journey_name, view_type='yearly'):
                 'completion_level': completion_level,
                 'day': day,
                 'is_scheduled': is_scheduled,
-                'is_missed': is_missed and not is_missed_sunday,  # Regular missed days (not Sunday)
-                'is_missed_sunday': is_missed_sunday
+                'is_missed': is_missed
             })
             
             # If we've filled a week (7 days), start a new week
@@ -434,7 +432,6 @@ def journey_detail(journey_name, view_type='yearly'):
                 # Check if this is a past day that was missed
                 is_past = current_date < date.today()
                 is_missed = is_past and is_scheduled and not has_contribution
-                is_missed_sunday = is_missed and day_of_week == 6  # Sunday
                 
                 current_week.append({
                     'date': date_key,
@@ -442,8 +439,7 @@ def journey_detail(journey_name, view_type='yearly'):
                     'completion_level': completion_level,
                     'day': day,
                     'is_scheduled': is_scheduled,
-                    'is_missed': is_missed and not is_missed_sunday,  # Regular missed days (not Sunday)
-                    'is_missed_sunday': is_missed_sunday
+                    'is_missed': is_missed
                 })
                 
                 # If we've filled a week (7 days), start a new week
@@ -893,4 +889,30 @@ def journey_tasks(journey_name):
     # Filter tasks for this journey
     journey_tasks = [task for task in tasks if task.get('journey_class') == journey_name]
     
-    # Sort by date (newest
+    # Sort by date (newest first)
+    journey_tasks = sorted(journey_tasks, key=lambda x: x['date'], reverse=True)
+    
+    # Group by date and convert to dd/mm/yyyy format for display
+    tasks_by_date = {}
+    for task in journey_tasks:
+        date_key = task['date']  # Internal format: yyyy-mm-dd
+        
+        # Convert to dd/mm/yyyy for display
+        try:
+            year, month, day = date_key.split('-')
+            display_date = f"{day}/{month}/{year}"
+        except:
+            display_date = date_key  # Fallback to original
+        
+        if display_date not in tasks_by_date:
+            tasks_by_date[display_date] = []
+        tasks_by_date[display_date].append(task)
+    
+    return render_template('journey_tasks.html',
+                         journey_name=journey_name,
+                         tasks=journey_tasks,
+                         tasks_by_date=tasks_by_date,
+                         settings=settings)
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5002)

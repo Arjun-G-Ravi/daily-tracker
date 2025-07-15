@@ -39,11 +39,11 @@
         <h4>Color Configuration:</h4>
         <div class="color-config-section">
             <div class="form-group">
-                <label for="missed-sunday-color">Missed Sunday Color:</label>
-                <input type="color" id="missed-sunday-color" 
-                       value="{{ colors[settings.theme + '_theme'].missed_sunday_color if colors else '#dc2626' }}"
-                       onchange="updateColor('missed_sunday_color', this.value)">
-                <span class="color-description">Color for missed tasks on Sundays</span>
+                <label for="missed-color">Missed Day Color:</label>
+                <input type="color" id="missed-color" 
+                       value="{{ colors[settings.theme + '_theme'].missed_color if colors else '#dc2626' }}"
+                       onchange="updateColor('missed_color', this.value)">
+                <span class="color-description">Color for all missed scheduled tasks</span>
             </div>
             
             <div class="form-group">
@@ -109,7 +109,7 @@
             if (confirm('Reset all colors to defaults?')) {
                 const theme = document.getElementById('theme').value + '_theme';
                 const defaultColors = {
-                    'missed_sunday_color': '#dc2626',
+                    'missed_color': '#dc2626',
                     'missed_regular_color': 'transparent',
                     'success_color': theme === 'dark_theme' ? '#39d353' : '#1a7f37',
                     'unscheduled_color': theme === 'dark_theme' ? '#9ac59c' : '#7fb069'
@@ -185,8 +185,7 @@
             <li><strong>Theme:</strong> Choose between dark and light appearance modes</li>
             <li><strong>Missed Mode:</strong> Days you were supposed to do a task but didn't are shown in red</li>
             <li><strong>Schedule Mode:</strong> Days you're not scheduled to do a task are shown in light green, scheduled but not done days are empty</li>
-            <li><strong>Missed Sunday Color:</strong> Special color for missed tasks specifically on Sundays</li>
-            <li><strong>Missed Regular Color:</strong> Color for missed tasks on all other days (use transparent for no highlighting)</li>
+            <li><strong>Missed Day Color:</strong> Color for all missed scheduled tasks (applies to all days of the week)</li>
         </ul>
     </div>
     </div>

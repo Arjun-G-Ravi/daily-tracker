@@ -79,10 +79,9 @@
                     {% else %}
                         <div class="day-cell 
                              {% if is_completed %}completed level-{{ completion_level }}
-                             {% elif is_missed_sunday %}missed-sunday
                              {% elif is_missed %}missed
                              {% endif %}"
-                             title="{{ journey }} - {{ day }}/{{ month }}{% if is_missed or is_missed_sunday %} (Missed){% endif %}"
+                             title="{{ journey }} - {{ day }}/{{ month }}{% if is_missed %} (Missed){% endif %}"
                              data-journey="{{ journey }}"
                              data-day="{{ day }}"
                              data-month="{{ month }}"
