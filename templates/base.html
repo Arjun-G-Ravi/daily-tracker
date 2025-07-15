@@ -384,11 +384,24 @@
         }
         
         .day-cell.completed {
-            background: var(--success-color);
+            border-color: var(--success-color);
+        }
+        
+        .day-cell.completed.level-1 {
+            background: #50c878; /* Light green */
+        }
+        
+        .day-cell.completed.level-2 {
+            background: var(--success-color); /* Medium green */
+        }
+        
+        .day-cell.completed.level-3 {
+            background: #228b22; /* Dark green */
         }
         
         .day-cell.missed {
             background: var(--danger-color);
+            border-color: var(--danger-color);
         }
         
         .day-cell.unscheduled {
@@ -692,9 +705,20 @@
         }
         
         .month-day.completed {
-            background: var(--success-color);
             border-color: var(--success-color);
             color: var(--bg-primary);
+        }
+        
+        .month-day.completed.level-1 {
+            background: #50c878; /* Light green */
+        }
+        
+        .month-day.completed.level-2 {
+            background: var(--success-color); /* Medium green */
+        }
+        
+        .month-day.completed.level-3 {
+            background: #228b22; /* Dark green */
         }
         
         .month-day.unscheduled {
@@ -776,8 +800,19 @@
         }
         
         .calendar-day.completed {
-            background: var(--success-color);
             color: var(--bg-primary);
+        }
+        
+        .calendar-day.completed.level-1 {
+            background: #50c878; /* Light green */
+        }
+        
+        .calendar-day.completed.level-2 {
+            background: var(--success-color); /* Medium green */
+        }
+        
+        .calendar-day.completed.level-3 {
+            background: #228b22; /* Dark green */
         }
         
         .calendar-day.unscheduled {
@@ -1068,21 +1103,20 @@
             themeIcon.textContent = currentTheme === 'dark' ? '🌙' : '☀️';
         });
         
-        // Toggle journey completion on click
+        // Toggle journey completion on click (cycles through levels)
         function toggleJourney(element, journey, day, month, year) {
             console.log('toggleJourney called with:', {element, journey, day, month, year});
             const dateKey = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-            const isCompleted = element.classList.contains('completed');
+            const currentLevel = parseInt(element.getAttribute('data-level')) || 0;
             
-            console.log('Date key:', dateKey, 'Is completed:', isCompleted);
+            // Cycle through levels: 0 -> 1 -> 2 -> 3 -> 0
+            const nextLevel = (currentLevel + 1) % 4;
             
-            // Toggle the visual state immediately for responsiveness
-            if (isCompleted) {
-                element.classList.remove('completed');
-            } else {
-                element.classList.add('completed');
-                element.classList.remove('missed');
-            }
+            console.log('Date key:', dateKey, 'Current level:', currentLevel, 'Next level:', nextLevel);
+            
+            // Update visual state immediately for responsiveness
+            updateElementVisuals(element, nextLevel);
+            element.setAttribute('data-level', nextLevel);
             
             // Send the toggle request to the server
             fetch('/toggle_journey', {
@@ -1093,30 +1127,35 @@
                 body: JSON.stringify({
                     journey: journey,
                     date_key: dateKey,
-                    completed: !isCompleted
+                    level: nextLevel
                 })
             })
             .then(response => response.json())
             .then(data => {
                 if (!data.success) {
                     // Revert the visual change if the server request failed
-                    if (isCompleted) {
-                        element.classList.add('completed');
-                    } else {
-                        element.classList.remove('completed');
-                    }
+                    updateElementVisuals(element, currentLevel);
+                    element.setAttribute('data-level', currentLevel);
                     console.error('Failed to toggle journey:', data.error);
                 }
             })
             .catch(error => {
                 // Revert the visual change if the request failed
-                if (isCompleted) {
-                    element.classList.add('completed');
-                } else {
-                    element.classList.remove('completed');
-                }
+                updateElementVisuals(element, currentLevel);
+                element.setAttribute('data-level', currentLevel);
                 console.error('Error:', error);
             });
+        }
+        
+        // Helper function to update element visuals based on completion level
+        function updateElementVisuals(element, level) {
+            // Remove all existing level classes
+            element.classList.remove('completed', 'level-1', 'level-2', 'level-3', 'missed');
+            
+            if (level > 0) {
+                element.classList.add('completed', `level-${level}`);
+            }
+            // Note: missed class should only be added by server-side logic, not here
         }
 
         // Add event listeners when the page loads

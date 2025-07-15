@@ -55,7 +55,8 @@
                     {% set journey_start_date = start_dates.get(journey) %}
                     {% set is_before_start = journey_start_date and current_date < journey_start_date %}
                     {% set is_after_today = current_date > today %}
-                    {% set is_completed = journeys.get(date_key, {}).get(journey) %}
+                    {% set completion_level = journeys.get(date_key, {}).get(journey, 0) %}
+                    {% set is_completed = completion_level > 0 %}
                     {% set is_missed = day in missed_days.get(journey, []) %}
                     {% set is_scheduled = day in scheduled_days.get(journey, []) %}
                     
@@ -64,25 +65,27 @@
                         </div>
                     {% elif settings.display_mode == 'schedule' %}
                         <div class="day-cell 
-                             {% if is_completed %}completed
+                             {% if is_completed %}completed level-{{ completion_level }}
                              {% elif not is_scheduled %}unscheduled
                              {% endif %}"
                              title="{{ journey }} - {{ day }}/{{ month }}"
                              data-journey="{{ journey }}"
                              data-day="{{ day }}"
                              data-month="{{ month }}"
-                             data-year="{{ year }}">
+                             data-year="{{ year }}"
+                             data-level="{{ completion_level }}">
                         </div>
                     {% else %}
                         <div class="day-cell 
-                             {% if is_completed %}completed
+                             {% if is_completed %}completed level-{{ completion_level }}
                              {% elif is_missed %}missed
                              {% endif %}"
                              title="{{ journey }} - {{ day }}/{{ month }}{% if is_missed %} (Missed){% endif %}"
                              data-journey="{{ journey }}"
                              data-day="{{ day }}"
                              data-month="{{ month }}"
-                             data-year="{{ year }}">
+                             data-year="{{ year }}"
+                             data-level="{{ completion_level }}">
                         </div>
                     {% endif %}
                     {% else %}

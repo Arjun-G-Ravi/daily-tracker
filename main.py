@@ -164,7 +164,8 @@ def home(year=None, month=None):
                 continue
             
             is_scheduled = day_of_week in journey_schedule
-            is_completed = journeys.get(date_key, {}).get(journey, False)
+            completion_level = journeys.get(date_key, {}).get(journey, 0)  # 0=empty, 1-3=completion levels
+            is_completed = completion_level > 0
             is_past = current_date < today
             
             if is_scheduled:
@@ -276,8 +277,10 @@ def journey_detail(journey_name, view_type='yearly'):
     # Get all data for this specific journey
     journey_data = {}
     for date_key, day_data in journeys.items():
-        if journey_name in day_data and day_data[journey_name]:
-            journey_data[date_key] = True
+        if journey_name in day_data:
+            completion_level = day_data[journey_name]
+            if completion_level > 0:  # Only include if there's some completion
+                journey_data[date_key] = completion_level
     
     # Get schedule and start date for this journey
     journey_schedule = schedules.get(journey_name, [])
@@ -311,7 +314,8 @@ def journey_detail(journey_name, view_type='yearly'):
         
         for day in range(1, days_in_month + 1):
             date_key = f"{current_year}-{current_month:02d}-{day:02d}"
-            has_contribution = journey_data.get(date_key, False)
+            completion_level = journey_data.get(date_key, 0)
+            has_contribution = completion_level > 0
             current_date = date(current_year, current_month, day)
             
             # Only consider dates from start date onwards and up to today
@@ -333,6 +337,7 @@ def journey_detail(journey_name, view_type='yearly'):
             current_week.append({
                 'date': date_key,
                 'has_contribution': has_contribution,
+                'completion_level': completion_level,
                 'day': day,
                 'is_scheduled': is_scheduled,
                 'is_missed': is_missed
@@ -383,7 +388,8 @@ def journey_detail(journey_name, view_type='yearly'):
             
             for day in range(1, days_in_month + 1):
                 date_key = f"{now.year}-{month:02d}-{day:02d}"
-                has_contribution = journey_data.get(date_key, False)
+                completion_level = journey_data.get(date_key, 0)
+                has_contribution = completion_level > 0
                 current_date = date(now.year, month, day)
                 
                 # Only consider dates from start date onwards and up to today
@@ -405,6 +411,7 @@ def journey_detail(journey_name, view_type='yearly'):
                 current_week.append({
                     'date': date_key,
                     'has_contribution': has_contribution,
+                    'completion_level': completion_level,
                     'day': day,
                     'is_scheduled': is_scheduled,
                     'is_missed': is_missed
@@ -475,7 +482,7 @@ def toggle_journey():
         data = request.get_json()
         journey_name = data.get('journey')
         date_key = data.get('date_key')
-        completed = data.get('completed')
+        level = data.get('level')  # New: support for completion levels (0-3)
         
         if not journey_name or not date_key:
             return jsonify({'success': False, 'error': 'Missing required fields'})
@@ -485,10 +492,11 @@ def toggle_journey():
         if date_key not in journeys:
             journeys[date_key] = {}
         
-        if completed:
-            journeys[date_key][journey_name] = True
+        if level and level > 0:
+            # Store completion level (1=light green, 2=green, 3=dark green)
+            journeys[date_key][journey_name] = level
         else:
-            # Remove the journey if it's being uncompleted
+            # Remove the journey if level is 0 (empty)
             if journey_name in journeys[date_key]:
                 del journeys[date_key][journey_name]
             # Clean up empty date entries
@@ -496,7 +504,7 @@ def toggle_journey():
                 del journeys[date_key]
         
         save_journeys(journeys)
-        return jsonify({'success': True})
+        return jsonify({'success': True, 'level': level})
     
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
@@ -767,7 +775,8 @@ def add_daily_task():
             journeys = load_journeys()
             if internal_date not in journeys:
                 journeys[internal_date] = {}
-            journeys[internal_date][journey_class] = True
+            # Set to level 3 (dark green) when adding a task
+            journeys[internal_date][journey_class] = 3
             save_journeys(journeys)
         
         return jsonify({'success': True, 'task': new_task})
