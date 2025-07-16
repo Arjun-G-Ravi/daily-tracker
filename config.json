@@ -6,9 +6,9 @@
   },
   "colors": {
     "completion_levels": {
-      "level_1": "#74e39c",
-      "level_2": "#44db7b",
-      "level_3": "#04d14e"
+      "level_1": "#aafaa2",
+      "level_2": "#5ff250",
+      "level_3": "#19f702"
     },
     "states": {
       "missed": "#ef4444",
