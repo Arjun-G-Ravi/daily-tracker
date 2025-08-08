@@ -6,10 +6,9 @@
     <form method="POST" action="{{ url_for('add_journey') }}">
         <div class="form-group">
             <label for="journey_name">Journey Name:</label>
-            <input type="text" id="journey_name" name="journey_name" required 
+            <input type="text" id="journey_name" name="journey_name" required
                    placeholder="e.g., Exercise, Reading, Meditation">
         </div>
-        
         <div class="form-group">
             <label for="day">Day of Month:</label>
             <select id="day" name="day" required>
@@ -18,13 +17,11 @@
                 {% endfor %}
             </select>
         </div>
-        
         <div class="form-group">
             <label>
                 <input type="checkbox" name="completed" checked> Completed
             </label>
         </div>
-        
         <button type="submit" class="btn">Add Entry</button>
     </form>
 </div>
