@@ -659,6 +659,20 @@ def save_theme():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
+
+@app.route('/journey_tasks/<journey_name>')
+def journey_tasks(journey_name):
+    # Load whatever tasks you want to show
+    journeys = load_journeys()
+    tasks = []
+    for date_key, day_data in journeys.items():
+        if journey_name in day_data:
+            tasks.append({"date": date_key, "level": day_data[journey_name]})
+    
+    return render_template('journey_tasks.html', journey_name=journey_name, tasks=tasks)
+
+
+
 @app.route('/rename_journey/<journey_name>', methods=['POST'])
 def rename_journey(journey_name):
     try:
