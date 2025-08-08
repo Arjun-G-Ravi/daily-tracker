@@ -1,6 +1,6 @@
 {
   "app": {
-    "theme": "dark",
+    "theme": "light",
     "port": 5000,
     "debug": true
   },

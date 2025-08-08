@@ -25,8 +25,7 @@ def load_config():
             "journey_templates": "journey_templates.json", 
             "journey_order": "journey_order.json",
             "journey_schedules": "journey_schedules.json",
-            "journey_start_dates": "journey_start_dates.json",
-            "daily_tasks": "daily_tasks.json"
+            "journey_start_dates": "journey_start_dates.json"
         },
         "defaults": {"journey_schedule": [0, 1, 2, 3, 4, 5, 6], "completion_level": 3}
     }
@@ -44,7 +43,6 @@ JOURNEY_TEMPLATES_FILE = config['files']['journey_templates']
 JOURNEY_ORDER_FILE = config['files']['journey_order']
 JOURNEY_SCHEDULES_FILE = config['files']['journey_schedules']
 JOURNEY_START_DATES_FILE = config['files']['journey_start_dates']
-DAILY_TASKS_FILE = config['files']['daily_tasks']
 
 def load_journeys():
     if os.path.exists(JOURNEYS_FILE):
@@ -108,16 +106,6 @@ def update_app_settings(settings_update):
     config['app'].update(settings_update)
     save_config(config)
 
-def load_daily_tasks():
-    if os.path.exists(DAILY_TASKS_FILE):
-        with open(DAILY_TASKS_FILE, 'r') as f:
-            return json.load(f)
-    return []
-
-def save_daily_tasks(tasks):
-    with open(DAILY_TASKS_FILE, 'w') as f:
-        json.dump(tasks, f, indent=2)
-
 def get_current_month_days():
     now = datetime.now()
     cal = calendar.monthcalendar(now.year, now.month)
@@ -158,7 +146,7 @@ def home(year=None, month=None):
     
     # Calculate missed days for each journey
     missed_days = {}
-    scheduled_days = {}  # New: track which days are scheduled for each journey
+    scheduled_days = {}  # Track which days are scheduled for each journey
     today = date.today()
     
     # Get unique journey names from both daily data and templates
@@ -245,7 +233,7 @@ def home(year=None, month=None):
                          prev_year=prev_year,
                          next_month=next_month,
                          next_year=next_year,
-                         all_journeys=all_journeys,  # Use ordered journeys instead of sorted
+                         all_journeys=all_journeys,
                          templates=templates,
                          schedules=schedules,
                          start_dates=start_dates,
@@ -518,7 +506,7 @@ def toggle_journey():
         data = request.get_json()
         journey_name = data.get('journey')
         date_key = data.get('date_key')
-        level = data.get('level')  # New: support for completion levels (0-3)
+        level = data.get('level')  # Support for completion levels (0-3)
         
         if not journey_name or not date_key:
             return jsonify({'success': False, 'error': 'Missing required fields'})
@@ -725,201 +713,6 @@ def rename_journey(journey_name):
     
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
-
-# Daily Task Tracker Routes
-@app.route('/daily_tasks')
-def daily_tasks():
-    """Main daily tasks page with list view only"""
-    tasks = load_daily_tasks()
-    app_settings = get_app_settings()
-    
-    # Get unique journey names for the class dropdown
-    templates = load_journey_templates()
-    
-    # Sort tasks by date (newest first)
-    sorted_tasks = sorted(tasks, key=lambda x: x['date'], reverse=True)
-    
-    # Group tasks by date and convert dates to dd/mm/yyyy format for display
-    tasks_by_date = {}
-    display_dates = {}  # Maps internal date to display format
-    
-    for task in sorted_tasks:
-        date_key = task['date']  # Internal format: yyyy-mm-dd
-        
-        # Convert to dd/mm/yyyy for display
-        try:
-            year, month, day = date_key.split('-')
-            display_date = f"{day}/{month}/{year}"
-        except:
-            display_date = date_key  # Fallback to original
-        
-        display_dates[date_key] = display_date
-        
-        if display_date not in tasks_by_date:
-            tasks_by_date[display_date] = []
-        tasks_by_date[display_date].append(task)
-    
-    # Get ordered dates for template (display format)
-    ordered_dates = list(tasks_by_date.keys())
-    
-    return render_template('daily_tasks_list.html',
-                         tasks=sorted_tasks,
-                         tasks_by_date=tasks_by_date,
-                         ordered_dates=ordered_dates,
-                         journey_classes=templates,
-                         settings=app_settings,
-                         config=config)
-
-@app.route('/add_daily_task', methods=['POST'])
-def add_daily_task():
-    """Add a new daily task"""
-    try:
-        data = request.get_json()
-        task_name = data.get('task', '').strip()
-        description = data.get('description', '').strip()
-        journey_class = data.get('journey_class', '').strip()
-        task_date = data.get('date', date.today().strftime('%d/%m/%Y'))
-        
-        # Convert date from dd/mm/yyyy to yyyy-mm-dd for internal storage
-        if '/' in task_date:
-            day, month, year = task_date.split('/')
-            internal_date = f"{year}-{month:0>2}-{day:0>2}"
-        else:
-            internal_date = task_date
-        
-        if not task_name:
-            return jsonify({'success': False, 'error': 'Task name is required'})
-        
-        tasks = load_daily_tasks()
-        
-        # Create new task
-        new_task = {
-            'id': len(tasks) + 1,  # Simple ID system
-            'task': task_name,
-            'description': description,
-            'journey_class': journey_class,
-            'date': internal_date,
-            'timestamp': datetime.now().isoformat()
-        }
-        
-        tasks.append(new_task)
-        save_daily_tasks(tasks)
-        
-        # If journey_class is specified, also mark it as completed in the main journey tracker
-        if journey_class:
-            journeys = load_journeys()
-            if internal_date not in journeys:
-                journeys[internal_date] = {}
-            # Set to level 3 (dark green) when adding a task
-            journeys[internal_date][journey_class] = config['defaults']['completion_level']
-            save_journeys(journeys)
-        
-        return jsonify({'success': True, 'task': new_task})
-    
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/delete_daily_task/<int:task_id>', methods=['POST'])
-def delete_daily_task(task_id):
-    """Delete a daily task"""
-    try:
-        tasks = load_daily_tasks()
-        
-        # Find and remove the task
-        task_to_remove = None
-        for i, task in enumerate(tasks):
-            if task['id'] == task_id:
-                task_to_remove = tasks.pop(i)
-                break
-        
-        if not task_to_remove:
-            return jsonify({'success': False, 'error': 'Task not found'})
-        
-        save_daily_tasks(tasks)
-        
-        # If this task was linked to a journey class, we might want to unmark it
-        # For now, we'll leave the journey completion as is since other tasks might have contributed
-        
-        return jsonify({'success': True})
-    
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/edit_daily_task/<int:task_id>', methods=['POST'])
-def edit_daily_task(task_id):
-    """Edit a daily task"""
-    try:
-        data = request.get_json()
-        task_name = data.get('task', '').strip()
-        description = data.get('description', '').strip()
-        journey_class = data.get('journey_class', '').strip()
-        
-        if not task_name:
-            return jsonify({'success': False, 'error': 'Task name is required'})
-        
-        tasks = load_daily_tasks()
-        
-        # Find and update the task
-        task_updated = False
-        for task in tasks:
-            if task['id'] == task_id:
-                old_journey_class = task.get('journey_class', '')
-                task['task'] = task_name
-                task['description'] = description
-                task['journey_class'] = journey_class
-                task_updated = True
-                
-                # Handle journey class changes
-                if old_journey_class != journey_class:
-                    # This is complex - for now we'll leave journey completions as is
-                    pass
-                
-                break
-        
-        if not task_updated:
-            return jsonify({'success': False, 'error': 'Task not found'})
-        
-        save_daily_tasks(tasks)
-        
-        return jsonify({'success': True})
-    
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/journey_tasks/<journey_name>')
-def journey_tasks(journey_name):
-    """View all tasks for a specific journey"""
-    tasks = load_daily_tasks()
-    app_settings = get_app_settings()
-    
-    # Filter tasks for this journey
-    journey_tasks = [task for task in tasks if task.get('journey_class') == journey_name]
-    
-    # Sort by date (newest first)
-    journey_tasks = sorted(journey_tasks, key=lambda x: x['date'], reverse=True)
-    
-    # Group by date and convert to dd/mm/yyyy format for display
-    tasks_by_date = {}
-    for task in journey_tasks:
-        date_key = task['date']  # Internal format: yyyy-mm-dd
-        
-        # Convert to dd/mm/yyyy for display
-        try:
-            year, month, day = date_key.split('-')
-            display_date = f"{day}/{month}/{year}"
-        except:
-            display_date = date_key  # Fallback to original
-        
-        if display_date not in tasks_by_date:
-            tasks_by_date[display_date] = []
-        tasks_by_date[display_date].append(task)
-    
-    return render_template('journey_tasks.html',
-                         journey_name=journey_name,
-                         tasks=journey_tasks,
-                         tasks_by_date=tasks_by_date,
-                         settings=app_settings,
-                         config=config)
 
 if __name__ == '__main__':
     app_config = config.get('app', {})
