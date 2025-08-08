@@ -5,16 +5,34 @@
     <h2>Settings</h2>
     
     <form method="POST">
+        <!-- Theme -->
         <div class="form-group">
             <label for="theme">Theme:</label>
             <select name="theme" id="theme">
-                <option value="dark" {% if settings.theme == 'dark' %}selected{% endif %}>
-                    Dark Mode
-                </option>
-                <option value="light" {% if settings.theme == 'light' %}selected{% endif %}>
-                    Light Mode
-                </option>
+                <option value="dark" {% if settings.theme == 'dark' %}selected{% endif %}>Dark Mode</option>
+                <option value="light" {% if settings.theme == 'light' %}selected{% endif %}>Light Mode</option>
             </select>
+        </div>
+
+        <!-- Completion Colors -->
+        <div class="form-group">
+            <label for="level_1_color">Completion Level 1 (Light Green):</label>
+            <input type="color" id="level_1_color" name="level_1_color" value="{{ config.colors.completion_levels.level_1 }}">
+        </div>
+
+        <div class="form-group">
+            <label for="level_2_color">Completion Level 2 (Medium Green):</label>
+            <input type="color" id="level_2_color" name="level_2_color" value="{{ config.colors.completion_levels.level_2 }}">
+        </div>
+
+        <div class="form-group">
+            <label for="level_3_color">Completion Level 3 (Dark Green):</label>
+            <input type="color" id="level_3_color" name="level_3_color" value="{{ config.colors.completion_levels.level_3 }}">
+        </div>
+
+        <div class="form-group">
+            <label for="error_color">Error / Red Color:</label>
+            <input type="color" id="error_color" name="error_color" value="{{ config.colors.error }}">
         </div>
         
         <div class="form-group">
@@ -27,7 +45,7 @@
         <h4>Configuration Info:</h4>
         <ul style="margin: 10px 0; padding-left: 20px; color: var(--text-secondary);">
             <li><strong>Theme:</strong> Choose between dark and light appearance modes</li>
-            <li><strong>Colors:</strong> Completion levels and state colors can be customized in config.json</li>
+            <li><strong>Colors:</strong> Completion levels and error colors can be customized here</li>
             <li><strong>App Settings:</strong> Port, debug mode, and file paths are configurable in config.json</li>
         </ul>
         
@@ -41,6 +59,7 @@
                 <div>Level 1: <span style="color: {{ config.colors.completion_levels.level_1 }}; font-weight: bold;">{{ config.colors.completion_levels.level_1 }}</span></div>
                 <div>Level 2: <span style="color: {{ config.colors.completion_levels.level_2 }}; font-weight: bold;">{{ config.colors.completion_levels.level_2 }}</span></div>
                 <div>Level 3: <span style="color: {{ config.colors.completion_levels.level_3 }}; font-weight: bold;">{{ config.colors.completion_levels.level_3 }}</span></div>
+                <div>Error: <span style="color: {{ config.colors.error }}; font-weight: bold;">{{ config.colors.error }}</span></div>
             </div>
         </div>
         {% endif %}
