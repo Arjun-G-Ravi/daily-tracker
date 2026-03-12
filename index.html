@@ -1014,43 +1014,47 @@
                 const saveButton = document.createElement('button');
                 saveButton.className = 'task-log-save-btn';
                 saveButton.textContent = 'Save';
-                saveButton.onclick = async () => {
-                    const minutesValue = Number(minutesInput.value || 0);
-                    if (minutesValue > 0) {
-                        await addManualSeconds(task.id, minutesValue * 60);
-                        minutesInput.value = '';
-                        fromInput.value = '';
-                        toInput.value = '';
-                        timeLogControls.classList.remove('open');
-                        return;
-                    }
-
-                    const secondsFromRange = getRangeSeconds(fromInput.value, toInput.value);
-                    if (secondsFromRange > 0) {
-                        await addManualSeconds(task.id, secondsFromRange);
-                        minutesInput.value = '';
-                        fromInput.value = '';
-                        toInput.value = '';
-                        timeLogControls.classList.remove('open');
-                        return;
-                    }
-
-                    alert('Enter minutes, or choose valid From and To times.');
-                };
 
                 const cancelButton = document.createElement('button');
                 cancelButton.className = 'task-log-cancel-btn';
                 cancelButton.textContent = 'Cancel';
-                cancelButton.onclick = () => {
+
+                function openPanel() {
+                    timeLogControls.classList.add('open');
+                    startStopButton.style.display = 'none';
+                    deleteButton.style.display = 'none';
+                    addToggleButton.style.display = 'none';
+                }
+
+                function closePanel() {
                     minutesInput.value = '';
                     fromInput.value = '';
                     toInput.value = '';
                     timeLogControls.classList.remove('open');
+                    startStopButton.style.display = '';
+                    deleteButton.style.display = '';
+                    addToggleButton.style.display = '';
+                }
+
+                addToggleButton.onclick = openPanel;
+
+                saveButton.onclick = async () => {
+                    const minutesValue = Number(minutesInput.value || 0);
+                    if (minutesValue > 0) {
+                        await addManualSeconds(task.id, minutesValue * 60);
+                        closePanel();
+                        return;
+                    }
+                    const secondsFromRange = getRangeSeconds(fromInput.value, toInput.value);
+                    if (secondsFromRange > 0) {
+                        await addManualSeconds(task.id, secondsFromRange);
+                        closePanel();
+                        return;
+                    }
+                    alert('Enter minutes, or choose valid From and To times.');
                 };
 
-                addToggleButton.onclick = () => {
-                    timeLogControls.classList.toggle('open');
-                };
+                cancelButton.onclick = closePanel;
 
                 timeLogControls.appendChild(minutesInput);
                 timeLogControls.appendChild(fromInput);
