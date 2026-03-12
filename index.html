@@ -381,7 +381,7 @@
             height: 240px;
             position: relative;
             display: flex;
-            align-items: flex-end;
+            align-items: stretch;
             gap: 6px;
             border-left: 1px solid #ddd;
             border-bottom: 1px solid #ddd;
@@ -422,6 +422,83 @@
             right: 0;
             border-top: 1px dashed #e8e8e8;
             pointer-events: none;
+        }
+        .chart-bar-col {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: stretch;
+        }
+        .chart-bar-col:hover .chart-bar {
+            filter: brightness(1.1);
+        }
+        .chart-bar-total {
+            font-size: 9px;
+            color: #888;
+            text-align: center;
+            line-height: 1.2;
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        #chartTooltip {
+            position: fixed;
+            background: rgba(24,24,32,0.96);
+            color: #fff;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 3000;
+            display: none;
+            min-width: 150px;
+            max-width: 250px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+            line-height: 1.6;
+        }
+        #chartTooltip.visible {
+            display: block;
+        }
+        .ct-title {
+            font-weight: 700;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+            padding-bottom: 5px;
+            margin-bottom: 6px;
+        }
+        .ct-row {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 2px;
+        }
+        .ct-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .ct-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .ct-time {
+            color: #bbb;
+            white-space: nowrap;
+            padding-left: 8px;
+            font-variant-numeric: tabular-nums;
+        }
+        .ct-total {
+            border-top: 1px solid rgba(255,255,255,0.15);
+            padding-top: 5px;
+            margin-top: 4px;
+            color: #ccc;
+            font-size: 11px;
         }
         .monthly-overview {
             list-style: none;
@@ -662,6 +739,228 @@
             text-align: center;
             padding: 20px 0;
         }
+
+        /* ── Daily Tasks Tab ───────────────────── */
+        .dt-section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 20px 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .dt-section-title:first-child { margin-top: 0; }
+        .dt-section-badge {
+            background: #e9ecef;
+            color: #666;
+            border-radius: 20px;
+            padding: 1px 8px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .dt-add-form {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 14px;
+        }
+        .dt-add-form input[type="text"] {
+            flex: 1;
+            min-width: 120px;
+            padding: 8px 10px;
+        }
+        .dt-add-form input[type="number"] {
+            width: 80px;
+            flex: 0 0 80px;
+            padding: 8px 10px;
+        }
+        .dt-add-form select {
+            height: 38px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 0 8px;
+            background: white;
+            font-size: 14px;
+        }
+        .dt-add-form input[type="color"] {
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            flex: 0 0 38px;
+        }
+        .dt-add-form label {
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap;
+        }
+        .dt-add-form .dt-field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .dt-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        .dt-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            transition: box-shadow 0.15s;
+        }
+        .dt-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        }
+        .dt-color-bar {
+            width: 4px;
+            min-width: 4px;
+            height: 36px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .dt-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .dt-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .dt-meta {
+            font-size: 11px;
+            color: #999;
+            margin-top: 2px;
+        }
+        .dt-weekly-bar-wrap {
+            width: 70px;
+            flex: 0 0 70px;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .dt-weekly-bar {
+            height: 100%;
+            border-radius: 999px;
+            background: #28a745;
+            min-width: 2px;
+            transition: width 0.3s;
+        }
+        .dt-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .dt-edit-btn {
+            background: #e9ecef;
+            color: #555;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .dt-edit-btn:hover { background: #dee2e6; }
+        .dt-del-btn {
+            background: none;
+            border: 1px solid #ddd;
+            color: #aaa;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .dt-del-btn:hover { background: #fff0f0; color: #dc3545; border-color: #dc3545; }
+        .dt-empty {
+            color: #bbb;
+            font-size: 13px;
+            padding: 16px 0;
+            text-align: center;
+        }
+
+        /* ── Daily Tasks panel under weekly graph ─ */
+        .daily-tasks-panel {
+            margin-top: 18px;
+            border-top: 1px solid #eee;
+            padding-top: 14px;
+        }
+        .daily-tasks-panel-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        .dtp-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .dtp-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 10px;
+            border-radius: 7px;
+            background: #fff;
+            border: 1px solid #eee;
+        }
+        .dtp-check {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            flex-shrink: 0;
+            accent-color: #28a745;
+        }
+        .dtp-color-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .dtp-name {
+            flex: 1;
+            font-size: 13px;
+            color: #333;
+        }
+        .dtp-name.done {
+            text-decoration: line-through;
+            color: #aaa;
+        }
+        .dtp-mins-input {
+            width: 62px;
+            padding: 4px 6px;
+            font-size: 12px;
+            flex: 0 0 62px;
+        }
+        .dtp-progress {
+            font-size: 11px;
+            color: #888;
+            white-space: nowrap;
+        }
+        .dtp-progress.complete {
+            color: #28a745;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -683,6 +982,7 @@
                 <div class="tabs">
                     <button class="tab-button active" onclick="switchTab('weekly', this)">Weekly</button>
                     <button class="tab-button" onclick="switchTab('monthly', this)">Monthly</button>
+                    <button class="tab-button" onclick="switchTab('tasks', this)">Tasks</button>
                     <button class="tab-button" onclick="switchTab('settings', this)">Settings</button>
                 </div>
 
@@ -710,6 +1010,64 @@
                         </div>
                         <div class="calendar-grid" id="calendarGrid"></div>
                     </div>
+                </div>
+
+                <div id="tasks" class="tab-content">
+                    <!-- Daily (repeating) tasks -->
+                    <div class="dt-section-title">Daily Tasks <span class="dt-section-badge" id="dtDailyBadge">0</span></div>
+                    <div class="dt-add-form" id="dtDailyAddForm">
+                        <div class="dt-field-group">
+                            <label>Name</label>
+                            <input type="text" id="dtDailyName" placeholder="Task name" style="width:140px">
+                        </div>
+                        <div class="dt-field-group">
+                            <label>Kind</label>
+                            <select id="dtDailyKind">
+                                <option value="checkbox">Checkbox</option>
+                                <option value="timed">Timed</option>
+                            </select>
+                        </div>
+                        <div class="dt-field-group" id="dtDailyTargetGroup">
+                            <label>Target (min)</label>
+                            <input type="number" min="1" id="dtDailyTarget" placeholder="e.g. 30">
+                        </div>
+                        <div class="dt-field-group">
+                            <label>Weekly target (min)</label>
+                            <input type="number" min="1" id="dtDailyWeeklyTarget" placeholder="e.g. 150">
+                        </div>
+                        <div class="dt-field-group">
+                            <label>Color</label>
+                            <input type="color" id="dtDailyColor" value="#28a745">
+                        </div>
+                        <button onclick="addDailyTask('daily')">Add</button>
+                    </div>
+                    <ul class="dt-list" id="dtDailyList"></ul>
+
+                    <!-- No-expiry tasks -->
+                    <div class="dt-section-title" style="margin-top:24px">No-Expiry Tasks <span class="dt-section-badge" id="dtNoExpiryBadge">0</span></div>
+                    <div class="dt-add-form">
+                        <div class="dt-field-group">
+                            <label>Name</label>
+                            <input type="text" id="dtNoExpiryName" placeholder="Task name" style="width:140px">
+                        </div>
+                        <div class="dt-field-group">
+                            <label>Kind</label>
+                            <select id="dtNoExpiryKind">
+                                <option value="checkbox">Checkbox</option>
+                                <option value="timed">Timed</option>
+                            </select>
+                        </div>
+                        <div class="dt-field-group" id="dtNoExpiryTargetGroup">
+                            <label>Target (min)</label>
+                            <input type="number" min="1" id="dtNoExpiryTarget" placeholder="e.g. 60">
+                        </div>
+                        <div class="dt-field-group">
+                            <label>Color</label>
+                            <input type="color" id="dtNoExpiryColor" value="#fd7e14">
+                        </div>
+                        <button onclick="addDailyTask('no_expiry')">Add</button>
+                    </div>
+                    <ul class="dt-list" id="dtNoExpiryList"></ul>
                 </div>
 
                 <div id="settings" class="tab-content">
@@ -752,9 +1110,15 @@
                         <div class="chart-labels-row" id="chartLabelsRow"></div>
                     </div>
                 </div>
+                <div class="daily-tasks-panel" id="dailyTasksPanel">
+                    <div class="daily-tasks-panel-title">Today's Tasks</div>
+                    <ul class="dtp-list" id="dtpList"></ul>
+                </div>
             </div>
         </div>
     </div>
+
+    <div id="chartTooltip"></div>
 
     <!-- Day logs modal -->
     <div class="modal-overlay" id="dayLogsModal">
@@ -784,6 +1148,7 @@
         let activeTab = 'weekly';
         let calendarYear = null;
         let calendarMonth = null;
+        let dailyTasksList = [];  // loaded from API
 
         function switchTab(tabName, buttonElement) {
             document.querySelectorAll('.tab-content').forEach(tab => {
@@ -802,8 +1167,12 @@
         }
 
         async function loadTasks() {
-            const response = await fetch('/api/tasks');
+            const [response, dtResponse] = await Promise.all([
+                fetch('/api/tasks'),
+                fetch('/api/daily_tasks'),
+            ]);
             const data = await response.json();
+            const dtData = await dtResponse.json();
 
             tasks.weekly = data.weekly || [];
             tasks.monthly = data.monthly || [];
@@ -815,6 +1184,7 @@
             weeklyChartMaxSeconds = data.weekly_chart_max_seconds || (14 * 3600);
             dayStartHour = Number(data.day_start_hour ?? 2);
             currentLogicalDate = data.current_logical_date || '';
+            dailyTasksList = dtData.tasks || [];
 
             if (calendarYear === null) {
                 const todayParts = (data.current_logical_date || '').split('-');
@@ -829,6 +1199,8 @@
             renderCalendar();
             renderSettings();
             renderWeeklyChart();
+            renderDailyTasksTab();
+            renderDailyTasksPanel();
         }
 
         function formatDisplayDate(dateIso) {
@@ -1058,6 +1430,70 @@
             todayCircle.style.background = `conic-gradient(${segments.join(', ')})`;
         }
 
+        function buildColorTaskMap() {
+            const map = {};
+            [...tasks.weekly, ...tasks.monthly].forEach(t => {
+                const c = (t.task_color || '#007bff').toLowerCase();
+                if (!map[c]) map[c] = [];
+                if (!map[c].includes(t.name)) map[c].push(t.name);
+            });
+            return map;
+        }
+
+        function formatHoursMinutes(seconds) {
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            if (hrs > 0 && mins > 0) return `${hrs}h ${mins}m`;
+            if (hrs > 0) return `${hrs}h`;
+            if (mins > 0) return `${mins}m`;
+            return '<1m';
+        }
+
+        function formatShortDate(dateIso) {
+            if (!dateIso) return '--';
+            const d = new Date(`${dateIso}T00:00:00`);
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        }
+
+        function showChartTooltip(title, totalSeconds, colors) {
+            const tooltip = document.getElementById('chartTooltip');
+            const colorTaskMap = buildColorTaskMap();
+            let html = `<div class="ct-title">${title}</div>`;
+            if (Array.isArray(colors) && colors.length > 0) {
+                colors.forEach(ce => {
+                    const names = colorTaskMap[(ce.color || '').toLowerCase()] || [];
+                    const label = names.length > 0 ? names.join(', ') : ce.color;
+                    html += `<div class="ct-row">
+                        <div class="ct-dot" style="background:${ce.color}"></div>
+                        <span class="ct-name">${label}</span>
+                        <span class="ct-time">${formatHoursMinutes(ce.seconds)}</span>
+                    </div>`;
+                });
+            }
+            if (totalSeconds > 0) {
+                html += `<div class="ct-total">Total: ${formatHoursMinutes(totalSeconds)}</div>`;
+            }
+            tooltip.innerHTML = html;
+            tooltip.classList.add('visible');
+        }
+
+        function moveChartTooltip(e) {
+            const tooltip = document.getElementById('chartTooltip');
+            if (!tooltip.classList.contains('visible')) return;
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            let x = e.clientX + 16;
+            let y = e.clientY - 12;
+            if (x + 260 > vw) x = e.clientX - 260;
+            if (y + 200 > vh) y = e.clientY - 200;
+            tooltip.style.left = `${x}px`;
+            tooltip.style.top = `${y}px`;
+        }
+
+        function hideChartTooltip() {
+            document.getElementById('chartTooltip').classList.remove('visible');
+        }
+
         function renderWeeklyChart() {
             const CHART_AREA_PX = 240;
             const MAX_HOURS = 14;
@@ -1092,9 +1528,20 @@
                 const clampedTotal = Math.min(total, maxSeconds);
                 const barPx = total > 0 ? Math.max(Math.round((clampedTotal / maxSeconds) * CHART_AREA_PX), 4) : 0;
 
+                const col = document.createElement('div');
+                col.className = 'chart-bar-col';
+
+                if (total > 0) {
+                    const tl = document.createElement('div');
+                    tl.className = 'chart-bar-total';
+                    tl.textContent = formatHoursMinutes(total);
+                    col.appendChild(tl);
+                }
+
                 const bar = document.createElement('div');
                 bar.className = 'chart-bar';
                 bar.style.height = `${barPx}px`;
+                bar.style.flex = 'none';
 
                 if (clampedTotal > 0 && Array.isArray(day.colors) && day.colors.length > 0) {
                     day.colors.forEach(colorEntry => {
@@ -1107,7 +1554,15 @@
                         bar.appendChild(segment);
                     });
                 }
-                barsArea.appendChild(bar);
+                col.appendChild(bar);
+
+                if (total > 0) {
+                    const tooltipTitle = `${day.weekday || ''}, ${formatShortDate(day.date)}`;
+                    col.addEventListener('mouseenter', e => { showChartTooltip(tooltipTitle, total, day.colors); moveChartTooltip(e); });
+                    col.addEventListener('mousemove', moveChartTooltip);
+                    col.addEventListener('mouseleave', hideChartTooltip);
+                }
+                barsArea.appendChild(col);
 
                 const label = document.createElement('div');
                 label.className = 'chart-label-cell';
@@ -1338,10 +1793,20 @@
                 const clampedTotal = Math.min(total, maxSeconds);
                 const barPx = total > 0 ? Math.max(Math.round((clampedTotal / maxSeconds) * CHART_AREA_PX), 4) : 0;
 
+                const col = document.createElement('div');
+                col.className = 'chart-bar-col';
+
+                if (total > 0) {
+                    const tl = document.createElement('div');
+                    tl.className = 'chart-bar-total';
+                    tl.textContent = formatHoursMinutes(total);
+                    col.appendChild(tl);
+                }
+
                 const bar = document.createElement('div');
                 bar.className = 'chart-bar';
                 bar.style.height = `${barPx}px`;
-                bar.title = `${item.label || item.month_key}: ${formatTime(total)}`;
+                bar.style.flex = 'none';
 
                 if (clampedTotal > 0 && Array.isArray(item.colors) && item.colors.length > 0) {
                     item.colors.forEach(colorEntry => {
@@ -1356,8 +1821,15 @@
                 } else if (total > 0) {
                     bar.style.background = '#007bff';
                 }
+                col.appendChild(bar);
 
-                barsArea.appendChild(bar);
+                if (total > 0) {
+                    const tooltipTitle = item.label || item.month_key || '--';
+                    col.addEventListener('mouseenter', e => { showChartTooltip(tooltipTitle, total, item.colors); moveChartTooltip(e); });
+                    col.addEventListener('mousemove', moveChartTooltip);
+                    col.addEventListener('mouseleave', hideChartTooltip);
+                }
+                barsArea.appendChild(col);
 
                 const label = document.createElement('div');
                 label.className = 'chart-label-cell';
@@ -1620,6 +2092,227 @@
 
         setInterval(tickRunningTimers, 1000);
         loadTasks();
+
+        // ── Daily Tasks Tab ─────────────────────────────────────────────────
+
+        // Show/hide target field depending on kind select
+        function wireKindSelect(kindId, targetGroupId) {
+            const sel = document.getElementById(kindId);
+            if (!sel) return;
+            function toggle() {
+                const grp = document.getElementById(targetGroupId);
+                if (grp) grp.style.display = sel.value === 'timed' ? '' : 'none';
+            }
+            sel.addEventListener('change', toggle);
+            toggle();
+        }
+        wireKindSelect('dtDailyKind', 'dtDailyTargetGroup');
+        wireKindSelect('dtNoExpiryKind', 'dtNoExpiryTargetGroup');
+
+        async function addDailyTask(category) {
+            const isNoExpiry = category === 'no_expiry';
+            const nameEl = document.getElementById(isNoExpiry ? 'dtNoExpiryName' : 'dtDailyName');
+            const kindEl = document.getElementById(isNoExpiry ? 'dtNoExpiryKind' : 'dtDailyKind');
+            const targetEl = document.getElementById(isNoExpiry ? 'dtNoExpiryTarget' : 'dtDailyTarget');
+            const weeklyTargetEl = document.getElementById(isNoExpiry ? null : 'dtDailyWeeklyTarget');
+            const colorEl = document.getElementById(isNoExpiry ? 'dtNoExpiryColor' : 'dtDailyColor');
+
+            const name = nameEl.value.trim();
+            if (!name) { nameEl.focus(); return; }
+
+            const payload = {
+                name,
+                category,
+                task_kind: kindEl.value,
+                target_minutes: kindEl.value === 'timed' && targetEl.value ? Number(targetEl.value) : null,
+                weekly_target_minutes: weeklyTargetEl && weeklyTargetEl.value ? Number(weeklyTargetEl.value) : null,
+                color: colorEl.value || '#28a745',
+                no_expiry: isNoExpiry ? true : false,
+            };
+
+            await fetch('/api/daily_tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            nameEl.value = '';
+            if (targetEl) targetEl.value = '';
+            if (weeklyTargetEl) weeklyTargetEl.value = '';
+            await loadTasks();
+        }
+
+        async function deleteDailyTask(id) {
+            if (!confirm('Delete this task?')) return;
+            await fetch(`/api/daily_tasks/${id}`, { method: 'DELETE' });
+            await loadTasks();
+        }
+
+        function renderDailyTasksTab() {
+            const daily = dailyTasksList.filter(t => !t.no_expiry);
+            const noExpiry = dailyTasksList.filter(t => t.no_expiry);
+
+            document.getElementById('dtDailyBadge').textContent = daily.length;
+            document.getElementById('dtNoExpiryBadge').textContent = noExpiry.length;
+
+            renderDtList(daily, 'dtDailyList');
+            renderDtList(noExpiry, 'dtNoExpiryList');
+        }
+
+        function renderDtList(list, containerId) {
+            const ul = document.getElementById(containerId);
+            ul.innerHTML = '';
+            if (list.length === 0) {
+                const empty = document.createElement('li');
+                empty.className = 'dt-empty';
+                empty.textContent = 'No tasks yet. Add one above.';
+                ul.appendChild(empty);
+                return;
+            }
+            list.forEach(task => {
+                const li = document.createElement('li');
+                li.className = 'dt-item';
+
+                const colorBar = document.createElement('div');
+                colorBar.className = 'dt-color-bar';
+                colorBar.style.background = task.color || '#007bff';
+
+                const info = document.createElement('div');
+                info.className = 'dt-info';
+
+                const name = document.createElement('div');
+                name.className = 'dt-name';
+                name.textContent = task.name;
+
+                const meta = document.createElement('div');
+                meta.className = 'dt-meta';
+                const kindLabel = task.task_kind === 'timed' ? `Timed${task.target_minutes ? ' · ' + task.target_minutes + 'min/day' : ''}` : 'Checkbox';
+                const weeklyLabel = task.weekly_target_minutes ? ` · ${task.weekly_target_minutes}min/week` : '';
+                meta.textContent = kindLabel + weeklyLabel;
+
+                info.appendChild(name);
+                info.appendChild(meta);
+
+                if (task.weekly_target_minutes) {
+                    const weeklyDone = task.weekly_done_minutes || 0;
+                    const pct = Math.min(100, (weeklyDone / task.weekly_target_minutes) * 100);
+                    const barWrap = document.createElement('div');
+                    barWrap.className = 'dt-weekly-bar-wrap';
+                    const bar = document.createElement('div');
+                    bar.className = 'dt-weekly-bar';
+                    bar.style.background = task.color || '#28a745';
+                    bar.style.width = pct + '%';
+                    barWrap.appendChild(bar);
+                    info.appendChild(barWrap);
+                    const wLabel = document.createElement('div');
+                    wLabel.className = 'dt-meta';
+                    wLabel.textContent = `This week: ${weeklyDone}/${task.weekly_target_minutes} min`;
+                    info.appendChild(wLabel);
+                }
+
+                const actions = document.createElement('div');
+                actions.className = 'dt-actions';
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'dt-del-btn';
+                delBtn.textContent = 'Delete';
+                delBtn.onclick = () => deleteDailyTask(task.id);
+
+                actions.appendChild(delBtn);
+                li.appendChild(colorBar);
+                li.appendChild(info);
+                li.appendChild(actions);
+                ul.appendChild(li);
+            });
+        }
+
+        // ── Daily Tasks Panel (under weekly graph) ──────────────────────────
+
+        function renderDailyTasksPanel() {
+            const panel = document.getElementById('dtpList');
+            panel.innerHTML = '';
+
+            if (dailyTasksList.length === 0) {
+                const empty = document.createElement('li');
+                empty.style.cssText = 'color:#bbb;font-size:12px;padding:8px 2px;';
+                empty.textContent = 'No daily tasks. Add some in Tasks tab.';
+                panel.appendChild(empty);
+                return;
+            }
+
+            dailyTasksList.forEach(task => {
+                const li = document.createElement('li');
+                li.className = 'dtp-item';
+
+                const dot = document.createElement('div');
+                dot.className = 'dtp-color-dot';
+                dot.style.background = task.color || '#007bff';
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'dtp-name' + (task.today_done ? ' done' : '');
+                nameSpan.textContent = task.name;
+
+                li.appendChild(dot);
+
+                if (task.task_kind === 'checkbox') {
+                    const chk = document.createElement('input');
+                    chk.type = 'checkbox';
+                    chk.className = 'dtp-check';
+                    chk.checked = !!task.today_done;
+                    chk.onchange = async () => {
+                        await fetch(`/api/daily_tasks/${task.id}/complete`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ done: chk.checked }),
+                        });
+                        await loadTasks();
+                    };
+                    li.appendChild(chk);
+                    li.appendChild(nameSpan);
+                } else {
+                    // timed task
+                    const chk = document.createElement('input');
+                    chk.type = 'checkbox';
+                    chk.className = 'dtp-check';
+                    chk.checked = !!task.today_done;
+
+                    const minsInput = document.createElement('input');
+                    minsInput.type = 'number';
+                    minsInput.min = '0';
+                    minsInput.className = 'dtp-mins-input';
+                    minsInput.placeholder = 'min';
+                    minsInput.value = task.today_done_minutes != null ? task.today_done_minutes : '';
+                    minsInput.title = 'Minutes done today';
+
+                    const target = task.target_minutes;
+                    const done = task.today_done_minutes || 0;
+                    const progressSpan = document.createElement('span');
+                    progressSpan.className = 'dtp-progress' + (target && done >= target ? ' complete' : '');
+                    progressSpan.textContent = target ? `${done}/${target}m` : `${done}m`;
+
+                    async function saveTimed() {
+                        const mins = Number(minsInput.value || 0);
+                        const isDone = target ? mins >= target : chk.checked;
+                        await fetch(`/api/daily_tasks/${task.id}/complete`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ done: isDone, done_minutes: mins }),
+                        });
+                        await loadTasks();
+                    }
+
+                    chk.onchange = saveTimed;
+                    minsInput.addEventListener('change', saveTimed);
+
+                    li.appendChild(chk);
+                    li.appendChild(nameSpan);
+                    li.appendChild(minsInput);
+                    li.appendChild(progressSpan);
+                }
+
+                panel.appendChild(li);
+            });
+        }
     </script>
 </body>
 </html>

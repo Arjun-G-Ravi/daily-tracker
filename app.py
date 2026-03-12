@@ -69,6 +69,36 @@ def init_db():
         )
         '''
     )
+    db.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS daily_tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'daily',
+            task_kind TEXT NOT NULL DEFAULT 'checkbox',
+            target_minutes INTEGER,
+            weekly_target_minutes INTEGER,
+            color TEXT NOT NULL DEFAULT '#007bff',
+            no_expiry INTEGER NOT NULL DEFAULT 0,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        '''
+    )
+    db.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS daily_task_completions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            daily_task_id INTEGER NOT NULL,
+            completion_date TEXT NOT NULL,
+            done INTEGER NOT NULL DEFAULT 0,
+            done_minutes INTEGER,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(daily_task_id, completion_date),
+            FOREIGN KEY(daily_task_id) REFERENCES daily_tasks(id) ON DELETE CASCADE
+        )
+        '''
+    )
     columns = db.execute("PRAGMA table_info(tasks)").fetchall()
     column_names = {column['name'] for column in columns}
     if 'task_color' not in column_names:
@@ -763,6 +793,188 @@ def get_monthly_calendar():
         'days': days,
         'today': logical_today.isoformat(),
     })
+
+
+# ── Daily Tasks ────────────────────────────────────────────────────────────────
+
+def daily_task_to_dict(row):
+    return {
+        'id': int(row['id']),
+        'name': row['name'],
+        'category': row['category'],
+        'task_kind': row['task_kind'],
+        'target_minutes': row['target_minutes'],
+        'weekly_target_minutes': row['weekly_target_minutes'],
+        'color': row['color'] or DEFAULT_TASK_COLOR,
+        'no_expiry': bool(row['no_expiry']),
+        'sort_order': int(row['sort_order']),
+    }
+
+
+@app.route('/api/daily_tasks', methods=['GET'])
+def get_daily_tasks():
+    db = get_db()
+    day_start_hour = get_day_start_hour()
+    today = get_logical_now(day_start_hour).date().isoformat()
+
+    rows = db.execute(
+        'SELECT * FROM daily_tasks ORDER BY sort_order, id'
+    ).fetchall()
+
+    task_ids = [int(r['id']) for r in rows]
+    completions = {}
+    if task_ids:
+        placeholders = ','.join('?' * len(task_ids))
+        comp_rows = db.execute(
+            f'SELECT * FROM daily_task_completions WHERE daily_task_id IN ({placeholders}) AND completion_date = ?',
+            task_ids + [today],
+        ).fetchall()
+        for c in comp_rows:
+            completions[int(c['daily_task_id'])] = {
+                'done': bool(c['done']),
+                'done_minutes': c['done_minutes'],
+            }
+
+    # weekly totals for each task (current Sun-Sat week)
+    today_date = get_logical_now(day_start_hour).date()
+    days_since_sunday = (today_date.weekday() + 1) % 7
+    week_start = (today_date - timedelta(days=days_since_sunday)).isoformat()
+    week_end = (today_date + timedelta(days=6 - days_since_sunday)).isoformat()
+    weekly_totals = {}
+    if task_ids:
+        placeholders = ','.join('?' * len(task_ids))
+        wt_rows = db.execute(
+            f'''SELECT daily_task_id, COALESCE(SUM(done_minutes), 0) AS total_mins
+                FROM daily_task_completions
+                WHERE daily_task_id IN ({placeholders})
+                  AND completion_date BETWEEN ? AND ?
+                  AND done = 1
+                GROUP BY daily_task_id''',
+            task_ids + [week_start, week_end],
+        ).fetchall()
+        for r in wt_rows:
+            weekly_totals[int(r['daily_task_id'])] = int(r['total_mins'] or 0)
+
+    result = []
+    for row in rows:
+        d = daily_task_to_dict(row)
+        tid = d['id']
+        d['today_done'] = completions.get(tid, {}).get('done', False)
+        d['today_done_minutes'] = completions.get(tid, {}).get('done_minutes', None)
+        d['weekly_done_minutes'] = weekly_totals.get(tid, 0)
+        result.append(d)
+
+    return flask.jsonify({'tasks': result, 'today': today})
+
+
+@app.route('/api/daily_tasks', methods=['POST'])
+def create_daily_task():
+    data = flask.request.get_json(silent=True) or {}
+    name = str(data.get('name', '')).strip()
+    if not name:
+        return flask.jsonify({'error': 'name required'}), 400
+
+    category = str(data.get('category', 'daily')).strip() or 'daily'
+    task_kind = str(data.get('task_kind', 'checkbox')).strip()
+    if task_kind not in ('checkbox', 'timed'):
+        return flask.jsonify({'error': 'task_kind must be checkbox or timed'}), 400
+
+    target_minutes = data.get('target_minutes')
+    if target_minutes is not None:
+        target_minutes = int(target_minutes)
+    weekly_target_minutes = data.get('weekly_target_minutes')
+    if weekly_target_minutes is not None:
+        weekly_target_minutes = int(weekly_target_minutes)
+
+    color = str(data.get('color', DEFAULT_TASK_COLOR)).strip() or DEFAULT_TASK_COLOR
+    if not HEX_COLOR_RE.match(color):
+        return flask.jsonify({'error': 'Invalid color'}), 400
+
+    no_expiry = 1 if data.get('no_expiry') else 0
+
+    db = get_db()
+    max_order = db.execute('SELECT COALESCE(MAX(sort_order), -1) FROM daily_tasks').fetchone()[0]
+    cursor = db.execute(
+        '''INSERT INTO daily_tasks (name, category, task_kind, target_minutes, weekly_target_minutes, color, no_expiry, sort_order)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+        (name, category, task_kind, target_minutes, weekly_target_minutes, color, no_expiry, int(max_order) + 1),
+    )
+    db.commit()
+    return flask.jsonify({'ok': True, 'id': cursor.lastrowid}), 201
+
+
+@app.route('/api/daily_tasks/<int:task_id>', methods=['PUT'])
+def update_daily_task(task_id):
+    data = flask.request.get_json(silent=True) or {}
+    db = get_db()
+    row = db.execute('SELECT * FROM daily_tasks WHERE id = ?', (task_id,)).fetchone()
+    if not row:
+        return flask.jsonify({'error': 'Not found'}), 404
+
+    name = str(data.get('name', row['name'])).strip() or row['name']
+    category = str(data.get('category', row['category'])).strip() or row['category']
+    task_kind = str(data.get('task_kind', row['task_kind'])).strip()
+    if task_kind not in ('checkbox', 'timed'):
+        task_kind = row['task_kind']
+
+    target_minutes = data.get('target_minutes', row['target_minutes'])
+    if target_minutes is not None:
+        target_minutes = int(target_minutes)
+    weekly_target_minutes = data.get('weekly_target_minutes', row['weekly_target_minutes'])
+    if weekly_target_minutes is not None:
+        weekly_target_minutes = int(weekly_target_minutes)
+
+    color = str(data.get('color', row['color'])).strip() or row['color']
+    if not HEX_COLOR_RE.match(color):
+        color = row['color']
+
+    no_expiry = 1 if data.get('no_expiry', bool(row['no_expiry'])) else 0
+
+    db.execute(
+        '''UPDATE daily_tasks SET name=?, category=?, task_kind=?, target_minutes=?,
+           weekly_target_minutes=?, color=?, no_expiry=? WHERE id=?''',
+        (name, category, task_kind, target_minutes, weekly_target_minutes, color, no_expiry, task_id),
+    )
+    db.commit()
+    return flask.jsonify({'ok': True})
+
+
+@app.route('/api/daily_tasks/<int:task_id>', methods=['DELETE'])
+def delete_daily_task(task_id):
+    db = get_db()
+    db.execute('DELETE FROM daily_tasks WHERE id = ?', (task_id,))
+    db.commit()
+    return flask.jsonify({'ok': True})
+
+
+@app.route('/api/daily_tasks/<int:task_id>/complete', methods=['POST'])
+def complete_daily_task(task_id):
+    data = flask.request.get_json(silent=True) or {}
+    done = 1 if data.get('done', True) else 0
+    done_minutes = data.get('done_minutes')
+    if done_minutes is not None:
+        done_minutes = int(done_minutes)
+
+    day_start_hour = get_day_start_hour()
+    date_str = str(data.get('date', '')).strip() or get_logical_now(day_start_hour).date().isoformat()
+    try:
+        datetime.strptime(date_str, '%Y-%m-%d')
+    except ValueError:
+        return flask.jsonify({'error': 'Invalid date'}), 400
+
+    db = get_db()
+    task = db.execute('SELECT id FROM daily_tasks WHERE id = ?', (task_id,)).fetchone()
+    if not task:
+        return flask.jsonify({'error': 'Not found'}), 404
+
+    db.execute(
+        '''INSERT INTO daily_task_completions (daily_task_id, completion_date, done, done_minutes)
+           VALUES (?, ?, ?, ?)
+           ON CONFLICT(daily_task_id, completion_date) DO UPDATE SET done=excluded.done, done_minutes=excluded.done_minutes''',
+        (task_id, date_str, done, done_minutes),
+    )
+    db.commit()
+    return flask.jsonify({'ok': True})
 
 
 with app.app_context():
