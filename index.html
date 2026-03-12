@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>weekly Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1160px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .dashboard-layout {
+            display: flex;
+            gap: 28px;
+            align-items: flex-start;
+        }
+        .left-panel {
+            flex: 1;
+            min-width: 0;
+        }
+        .right-panel {
+            width: 340px;
+            flex: 0 0 340px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 14px;
+            background: #fafafa;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 0;
+        }
+        .current-day-label {
+            margin-top: 6px;
+            font-size: 13px;
+            color: #666;
+        }
+        .today-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: #e9ecef;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .today-circle-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .today-label {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .today-value {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .tab-button.active {
+            color: #007bff;
+            border-bottom-color: #007bff;
+        }
+        .tab-button:hover {
+            color: #007bff;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .time-input {
+            max-width: 170px;
+            flex: 0 0 170px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .tasks {
+            list-style: none;
+        }
+        .tasks li {
+            padding: 15px;
+            background: #f9f9f9;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .task-info {
+            flex: 1;
+        }
+        .task-name {
+            font-weight: bold;
+            color: #333;
+        }
+        .task-time {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .task-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .task-time-log-panel {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            padding: 8px;
+            border: 1px solid #e2e6ea;
+            border-radius: 6px;
+            background: #fff;
+        }
+        .task-time-log-panel.open {
+            display: flex;
+        }
+        .task-time-log-panel input[type="number"] {
+            width: 84px;
+            flex: 0 0 84px;
+            padding: 7px;
+        }
+        .task-time-log-panel input[type="time"] {
+            width: 108px;
+            flex: 0 0 108px;
+            padding: 7px;
+        }
+        .task-add-btn {
+            background-color: #17a2b8;
+            padding: 8px 12px;
+        }
+        .task-add-btn:hover {
+            background-color: #138496;
+        }
+        .task-log-save-btn {
+            background-color: #17a2b8;
+            padding: 8px 12px;
+        }
+        .task-log-save-btn:hover {
+            background-color: #138496;
+        }
+        .task-log-cancel-btn {
+            background-color: #6c757d;
+            padding: 8px 12px;
+        }
+        .task-log-cancel-btn:hover {
+            background-color: #5a6268;
+        }
+        .start-btn {
+            background-color: #28a745;
+            padding: 8px 15px;
+        }
+        .start-btn:hover {
+            background-color: #218838;
+        }
+        .stop-btn {
+            background-color: #dc3545;
+            padding: 8px 15px;
+        }
+        .stop-btn:hover {
+            background-color: #c82333;
+        }
+        .delete-btn {
+            background-color: #6c757d;
+            padding: 8px 15px;
+        }
+        .delete-btn:hover {
+            background-color: #5a6268;
+        }
+        .timer {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .active-timer {
+            color: #dc3545;
+        }
+        .settings-list {
+            list-style: none;
+        }
+        .settings-list li {
+            padding: 12px;
+            background: #f9f9f9;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        .settings-task-name {
+            color: #333;
+            font-weight: 600;
+        }
+        .settings-task-type {
+            color: #666;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .settings-color-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .settings-color-control input[type="color"] {
+            width: 46px;
+            height: 32px;
+            padding: 0;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            flex: 0 0 auto;
+        }
+        .settings-create-form {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+            align-items: center;
+        }
+        .settings-create-form input[type="text"] {
+            flex: 1;
+        }
+        .settings-create-form input[type="number"] {
+            width: 100px;
+            flex: 0 0 100px;
+        }
+        .settings-create-form select {
+            height: 38px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 0 8px;
+            background: white;
+        }
+        .settings-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #333;
+            margin: 12px 0 8px;
+        }
+        .settings-day-start-form,
+        .settings-past-log-form {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .settings-day-start-form input[type="number"] {
+            width: 84px;
+            flex: 0 0 84px;
+        }
+        .settings-past-log-form select,
+        .settings-past-log-form input[type="date"],
+        .settings-past-log-form input[type="number"] {
+            height: 38px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 0 8px;
+            background: white;
+        }
+        .settings-past-log-form select {
+            min-width: 180px;
+        }
+        .settings-past-log-form input[type="number"] {
+            width: 100px;
+        }
+        .chart-title {
+            font-size: 15px;
+            color: #333;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+        .weekly-chart {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            height: 280px;
+            padding: 10px 0 4px;
+            border-left: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+            padding-left: 10px;
+            margin-bottom: 10px;
+        }
+        .chart-day {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px;
+        }
+        .chart-bar {
+            width: 100%;
+            max-width: 28px;
+            border-radius: 4px 4px 0 0;
+            background: #e9ecef;
+            display: flex;
+            flex-direction: column-reverse;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .chart-segment {
+            width: 100%;
+        }
+        .chart-day-label {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            line-height: 1.2;
+        }
+        .chart-day-date {
+            font-size: 11px;
+            color: #8a8a8a;
+        }
+        .chart-hours-label {
+            font-size: 12px;
+            color: #666;
+            text-align: right;
+        }
+        .monthly-overview {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .monthly-overview li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .monthly-overview-month {
+            width: 90px;
+            font-weight: 600;
+            color: #333;
+            flex: 0 0 90px;
+        }
+        .monthly-overview-bar-wrap {
+            flex: 1;
+            height: 16px;
+            background: #e9ecef;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .monthly-overview-bar {
+            height: 100%;
+            background: #007bff;
+            border-radius: 999px;
+            min-width: 2px;
+        }
+        .monthly-overview-time {
+            width: 78px;
+            text-align: right;
+            color: #666;
+            font-size: 12px;
+            flex: 0 0 78px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="dashboard-layout">
+            <div class="left-panel">
+                <div class="header">
+                    <div>
+                        <h1>Task Tracker</h1>
+                        <div class="current-day-label" id="currentDayLabel">Current Day: --</div>
+                    </div>
+                    <div class="today-circle" id="todayCircle">
+                        <div class="today-circle-inner">
+                            <div class="today-label">Today Total</div>
+                            <div class="today-value" id="todayTotal">00:00:00</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tabs">
+                    <button class="tab-button active" onclick="switchTab('weekly', this)">Weekly</button>
+                    <button class="tab-button" onclick="switchTab('monthly', this)">Monthly</button>
+                    <button class="tab-button" onclick="switchTab('settings', this)">Settings</button>
+                </div>
+
+                <div id="weekly" class="tab-content active">
+                    <ul class="tasks" id="weeklyTaskList"></ul>
+                </div>
+
+                <div id="monthly" class="tab-content">
+                    <ul class="monthly-overview" id="monthlyOverviewList"></ul>
+                </div>
+
+                <div id="settings" class="tab-content">
+                    <div class="settings-section-title">Day Start</div>
+                    <div class="settings-day-start-form">
+                        <span>New day starts at</span>
+                        <input type="number" min="0" max="23" step="1" id="settingsDayStartHour">
+                        <span>:00</span>
+                        <button onclick="saveDayStartHour()">Save</button>
+                    </div>
+
+                    <div class="settings-section-title">Add Time for Any Day</div>
+                    <div class="settings-past-log-form">
+                        <select id="settingsPastTaskSelect"></select>
+                        <input type="date" id="settingsPastDate">
+                        <input type="number" min="1" step="1" id="settingsPastMinutes" placeholder="Minutes">
+                        <button onclick="addTimeForAnyDay()">Add Time</button>
+                    </div>
+
+                    <div class="settings-section-title">Create Task</div>
+                    <div class="settings-create-form">
+                        <input type="text" id="settingsTaskInput" placeholder="Add reusable task...">
+                        <select id="settingsTaskType">
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                        <input type="number" min="0" step="1" id="settingsTaskMinutes" placeholder="Minutes">
+                        <input type="color" id="settingsTaskColor" value="#007bff" title="Task color">
+                        <button onclick="addTaskFromSettings()">Add Task</button>
+                    </div>
+                    <ul class="settings-list" id="settingsTaskList"></ul>
+                </div>
+            </div>
+            <div class="right-panel">
+                <div class="chart-title">This Week (Sun-Sat)</div>
+                <div class="weekly-chart" id="weeklyChart"></div>
+                <!-- <div class="chart-hours-label">Max bar height: 14h</div> -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tasks = {
+            weekly: [],
+            monthly: []
+        };
+        let todayTotalSeconds = 0;
+        let todayColorBreakdown = [];
+        let todayTaskSeconds = {};
+        let weeklyColorBreakdown = [];
+        let monthlyOverview = [];
+        let weeklyChartMaxSeconds = 14 * 3600;
+        let dayStartHour = 2;
+        let currentLogicalDate = '';
+        let activeTab = 'weekly';
+
+        function switchTab(tabName, buttonElement) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById(tabName).classList.add('active');
+            buttonElement.classList.add('active');
+            activeTab = tabName;
+        }
+
+        async function loadTasks() {
+            const response = await fetch('/api/tasks');
+            const data = await response.json();
+
+            tasks.weekly = data.weekly || [];
+            tasks.monthly = data.monthly || [];
+            todayTotalSeconds = data.today_total_seconds || 0;
+            todayColorBreakdown = data.today_color_breakdown || [];
+            todayTaskSeconds = data.today_task_seconds || {};
+            weeklyColorBreakdown = data.weekly_color_breakdown || [];
+            monthlyOverview = data.monthly_overview || [];
+            weeklyChartMaxSeconds = data.weekly_chart_max_seconds || (14 * 3600);
+            dayStartHour = Number(data.day_start_hour ?? 2);
+            currentLogicalDate = data.current_logical_date || '';
+
+            ensureWeeklyChartHasTodayData();
+
+            updateTodayTotal();
+            updateCurrentDayLabel();
+            renderTasks('weekly');
+            renderMonthlyOverview();
+            renderSettings();
+            renderWeeklyChart();
+        }
+
+        function ensureWeeklyChartHasTodayData() {
+            const todayKey = currentLogicalDate || getCurrentLogicalDateClient();
+            if (!Array.isArray(weeklyColorBreakdown) || weeklyColorBreakdown.length === 0) return;
+
+            const todayEntry = weeklyColorBreakdown.find(day => day.date === todayKey);
+            if (!todayEntry) return;
+
+            const hasTodayTotal = Number(todayEntry.total_seconds || 0) > 0;
+            if (hasTodayTotal || todayTotalSeconds <= 0) return;
+
+            todayEntry.total_seconds = todayTotalSeconds;
+            todayEntry.colors = (todayColorBreakdown || []).map(item => ({
+                color: item.color,
+                seconds: Number(item.seconds || 0)
+            }));
+        }
+
+        function formatDisplayDate(dateIso) {
+            if (!dateIso) return '--';
+            const date = new Date(`${dateIso}T00:00:00`);
+            if (Number.isNaN(date.getTime())) return dateIso;
+            return date.toLocaleDateString(undefined, {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        function updateCurrentDayLabel() {
+            const currentDayLabel = document.getElementById('currentDayLabel');
+            currentDayLabel.textContent = `Current Day: ${formatDisplayDate(currentLogicalDate)} (starts at ${String(dayStartHour).padStart(2, '0')}:00)`;
+        }
+
+        async function addTaskFromSettings() {
+            const nameInput = document.getElementById('settingsTaskInput');
+            const typeInput = document.getElementById('settingsTaskType');
+            const minutesInput = document.getElementById('settingsTaskMinutes');
+            const colorInput = document.getElementById('settingsTaskColor');
+
+            const name = nameInput.value.trim();
+            if (!name) return;
+
+            const minutes = Number(minutesInput.value || 0);
+            if (minutes < 0) return;
+
+            await fetch('/api/tasks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name,
+                    task_type: typeInput.value,
+                    initial_seconds: Math.floor(minutes * 60),
+                    task_color: colorInput.value || '#007bff'
+                })
+            });
+
+            nameInput.value = '';
+            minutesInput.value = '';
+            await loadTasks();
+        }
+
+        async function startTask(taskId) {
+            await fetch(`/api/tasks/${taskId}/start`, {
+                method: 'POST'
+            });
+            await loadTasks();
+        }
+
+        async function stopTask(taskId) {
+            await fetch(`/api/tasks/${taskId}/stop`, {
+                method: 'POST'
+            });
+            await loadTasks();
+        }
+
+        async function deleteTask(taskId) {
+            await fetch(`/api/tasks/${taskId}`, {
+                method: 'DELETE'
+            });
+            await loadTasks();
+        }
+
+        async function updateTaskColor(taskId, taskColor) {
+            if (!/^#[0-9a-fA-F]{6}$/.test(taskColor)) return;
+            await fetch(`/api/tasks/${taskId}/color`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    task_color: taskColor
+                })
+            });
+            await loadTasks();
+        }
+
+        async function addManualSeconds(taskId, seconds, workDate = '') {
+            const totalSeconds = Math.floor(Number(seconds || 0));
+            if (totalSeconds <= 0) {
+                alert('Please enter a valid duration.');
+                return;
+            }
+
+            const payload = {
+                seconds: totalSeconds
+            };
+            if (workDate) payload.work_date = workDate;
+
+            await fetch(`/api/tasks/${taskId}/manual_time`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            await loadTasks();
+        }
+
+        async function saveDayStartHour() {
+            const hourInput = document.getElementById('settingsDayStartHour');
+            const value = Number(hourInput.value);
+            if (!Number.isInteger(value) || value < 0 || value > 23) {
+                alert('Day start hour must be between 0 and 23.');
+                return;
+            }
+
+            await fetch('/api/settings/day_start', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    day_start_hour: value
+                })
+            });
+
+            await loadTasks();
+        }
+
+        async function addTimeForAnyDay() {
+            const taskSelect = document.getElementById('settingsPastTaskSelect');
+            const dateInput = document.getElementById('settingsPastDate');
+            const minutesInput = document.getElementById('settingsPastMinutes');
+
+            const taskId = Number(taskSelect.value || 0);
+            const workDate = dateInput.value;
+            const minutes = Number(minutesInput.value || 0);
+
+            if (!taskId) {
+                alert('Please select a task.');
+                return;
+            }
+            if (!workDate) {
+                alert('Please select a date.');
+                return;
+            }
+            if (minutes <= 0) {
+                alert('Please enter minutes greater than 0.');
+                return;
+            }
+
+            await addManualSeconds(taskId, minutes * 60, workDate);
+            minutesInput.value = '';
+        }
+
+        function getCurrentLogicalDateClient() {
+            const now = new Date();
+            const logicalMillis = now.getTime() - (dayStartHour * 3600 * 1000);
+            const logicalDate = new Date(logicalMillis);
+            const year = logicalDate.getFullYear();
+            const month = String(logicalDate.getMonth() + 1).padStart(2, '0');
+            const day = String(logicalDate.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function getRangeSeconds(fromValue, toValue) {
+            if (!fromValue || !toValue) return 0;
+            const [fromHour, fromMinute] = fromValue.split(':').map(Number);
+            const [toHour, toMinute] = toValue.split(':').map(Number);
+
+            if (
+                Number.isNaN(fromHour) || Number.isNaN(fromMinute)
+                || Number.isNaN(toHour) || Number.isNaN(toMinute)
+            ) {
+                return 0;
+            }
+
+            const fromTotal = (fromHour * 60) + fromMinute;
+            const toTotal = (toHour * 60) + toMinute;
+            if (fromTotal === toTotal) return 0;
+
+            if (toTotal > fromTotal) {
+                return (toTotal - fromTotal) * 60;
+            }
+
+            return ((toTotal + (24 * 60)) - fromTotal) * 60;
+        }
+
+        function formatTime(seconds) {
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function updateTodayTotal() {
+            document.getElementById('todayTotal').textContent = formatTime(todayTotalSeconds);
+            updateTodayCircle();
+        }
+
+        function updateTodayCircle() {
+            const todayCircle = document.getElementById('todayCircle');
+            if (todayTotalSeconds <= 0 || todayColorBreakdown.length === 0) {
+                todayCircle.style.background = '#e9ecef';
+                return;
+            }
+
+            let currentDeg = 0;
+            const segments = [];
+
+            todayColorBreakdown.forEach(entry => {
+                const portion = entry.seconds / todayTotalSeconds;
+                const sweep = portion * 360;
+                const nextDeg = currentDeg + sweep;
+                segments.push(`${entry.color} ${currentDeg}deg ${nextDeg}deg`);
+                currentDeg = nextDeg;
+            });
+
+            todayCircle.style.background = `conic-gradient(${segments.join(', ')})`;
+        }
+
+        function renderWeeklyChart() {
+            const weeklyChart = document.getElementById('weeklyChart');
+            weeklyChart.innerHTML = '';
+
+            const maxSeconds = weeklyChartMaxSeconds > 0 ? weeklyChartMaxSeconds : (14 * 3600);
+
+            weeklyColorBreakdown.forEach(day => {
+                const dayColumn = document.createElement('div');
+                dayColumn.className = 'chart-day';
+
+                const bar = document.createElement('div');
+                bar.className = 'chart-bar';
+
+                const total = Number(day.total_seconds || 0);
+                const clampedTotal = Math.min(total, maxSeconds);
+                const percentHeight = (clampedTotal / maxSeconds) * 100;
+                const barPx = total > 0 ? Math.max(Math.round(percentHeight * 240 / 100), 4) : 0;
+                bar.style.height = `${barPx}px`;
+
+                if (clampedTotal > 0 && Array.isArray(day.colors) && day.colors.length > 0) {
+                    day.colors.forEach(colorEntry => {
+                        const colorSeconds = Math.max(0, Number(colorEntry.seconds || 0));
+                        if (colorSeconds <= 0) return;
+
+                        const segment = document.createElement('div');
+                        segment.className = 'chart-segment';
+                        segment.style.background = colorEntry.color;
+                        segment.style.height = `${(colorSeconds / total) * 100}%`;
+                        bar.appendChild(segment);
+                    });
+                }
+
+                const dayLabel = document.createElement('div');
+                dayLabel.className = 'chart-day-label';
+                const datePart = (day.date || '').slice(-2);
+                dayLabel.innerHTML = `<div>${day.weekday || ''}</div><div class="chart-day-date">${datePart || '--'}</div>`;
+
+                dayColumn.appendChild(bar);
+                dayColumn.appendChild(dayLabel);
+                weeklyChart.appendChild(dayColumn);
+            });
+        }
+
+        function incrementTodayWeeklyBreakdown() {
+            const todayIso = getCurrentLogicalDateClient();
+            const todayEntry = weeklyColorBreakdown.find(entry => entry.date === todayIso);
+
+            if (!todayEntry) return;
+            if (!Array.isArray(todayEntry.colors)) todayEntry.colors = [];
+            if (typeof todayEntry.total_seconds !== 'number') todayEntry.total_seconds = Number(todayEntry.total_seconds || 0);
+
+            const runningTaskColors = [];
+            ['weekly', 'monthly'].forEach(tabType => {
+                tasks[tabType].forEach(task => {
+                    if (task.running) {
+                        runningTaskColors.push(task.task_color || '#007bff');
+                    }
+                });
+            });
+
+            if (runningTaskColors.length === 0) return;
+
+            runningTaskColors.forEach(color => {
+                let colorEntry = todayEntry.colors.find(entry => entry.color === color);
+                if (!colorEntry) {
+                    colorEntry = { color, seconds: 0 };
+                    todayEntry.colors.push(colorEntry);
+                }
+                colorEntry.seconds += 1;
+                todayEntry.total_seconds += 1;
+            });
+
+            todayEntry.colors.sort((a, b) => b.seconds - a.seconds);
+        }
+
+        function tickRunningTimers() {
+            let hasRunningTask = false;
+            ['weekly', 'monthly'].forEach(tabType => {
+                tasks[tabType].forEach(task => {
+                    if (task.running) {
+                        task.elapsed += 1;
+                        todayTaskSeconds[task.id] = (Number(todayTaskSeconds[task.id] || 0)) + 1;
+                        hasRunningTask = true;
+                    }
+                });
+            });
+
+            if (hasRunningTask) {
+                todayTotalSeconds += 1;
+                currentLogicalDate = getCurrentLogicalDateClient();
+                incrementTodayWeeklyBreakdown();
+                updateTodayTotal();
+                updateCurrentDayLabel();
+                renderTasks(activeTab);
+                renderSettings();
+                renderWeeklyChart();
+                renderMonthlyOverview();
+            }
+        }
+
+        function renderTasks(tabType) {
+            const taskList = document.getElementById(`${tabType}TaskList`);
+            if (!taskList) return;
+            taskList.innerHTML = '';
+            
+            const sourceTasks = tabType === 'weekly'
+                ? [...tasks.weekly, ...tasks.monthly]
+                : tasks[tabType];
+
+            sourceTasks.forEach(task => {
+                const li = document.createElement('li');
+
+                const taskInfo = document.createElement('div');
+                taskInfo.className = 'task-info';
+
+                const taskName = document.createElement('div');
+                taskName.className = 'task-name';
+                taskName.textContent = task.name;
+
+                const taskTime = document.createElement('div');
+                taskTime.className = `task-time ${task.running ? 'active-timer' : ''}`;
+                const todayForTask = Number(todayTaskSeconds[task.id] || 0);
+                taskTime.textContent = `⏱ ${formatTime(todayForTask)} today`;
+
+                taskInfo.appendChild(taskName);
+                taskInfo.appendChild(taskTime);
+
+                const taskActions = document.createElement('div');
+                taskActions.className = 'task-actions';
+
+                const startStopButton = document.createElement('button');
+                if (task.running) {
+                    startStopButton.className = 'stop-btn';
+                    startStopButton.textContent = 'Stop';
+                    startStopButton.onclick = () => stopTask(task.id);
+                } else {
+                    startStopButton.className = 'start-btn';
+                    startStopButton.textContent = 'Start';
+                    startStopButton.onclick = () => startTask(task.id);
+                }
+
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'delete-btn';
+                deleteButton.textContent = 'Delete';
+                deleteButton.onclick = () => deleteTask(task.id);
+
+                const addToggleButton = document.createElement('button');
+                addToggleButton.className = 'task-add-btn';
+                addToggleButton.textContent = 'Add';
+
+                const timeLogControls = document.createElement('div');
+                timeLogControls.className = 'task-time-log-panel';
+
+                const minutesInput = document.createElement('input');
+                minutesInput.type = 'number';
+                minutesInput.min = '0';
+                minutesInput.step = '1';
+                minutesInput.placeholder = 'Minutes';
+
+                const fromInput = document.createElement('input');
+                fromInput.type = 'time';
+                fromInput.title = 'From';
+
+                const toInput = document.createElement('input');
+                toInput.type = 'time';
+                toInput.title = 'To';
+
+                const saveButton = document.createElement('button');
+                saveButton.className = 'task-log-save-btn';
+                saveButton.textContent = 'Save';
+                saveButton.onclick = async () => {
+                    const minutesValue = Number(minutesInput.value || 0);
+                    if (minutesValue > 0) {
+                        await addManualSeconds(task.id, minutesValue * 60);
+                        minutesInput.value = '';
+                        fromInput.value = '';
+                        toInput.value = '';
+                        timeLogControls.classList.remove('open');
+                        return;
+                    }
+
+                    const secondsFromRange = getRangeSeconds(fromInput.value, toInput.value);
+                    if (secondsFromRange > 0) {
+                        await addManualSeconds(task.id, secondsFromRange);
+                        minutesInput.value = '';
+                        fromInput.value = '';
+                        toInput.value = '';
+                        timeLogControls.classList.remove('open');
+                        return;
+                    }
+
+                    alert('Enter minutes, or choose valid From and To times.');
+                };
+
+                const cancelButton = document.createElement('button');
+                cancelButton.className = 'task-log-cancel-btn';
+                cancelButton.textContent = 'Cancel';
+                cancelButton.onclick = () => {
+                    minutesInput.value = '';
+                    fromInput.value = '';
+                    toInput.value = '';
+                    timeLogControls.classList.remove('open');
+                };
+
+                addToggleButton.onclick = () => {
+                    timeLogControls.classList.toggle('open');
+                };
+
+                timeLogControls.appendChild(minutesInput);
+                timeLogControls.appendChild(fromInput);
+                timeLogControls.appendChild(toInput);
+                timeLogControls.appendChild(saveButton);
+                timeLogControls.appendChild(cancelButton);
+
+                taskActions.appendChild(startStopButton);
+                taskActions.appendChild(addToggleButton);
+                taskActions.appendChild(timeLogControls);
+                taskActions.appendChild(deleteButton);
+
+                li.appendChild(taskInfo);
+                li.appendChild(taskActions);
+                taskList.appendChild(li);
+            });
+        }
+
+        function renderMonthlyOverview() {
+            const monthlyOverviewList = document.getElementById('monthlyOverviewList');
+            monthlyOverviewList.innerHTML = '';
+
+            const totals = monthlyOverview.map(item => Number(item.total_seconds || 0));
+            const maxTotal = Math.max(...totals, 1);
+
+            monthlyOverview.forEach(item => {
+                const li = document.createElement('li');
+
+                const monthLabel = document.createElement('div');
+                monthLabel.className = 'monthly-overview-month';
+                monthLabel.textContent = item.label || item.month_key || '--';
+
+                const barWrap = document.createElement('div');
+                barWrap.className = 'monthly-overview-bar-wrap';
+
+                const bar = document.createElement('div');
+                bar.className = 'monthly-overview-bar';
+                const widthPercent = (Number(item.total_seconds || 0) / maxTotal) * 100;
+                bar.style.width = `${Math.max(widthPercent, Number(item.total_seconds || 0) > 0 ? 2 : 0)}%`;
+
+                const timeLabel = document.createElement('div');
+                timeLabel.className = 'monthly-overview-time';
+                timeLabel.textContent = formatTime(Number(item.total_seconds || 0));
+
+                barWrap.appendChild(bar);
+                li.appendChild(monthLabel);
+                li.appendChild(barWrap);
+                li.appendChild(timeLabel);
+                monthlyOverviewList.appendChild(li);
+            });
+        }
+
+        function renderSettings() {
+            const settingsTaskList = document.getElementById('settingsTaskList');
+            settingsTaskList.innerHTML = '';
+
+            const settingsDayStartHour = document.getElementById('settingsDayStartHour');
+            settingsDayStartHour.value = String(dayStartHour);
+
+            const allTasks = [
+                ...tasks.weekly.map(task => ({ ...task, task_type: 'weekly' })),
+                ...tasks.monthly.map(task => ({ ...task, task_type: 'monthly' }))
+            ];
+
+            const settingsPastTaskSelect = document.getElementById('settingsPastTaskSelect');
+            settingsPastTaskSelect.innerHTML = '';
+            allTasks.forEach(task => {
+                const option = document.createElement('option');
+                option.value = String(task.id);
+                option.textContent = `${task.name} (${task.task_type})`;
+                settingsPastTaskSelect.appendChild(option);
+            });
+
+            const settingsPastDate = document.getElementById('settingsPastDate');
+            if (!settingsPastDate.value) {
+                settingsPastDate.value = currentLogicalDate || getCurrentLogicalDateClient();
+            }
+
+            allTasks.forEach(task => {
+                const li = document.createElement('li');
+
+                const taskInfo = document.createElement('div');
+
+                const taskName = document.createElement('div');
+                taskName.className = 'settings-task-name';
+                taskName.textContent = task.name;
+
+                const taskType = document.createElement('div');
+                taskType.className = 'settings-task-type';
+                taskType.textContent = 'Reusable task';
+
+                taskInfo.appendChild(taskName);
+                taskInfo.appendChild(taskType);
+
+                const colorControl = document.createElement('div');
+                colorControl.className = 'settings-color-control';
+
+                const colorInput = document.createElement('input');
+                colorInput.type = 'color';
+                colorInput.value = task.task_color || '#007bff';
+                colorInput.onchange = () => updateTaskColor(task.id, colorInput.value);
+
+                colorControl.appendChild(colorInput);
+
+                li.appendChild(taskInfo);
+                li.appendChild(colorControl);
+                settingsTaskList.appendChild(li);
+            });
+        }
+
+        setInterval(tickRunningTimers, 1000);
+        loadTasks();
+    </script>
+</body>
+</html>
