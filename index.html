@@ -816,8 +816,6 @@
             dayStartHour = Number(data.day_start_hour ?? 2);
             currentLogicalDate = data.current_logical_date || '';
 
-            ensureWeeklyChartHasTodayData();
-
             if (calendarYear === null) {
                 const todayParts = (data.current_logical_date || '').split('-');
                 calendarYear = Number(todayParts[0]) || new Date().getFullYear();
@@ -831,23 +829,6 @@
             renderCalendar();
             renderSettings();
             renderWeeklyChart();
-        }
-
-        function ensureWeeklyChartHasTodayData() {
-            const todayKey = currentLogicalDate || getCurrentLogicalDateClient();
-            if (!Array.isArray(weeklyColorBreakdown) || weeklyColorBreakdown.length === 0) return;
-
-            const todayEntry = weeklyColorBreakdown.find(day => day.date === todayKey);
-            if (!todayEntry) return;
-
-            const hasTodayTotal = Number(todayEntry.total_seconds || 0) > 0;
-            if (hasTodayTotal || todayTotalSeconds <= 0) return;
-
-            todayEntry.total_seconds = todayTotalSeconds;
-            todayEntry.colors = (todayColorBreakdown || []).map(item => ({
-                color: item.color,
-                seconds: Number(item.seconds || 0)
-            }));
         }
 
         function formatDisplayDate(dateIso) {
@@ -914,6 +895,15 @@
         async function deleteTask(taskId) {
             await fetch(`/api/tasks/${taskId}`, {
                 method: 'DELETE'
+            });
+            await loadTasks();
+        }
+
+        async function updateTaskIsWork(taskId, isWork) {
+            await fetch(`/api/tasks/${taskId}/is_work`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_work: isWork })
             });
             await loadTasks();
         }
@@ -1138,7 +1128,7 @@
             const runningTaskColors = [];
             ['weekly', 'monthly'].forEach(tabType => {
                 tasks[tabType].forEach(task => {
-                    if (task.running) {
+                    if (task.running && task.is_work) {
                         runningTaskColors.push(task.task_color || '#007bff');
                     }
                 });
@@ -1351,10 +1341,21 @@
                 const bar = document.createElement('div');
                 bar.className = 'chart-bar';
                 bar.style.height = `${barPx}px`;
-                if (total > 0) {
+                bar.title = `${item.label || item.month_key}: ${formatTime(total)}`;
+
+                if (clampedTotal > 0 && Array.isArray(item.colors) && item.colors.length > 0) {
+                    item.colors.forEach(colorEntry => {
+                        const colorSeconds = Math.max(0, Number(colorEntry.seconds || 0));
+                        if (colorSeconds <= 0) return;
+                        const segment = document.createElement('div');
+                        segment.className = 'chart-segment';
+                        segment.style.background = colorEntry.color;
+                        segment.style.height = `${(colorSeconds / total) * 100}%`;
+                        bar.appendChild(segment);
+                    });
+                } else if (total > 0) {
                     bar.style.background = '#007bff';
                 }
-                bar.title = `${item.label || item.month_key}: ${formatTime(total)}`;
 
                 barsArea.appendChild(bar);
 
@@ -1592,6 +1593,15 @@
                 colorInput.value = task.task_color || '#007bff';
                 colorInput.onchange = () => updateTaskColor(task.id, colorInput.value);
 
+                const workLabel = document.createElement('label');
+                workLabel.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;white-space:nowrap;';
+                const workCheckbox = document.createElement('input');
+                workCheckbox.type = 'checkbox';
+                workCheckbox.checked = !!task.is_work;
+                workCheckbox.onchange = () => updateTaskIsWork(task.id, workCheckbox.checked);
+                workLabel.appendChild(workCheckbox);
+                workLabel.appendChild(document.createTextNode('work'));
+
                 const settingsDeleteBtn = document.createElement('button');
                 settingsDeleteBtn.className = 'delete-btn';
                 settingsDeleteBtn.textContent = 'Delete';
@@ -1599,6 +1609,7 @@
                 settingsDeleteBtn.onclick = () => deleteTask(task.id);
 
                 colorControl.appendChild(colorInput);
+                colorControl.appendChild(workLabel);
                 colorControl.appendChild(settingsDeleteBtn);
 
                 li.appendChild(taskInfo);

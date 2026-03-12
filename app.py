@@ -75,6 +75,10 @@ def init_db():
         db.execute(
             "ALTER TABLE tasks ADD COLUMN task_color TEXT NOT NULL DEFAULT '#007bff'"
         )
+    if 'is_work' not in column_names:
+        db.execute(
+            "ALTER TABLE tasks ADD COLUMN is_work INTEGER NOT NULL DEFAULT 0"
+        )
     existing_day_start = db.execute(
         "SELECT value FROM app_settings WHERE key = 'day_start_hour'"
     ).fetchone()
@@ -137,6 +141,7 @@ def task_to_dict(task_row):
         'name': task_row['name'],
         'task_type': task_row['task_type'],
         'task_color': task_row['task_color'] or DEFAULT_TASK_COLOR,
+        'is_work': bool(task_row['is_work']),
         'elapsed': base_elapsed,
         'running': running,
     }
@@ -262,7 +267,7 @@ def get_weekly_color_breakdown():
         SELECT w.work_date, t.task_color, COALESCE(SUM(w.seconds), 0) AS total_seconds
         FROM work_logs w
         JOIN tasks t ON t.id = w.task_id
-        WHERE w.work_date BETWEEN ? AND ?
+        WHERE w.work_date BETWEEN ? AND ? AND t.is_work = 1
         GROUP BY w.work_date, t.task_color
         ''',
         (week_start.isoformat(), week_end.isoformat()),
@@ -278,7 +283,7 @@ def get_weekly_color_breakdown():
         day_data[work_date]['total_seconds'] += seconds
 
     running_rows = db.execute(
-        'SELECT started_at, task_color FROM tasks WHERE running = 1 AND started_at IS NOT NULL'
+        'SELECT started_at, task_color FROM tasks WHERE running = 1 AND started_at IS NOT NULL AND is_work = 1'
     ).fetchall()
 
     today_key = today_date.isoformat()
@@ -332,15 +337,18 @@ def get_monthly_overview(month_count=6):
             'month_key': month_key,
             'label': month_start.strftime('%b %Y'),
             'total_seconds': 0,
+            'colors': {},
         }
         month_order.append(month_key)
 
     logged_rows = db.execute(
         '''
-        SELECT substr(work_date, 1, 7) AS month_key, COALESCE(SUM(seconds), 0) AS total_seconds
-        FROM work_logs
-        WHERE work_date >= ?
-        GROUP BY substr(work_date, 1, 7)
+        SELECT substr(w.work_date, 1, 7) AS month_key, t.task_color,
+               COALESCE(SUM(w.seconds), 0) AS total_seconds
+        FROM work_logs w
+        JOIN tasks t ON t.id = w.task_id
+        WHERE w.work_date >= ? AND t.is_work = 1
+        GROUP BY substr(w.work_date, 1, 7), t.task_color
         ''',
         (oldest_month_start.isoformat(),),
     ).fetchall()
@@ -348,10 +356,13 @@ def get_monthly_overview(month_count=6):
     for row in logged_rows:
         month_key = row['month_key']
         if month_key in month_map:
-            month_map[month_key]['total_seconds'] = int(row['total_seconds'])
+            color = row['task_color'] or DEFAULT_TASK_COLOR
+            secs = int(row['total_seconds'])
+            month_map[month_key]['total_seconds'] += secs
+            month_map[month_key]['colors'][color] = month_map[month_key]['colors'].get(color, 0) + secs
 
     running_rows = db.execute(
-        'SELECT started_at FROM tasks WHERE running = 1 AND started_at IS NOT NULL'
+        'SELECT started_at, task_color FROM tasks WHERE running = 1 AND started_at IS NOT NULL AND is_work = 1'
     ).fetchall()
 
     now_ts = int(time.time())
@@ -360,11 +371,24 @@ def get_monthly_overview(month_count=6):
     if current_month_key in month_map:
         for row in running_rows:
             started_at = int(row['started_at'])
-            month_map[current_month_key]['total_seconds'] += max(
-                0, now_ts - max(started_at, logical_day_start_ts)
-            )
+            color = row['task_color'] or DEFAULT_TASK_COLOR
+            duration = max(0, now_ts - max(started_at, logical_day_start_ts))
+            if duration > 0:
+                month_map[current_month_key]['total_seconds'] += duration
+                month_map[current_month_key]['colors'][color] = month_map[current_month_key]['colors'].get(color, 0) + duration
 
-    return [month_map[month_key] for month_key in month_order]
+    result = []
+    for month_key in month_order:
+        entry = month_map[month_key]
+        colors = [{'color': c, 'seconds': s} for c, s in entry['colors'].items() if s > 0]
+        colors.sort(key=lambda x: x['seconds'], reverse=True)
+        result.append({
+            'month_key': entry['month_key'],
+            'label': entry['label'],
+            'total_seconds': entry['total_seconds'],
+            'colors': colors,
+        })
+    return result
 
 
 @app.route('/')
@@ -376,7 +400,7 @@ def hello():
 def get_tasks():
     db = get_db()
     rows = db.execute(
-        'SELECT id, name, task_type, task_color, elapsed_seconds, running, started_at FROM tasks ORDER BY created_at DESC, id DESC'
+        'SELECT id, name, task_type, task_color, is_work, elapsed_seconds, running, started_at FROM tasks ORDER BY created_at DESC, id DESC'
     ).fetchall()
 
     day_start_hour = get_day_start_hour()
@@ -552,6 +576,21 @@ def update_day_start_hour():
     )
     db.commit()
     return flask.jsonify({'ok': True, 'day_start_hour': day_start_hour})
+
+
+@app.route('/api/tasks/<int:task_id>/is_work', methods=['PUT'])
+def update_task_is_work(task_id):
+    data = flask.request.get_json(silent=True) or {}
+    is_work = 1 if data.get('is_work') else 0
+
+    db = get_db()
+    task = db.execute('SELECT id FROM tasks WHERE id = ?', (task_id,)).fetchone()
+    if not task:
+        return flask.jsonify({'error': 'Task not found'}), 404
+
+    db.execute('UPDATE tasks SET is_work = ? WHERE id = ?', (is_work, task_id))
+    db.commit()
+    return flask.jsonify({'ok': True})
 
 
 @app.route('/api/tasks/<int:task_id>/color', methods=['PUT'])
