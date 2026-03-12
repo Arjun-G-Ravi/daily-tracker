@@ -161,6 +161,16 @@
         .task-name {
             font-weight: bold;
             color: #333;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .task-color-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
         }
         .task-time {
             font-size: 14px;
@@ -340,53 +350,78 @@
             margin-bottom: 12px;
             font-weight: 700;
         }
-        .weekly-chart {
+        .chart-outer {
             display: flex;
-            gap: 10px;
-            align-items: flex-end;
-            height: 280px;
-            padding: 10px 0 4px;
-            border-left: 1px solid #ddd;
-            border-bottom: 1px solid #ddd;
-            padding-left: 10px;
+            gap: 0;
+            align-items: flex-start;
             margin-bottom: 10px;
         }
-        .chart-day {
+        .chart-y-axis {
+            flex: 0 0 26px;
+            width: 26px;
+            position: relative;
+            height: 240px;
+        }
+        .chart-y-tick {
+            position: absolute;
+            right: 4px;
+            font-size: 10px;
+            color: #aaa;
+            line-height: 1;
+            transform: translateY(50%);
+            white-space: nowrap;
+        }
+        .chart-body {
             flex: 1;
             min-width: 0;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: flex-end;
+        }
+        .chart-bars-area {
+            height: 240px;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
             gap: 6px;
+            border-left: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+        }
+        .chart-labels-row {
+            display: flex;
+            gap: 6px;
+            padding-top: 6px;
+            border-left: 1px solid transparent;
         }
         .chart-bar {
-            width: 100%;
-            max-width: 28px;
-            border-radius: 4px 4px 0 0;
+            flex: 1;
+            min-width: 0;
+            border-radius: 3px 3px 0 0;
             background: #e9ecef;
             display: flex;
             flex-direction: column-reverse;
             overflow: hidden;
-            flex-shrink: 0;
         }
         .chart-segment {
             width: 100%;
         }
-        .chart-day-label {
-            font-size: 12px;
+        .chart-label-cell {
+            flex: 1;
+            min-width: 0;
+            font-size: 11px;
             color: #666;
             text-align: center;
-            line-height: 1.2;
+            line-height: 1.3;
         }
         .chart-day-date {
-            font-size: 11px;
-            color: #8a8a8a;
+            font-size: 10px;
+            color: #aaa;
         }
-        .chart-hours-label {
-            font-size: 12px;
-            color: #666;
-            text-align: right;
+        .chart-grid-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            border-top: 1px dashed #e8e8e8;
+            pointer-events: none;
         }
         .monthly-overview {
             list-style: none;
@@ -490,8 +525,13 @@
             </div>
             <div class="right-panel">
                 <div class="chart-title">This Week (Sun-Sat)</div>
-                <div class="weekly-chart" id="weeklyChart"></div>
-                <!-- <div class="chart-hours-label">Max bar height: 14h</div> -->
+                <div class="chart-outer">
+                    <div class="chart-y-axis" id="chartYAxis"></div>
+                    <div class="chart-body">
+                        <div class="chart-bars-area" id="weeklyChart"></div>
+                        <div class="chart-labels-row" id="chartLabelsRow"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -785,29 +825,47 @@
         }
 
         function renderWeeklyChart() {
-            const weeklyChart = document.getElementById('weeklyChart');
-            weeklyChart.innerHTML = '';
+            const CHART_AREA_PX = 240;
+            const MAX_HOURS = 14;
+            const maxSeconds = weeklyChartMaxSeconds > 0 ? weeklyChartMaxSeconds : (MAX_HOURS * 3600);
 
-            const maxSeconds = weeklyChartMaxSeconds > 0 ? weeklyChartMaxSeconds : (14 * 3600);
+            const barsArea = document.getElementById('weeklyChart');
+            const labelsRow = document.getElementById('chartLabelsRow');
+            const yAxis = document.getElementById('chartYAxis');
+            barsArea.innerHTML = '';
+            labelsRow.innerHTML = '';
+            yAxis.innerHTML = '';
 
+            // Y-axis ticks + grid lines
+            for (let h = 0; h <= MAX_HOURS; h += 2) {
+                const bottomPx = Math.round(CHART_AREA_PX * h / MAX_HOURS);
+
+                const gridLine = document.createElement('div');
+                gridLine.className = 'chart-grid-line';
+                gridLine.style.bottom = `${bottomPx}px`;
+                barsArea.appendChild(gridLine);
+
+                const tick = document.createElement('div');
+                tick.className = 'chart-y-tick';
+                tick.style.bottom = `${bottomPx}px`;
+                tick.textContent = `${h}h`;
+                yAxis.appendChild(tick);
+            }
+
+            // Bars and labels
             weeklyColorBreakdown.forEach(day => {
-                const dayColumn = document.createElement('div');
-                dayColumn.className = 'chart-day';
+                const total = Number(day.total_seconds || 0);
+                const clampedTotal = Math.min(total, maxSeconds);
+                const barPx = total > 0 ? Math.max(Math.round((clampedTotal / maxSeconds) * CHART_AREA_PX), 4) : 0;
 
                 const bar = document.createElement('div');
                 bar.className = 'chart-bar';
-
-                const total = Number(day.total_seconds || 0);
-                const clampedTotal = Math.min(total, maxSeconds);
-                const percentHeight = (clampedTotal / maxSeconds) * 100;
-                const barPx = total > 0 ? Math.max(Math.round(percentHeight * 240 / 100), 4) : 0;
                 bar.style.height = `${barPx}px`;
 
                 if (clampedTotal > 0 && Array.isArray(day.colors) && day.colors.length > 0) {
                     day.colors.forEach(colorEntry => {
                         const colorSeconds = Math.max(0, Number(colorEntry.seconds || 0));
                         if (colorSeconds <= 0) return;
-
                         const segment = document.createElement('div');
                         segment.className = 'chart-segment';
                         segment.style.background = colorEntry.color;
@@ -815,15 +873,13 @@
                         bar.appendChild(segment);
                     });
                 }
+                barsArea.appendChild(bar);
 
-                const dayLabel = document.createElement('div');
-                dayLabel.className = 'chart-day-label';
+                const label = document.createElement('div');
+                label.className = 'chart-label-cell';
                 const datePart = (day.date || '').slice(-2);
-                dayLabel.innerHTML = `<div>${day.weekday || ''}</div><div class="chart-day-date">${datePart || '--'}</div>`;
-
-                dayColumn.appendChild(bar);
-                dayColumn.appendChild(dayLabel);
-                weeklyChart.appendChild(dayColumn);
+                label.innerHTML = `<div>${day.weekday || ''}</div><div class="chart-day-date">${datePart || '--'}</div>`;
+                labelsRow.appendChild(label);
             });
         }
 
@@ -901,12 +957,16 @@
 
                 const taskName = document.createElement('div');
                 taskName.className = 'task-name';
-                taskName.textContent = task.name;
+                const colorDot = document.createElement('span');
+                colorDot.className = 'task-color-dot';
+                colorDot.style.background = task.task_color || '#007bff';
+                taskName.appendChild(colorDot);
+                taskName.appendChild(document.createTextNode(task.name));
 
                 const taskTime = document.createElement('div');
                 taskTime.className = `task-time ${task.running ? 'active-timer' : ''}`;
                 const todayForTask = Number(todayTaskSeconds[task.id] || 0);
-                taskTime.textContent = `⏱ ${formatTime(todayForTask)} today`;
+                taskTime.textContent = `⏱ ${formatTime(todayForTask)}`;
 
                 taskInfo.appendChild(taskName);
                 taskInfo.appendChild(taskTime);
