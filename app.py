@@ -580,6 +580,152 @@ def delete_task(task_id):
     return flask.jsonify({'ok': True})
 
 
+@app.route('/api/day_logs', methods=['GET'])
+def get_day_logs():
+    work_date = flask.request.args.get('date', '').strip()
+    if not work_date:
+        return flask.jsonify({'error': 'date parameter is required'}), 400
+    try:
+        datetime.strptime(work_date, '%Y-%m-%d')
+    except ValueError:
+        return flask.jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+
+    db = get_db()
+    rows = db.execute(
+        '''
+        SELECT w.id, w.task_id, w.work_date, w.seconds, w.entry_type, w.created_at,
+               t.name AS task_name, t.task_color
+        FROM work_logs w
+        JOIN tasks t ON t.id = w.task_id
+        WHERE w.work_date = ?
+        ORDER BY w.created_at DESC, w.id DESC
+        ''',
+        (work_date,),
+    ).fetchall()
+
+    logs = []
+    for row in rows:
+        logs.append({
+            'id': int(row['id']),
+            'task_id': int(row['task_id']),
+            'task_name': row['task_name'],
+            'task_color': row['task_color'] or DEFAULT_TASK_COLOR,
+            'work_date': row['work_date'],
+            'seconds': int(row['seconds']),
+            'entry_type': row['entry_type'],
+            'created_at': row['created_at'],
+        })
+
+    return flask.jsonify({'logs': logs, 'work_date': work_date})
+
+
+@app.route('/api/work_logs/<int:log_id>', methods=['PUT'])
+def update_work_log(log_id):
+    data = flask.request.get_json(silent=True) or {}
+    seconds = int(data.get('seconds', 0) or 0)
+
+    if seconds <= 0:
+        return flask.jsonify({'error': 'Seconds must be greater than 0'}), 400
+
+    db = get_db()
+    log = db.execute('SELECT id, task_id, seconds FROM work_logs WHERE id = ?', (log_id,)).fetchone()
+    if not log:
+        return flask.jsonify({'error': 'Work log not found'}), 404
+
+    old_seconds = int(log['seconds'])
+    diff = seconds - old_seconds
+    db.execute('UPDATE work_logs SET seconds = ? WHERE id = ?', (seconds, log_id))
+    db.execute(
+        'UPDATE tasks SET elapsed_seconds = MAX(0, elapsed_seconds + ?) WHERE id = ?',
+        (diff, int(log['task_id'])),
+    )
+    db.commit()
+    return flask.jsonify({'ok': True})
+
+
+@app.route('/api/work_logs/<int:log_id>', methods=['DELETE'])
+def delete_work_log(log_id):
+    db = get_db()
+    log = db.execute('SELECT id, task_id, seconds FROM work_logs WHERE id = ?', (log_id,)).fetchone()
+    if not log:
+        return flask.jsonify({'error': 'Work log not found'}), 404
+
+    seconds = int(log['seconds'])
+    db.execute('DELETE FROM work_logs WHERE id = ?', (log_id,))
+    db.execute(
+        'UPDATE tasks SET elapsed_seconds = MAX(0, elapsed_seconds - ?) WHERE id = ?',
+        (seconds, int(log['task_id'])),
+    )
+    db.commit()
+    return flask.jsonify({'ok': True})
+
+
+@app.route('/api/monthly_calendar', methods=['GET'])
+def get_monthly_calendar():
+    year_str = flask.request.args.get('year', '').strip()
+    month_str = flask.request.args.get('month', '').strip()
+
+    day_start_hour = get_day_start_hour()
+    logical_today = get_logical_now(day_start_hour).date()
+
+    try:
+        year = int(year_str) if year_str else logical_today.year
+        month = int(month_str) if month_str else logical_today.month
+        if not (1 <= month <= 12):
+            raise ValueError('Invalid month')
+        month_start = logical_today.replace(year=year, month=month, day=1)
+    except ValueError:
+        return flask.jsonify({'error': 'Invalid year/month'}), 400
+
+    import calendar as cal_module
+    days_in_month = cal_module.monthrange(year, month)[1]
+    month_end = month_start.replace(day=days_in_month)
+
+    db = get_db()
+    rows = db.execute(
+        '''
+        SELECT w.work_date, t.task_color, COALESCE(SUM(w.seconds), 0) AS total_seconds
+        FROM work_logs w
+        JOIN tasks t ON t.id = w.task_id
+        WHERE w.work_date BETWEEN ? AND ?
+        GROUP BY w.work_date, t.task_color
+        ORDER BY w.work_date
+        ''',
+        (month_start.isoformat(), month_end.isoformat()),
+    ).fetchall()
+
+    day_map = {}
+    for row in rows:
+        d = row['work_date']
+        if d not in day_map:
+            day_map[d] = {'total_seconds': 0, 'colors': {}}
+        color = row['task_color'] or DEFAULT_TASK_COLOR
+        secs = int(row['total_seconds'])
+        day_map[d]['total_seconds'] += secs
+        day_map[d]['colors'][color] = day_map[d]['colors'].get(color, 0) + secs
+
+    days = []
+    for day_num in range(1, days_in_month + 1):
+        d = month_start.replace(day=day_num).isoformat()
+        entry = day_map.get(d, {'total_seconds': 0, 'colors': {}})
+        colors = [{'color': c, 'seconds': s} for c, s in entry['colors'].items() if s > 0]
+        colors.sort(key=lambda x: x['seconds'], reverse=True)
+        days.append({
+            'date': d,
+            'day': day_num,
+            'total_seconds': entry['total_seconds'],
+            'colors': colors,
+        })
+
+    return flask.jsonify({
+        'year': year,
+        'month': month,
+        'month_label': month_start.strftime('%B %Y'),
+        'days': days,
+        'today': logical_today.isoformat(),
+    })
+
+
 with app.app_context():
     init_db()
 

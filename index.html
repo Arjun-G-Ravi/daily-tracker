@@ -460,6 +460,208 @@
             font-size: 12px;
             flex: 0 0 78px;
         }
+        /* Monthly bar chart */
+        .monthly-chart-section {
+            margin-bottom: 28px;
+        }
+        .monthly-chart-section .chart-bars-area {
+            height: 220px;
+        }
+        .monthly-chart-section .chart-y-axis {
+            height: 220px;
+        }
+        /* Calendar */
+        .calendar-section {
+            margin-top: 8px;
+        }
+        .calendar-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .calendar-nav-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #333;
+            flex: 1;
+            text-align: center;
+        }
+        .calendar-nav button {
+            padding: 5px 12px;
+            background: #e9ecef;
+            color: #333;
+            font-size: 14px;
+        }
+        .calendar-nav button:hover {
+            background: #dee2e6;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .calendar-dow-header {
+            font-size: 11px;
+            color: #999;
+            text-align: center;
+            padding: 2px 0 6px;
+            font-weight: 600;
+        }
+        .calendar-day {
+            min-height: 56px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            padding: 4px 5px;
+            cursor: pointer;
+            background: #fff;
+            transition: background 0.15s;
+            position: relative;
+            overflow: hidden;
+        }
+        .calendar-day:hover {
+            background: #f0f4ff;
+            border-color: #b3c6ff;
+        }
+        .calendar-day.today {
+            border-color: #007bff;
+            background: #eef4ff;
+        }
+        .calendar-day.empty {
+            background: transparent;
+            border: none;
+            cursor: default;
+        }
+        .calendar-day-num {
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+            line-height: 1;
+        }
+        .calendar-day.today .calendar-day-num {
+            color: #007bff;
+        }
+        .calendar-day-time {
+            font-size: 10px;
+            color: #888;
+            margin-top: 3px;
+        }
+        .calendar-day-colors {
+            display: flex;
+            gap: 2px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+        .calendar-day-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        /* Day logs modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.35);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.open {
+            display: flex;
+        }
+        .modal-box {
+            background: white;
+            border-radius: 10px;
+            padding: 24px;
+            width: 480px;
+            max-width: 96vw;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .modal-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #999;
+            cursor: pointer;
+            padding: 0 4px;
+            line-height: 1;
+        }
+        .modal-close:hover {
+            color: #333;
+            background: none;
+        }
+        .modal-total {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .log-entry {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        .log-entry-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .log-entry-name {
+            flex: 1;
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+        }
+        .log-entry-mins-input {
+            width: 80px;
+            flex: 0 0 80px;
+            padding: 5px 7px;
+            font-size: 13px;
+        }
+        .log-entry-save-btn {
+            padding: 5px 10px;
+            font-size: 12px;
+            background: #17a2b8;
+        }
+        .log-entry-save-btn:hover {
+            background: #138496;
+        }
+        .log-entry-del-btn {
+            padding: 5px 10px;
+            font-size: 12px;
+            background: #dc3545;
+        }
+        .log-entry-del-btn:hover {
+            background: #c82333;
+        }
+        .modal-empty {
+            color: #aaa;
+            font-size: 13px;
+            text-align: center;
+            padding: 20px 0;
+        }
     </style>
 </head>
 <body>
@@ -489,7 +691,25 @@
                 </div>
 
                 <div id="monthly" class="tab-content">
-                    <ul class="monthly-overview" id="monthlyOverviewList"></ul>
+                    <div class="monthly-chart-section">
+                        <div class="chart-title">Monthly Hours (last 6 months)</div>
+                        <div class="chart-outer">
+                            <div class="chart-y-axis" id="monthlyChartYAxis"></div>
+                            <div class="chart-body">
+                                <div class="chart-bars-area" id="monthlyBarChart"></div>
+                                <div class="chart-labels-row" id="monthlyChartLabelsRow"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="calendar-section">
+                        <div class="chart-title">Calendar</div>
+                        <div class="calendar-nav">
+                            <button onclick="calendarPrev()">&lsaquo;</button>
+                            <div class="calendar-nav-title" id="calendarNavTitle">--</div>
+                            <button onclick="calendarNext()">&rsaquo;</button>
+                        </div>
+                        <div class="calendar-grid" id="calendarGrid"></div>
+                    </div>
                 </div>
 
                 <div id="settings" class="tab-content">
@@ -523,7 +743,7 @@
                     <ul class="settings-list" id="settingsTaskList"></ul>
                 </div>
             </div>
-            <div class="right-panel">
+            <div class="right-panel" id="weeklyRightPanel">
                 <div class="chart-title">This Week (Sun-Sat)</div>
                 <div class="chart-outer">
                     <div class="chart-y-axis" id="chartYAxis"></div>
@@ -533,6 +753,18 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Day logs modal -->
+    <div class="modal-overlay" id="dayLogsModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title" id="dayLogsModalTitle">--</div>
+                <button class="modal-close" onclick="closeDayLogsModal()">&times;</button>
+            </div>
+            <div class="modal-total" id="dayLogsModalTotal"></div>
+            <div id="dayLogsModalBody"></div>
         </div>
     </div>
 
@@ -550,6 +782,8 @@
         let dayStartHour = 2;
         let currentLogicalDate = '';
         let activeTab = 'weekly';
+        let calendarYear = null;
+        let calendarMonth = null;
 
         function switchTab(tabName, buttonElement) {
             document.querySelectorAll('.tab-content').forEach(tab => {
@@ -558,10 +792,13 @@
             document.querySelectorAll('.tab-button').forEach(btn => {
                 btn.classList.remove('active');
             });
-            
+
             document.getElementById(tabName).classList.add('active');
             buttonElement.classList.add('active');
             activeTab = tabName;
+
+            const rightPanel = document.getElementById('weeklyRightPanel');
+            rightPanel.style.display = (tabName === 'monthly') ? 'none' : '';
         }
 
         async function loadTasks() {
@@ -581,10 +818,17 @@
 
             ensureWeeklyChartHasTodayData();
 
+            if (calendarYear === null) {
+                const todayParts = (data.current_logical_date || '').split('-');
+                calendarYear = Number(todayParts[0]) || new Date().getFullYear();
+                calendarMonth = Number(todayParts[1]) || (new Date().getMonth() + 1);
+            }
+
             updateTodayTotal();
             updateCurrentDayLabel();
             renderTasks('weekly');
-            renderMonthlyOverview();
+            renderMonthlyBarChart();
+            renderCalendar();
             renderSettings();
             renderWeeklyChart();
         }
@@ -620,7 +864,7 @@
 
         function updateCurrentDayLabel() {
             const currentDayLabel = document.getElementById('currentDayLabel');
-            currentDayLabel.textContent = `Current Day: ${formatDisplayDate(currentLogicalDate)} (starts at ${String(dayStartHour).padStart(2, '0')}:00)`;
+            currentDayLabel.textContent = ` ${formatDisplayDate(currentLogicalDate)} `;
         }
 
         async function addTaskFromSettings() {
@@ -936,7 +1180,7 @@
                 renderTasks(activeTab);
                 renderSettings();
                 renderWeeklyChart();
-                renderMonthlyOverview();
+                renderMonthlyBarChart();
             }
         }
 
@@ -985,11 +1229,6 @@
                     startStopButton.onclick = () => startTask(task.id);
                 }
 
-                const deleteButton = document.createElement('button');
-                deleteButton.className = 'delete-btn';
-                deleteButton.textContent = 'Delete';
-                deleteButton.onclick = () => deleteTask(task.id);
-
                 const addToggleButton = document.createElement('button');
                 addToggleButton.className = 'task-add-btn';
                 addToggleButton.textContent = 'Add';
@@ -1022,7 +1261,6 @@
                 function openPanel() {
                     timeLogControls.classList.add('open');
                     startStopButton.style.display = 'none';
-                    deleteButton.style.display = 'none';
                     addToggleButton.style.display = 'none';
                 }
 
@@ -1032,7 +1270,6 @@
                     toInput.value = '';
                     timeLogControls.classList.remove('open');
                     startStopButton.style.display = '';
-                    deleteButton.style.display = '';
                     addToggleButton.style.display = '';
                 }
 
@@ -1065,7 +1302,6 @@
                 taskActions.appendChild(startStopButton);
                 taskActions.appendChild(addToggleButton);
                 taskActions.appendChild(timeLogControls);
-                taskActions.appendChild(deleteButton);
 
                 li.appendChild(taskInfo);
                 li.appendChild(taskActions);
@@ -1073,39 +1309,238 @@
             });
         }
 
-        function renderMonthlyOverview() {
-            const monthlyOverviewList = document.getElementById('monthlyOverviewList');
-            monthlyOverviewList.innerHTML = '';
+        function renderMonthlyBarChart() {
+            const CHART_AREA_PX = 220;
+            const MAX_HOURS = 300;
+            const maxSeconds = MAX_HOURS * 3600;
 
-            const totals = monthlyOverview.map(item => Number(item.total_seconds || 0));
-            const maxTotal = Math.max(...totals, 1);
+            const barsArea = document.getElementById('monthlyBarChart');
+            const labelsRow = document.getElementById('monthlyChartLabelsRow');
+            const yAxis = document.getElementById('monthlyChartYAxis');
+            barsArea.innerHTML = '';
+            labelsRow.innerHTML = '';
+            yAxis.innerHTML = '';
+
+            // Y-axis ticks every 50h, with limit line at 300h
+            const tickStep = 50;
+            for (let h = 0; h <= MAX_HOURS; h += tickStep) {
+                const bottomPx = Math.round(CHART_AREA_PX * h / MAX_HOURS);
+
+                const gridLine = document.createElement('div');
+                gridLine.className = 'chart-grid-line';
+                gridLine.style.bottom = `${bottomPx}px`;
+                if (h === MAX_HOURS) {
+                    gridLine.style.borderColor = '#f0a';
+                    gridLine.style.borderTopStyle = 'solid';
+                    gridLine.style.opacity = '0.4';
+                }
+                barsArea.appendChild(gridLine);
+
+                const tick = document.createElement('div');
+                tick.className = 'chart-y-tick';
+                tick.style.bottom = `${bottomPx}px`;
+                tick.textContent = `${h}h`;
+                yAxis.appendChild(tick);
+            }
 
             monthlyOverview.forEach(item => {
-                const li = document.createElement('li');
-
-                const monthLabel = document.createElement('div');
-                monthLabel.className = 'monthly-overview-month';
-                monthLabel.textContent = item.label || item.month_key || '--';
-
-                const barWrap = document.createElement('div');
-                barWrap.className = 'monthly-overview-bar-wrap';
+                const total = Number(item.total_seconds || 0);
+                const clampedTotal = Math.min(total, maxSeconds);
+                const barPx = total > 0 ? Math.max(Math.round((clampedTotal / maxSeconds) * CHART_AREA_PX), 4) : 0;
 
                 const bar = document.createElement('div');
-                bar.className = 'monthly-overview-bar';
-                const widthPercent = (Number(item.total_seconds || 0) / maxTotal) * 100;
-                bar.style.width = `${Math.max(widthPercent, Number(item.total_seconds || 0) > 0 ? 2 : 0)}%`;
+                bar.className = 'chart-bar';
+                bar.style.height = `${barPx}px`;
+                if (total > 0) {
+                    bar.style.background = '#007bff';
+                }
+                bar.title = `${item.label || item.month_key}: ${formatTime(total)}`;
 
-                const timeLabel = document.createElement('div');
-                timeLabel.className = 'monthly-overview-time';
-                timeLabel.textContent = formatTime(Number(item.total_seconds || 0));
+                barsArea.appendChild(bar);
 
-                barWrap.appendChild(bar);
-                li.appendChild(monthLabel);
-                li.appendChild(barWrap);
-                li.appendChild(timeLabel);
-                monthlyOverviewList.appendChild(li);
+                const label = document.createElement('div');
+                label.className = 'chart-label-cell';
+                const labelText = (item.label || item.month_key || '--');
+                const parts = labelText.split(' ');
+                label.innerHTML = `<div>${parts[0] || '--'}</div><div class="chart-day-date">${parts[1] || ''}</div>`;
+                labelsRow.appendChild(label);
             });
         }
+
+        async function renderCalendar() {
+            const today = currentLogicalDate || getCurrentLogicalDateClient();
+            const resp = await fetch(`/api/monthly_calendar?year=${calendarYear}&month=${calendarMonth}`);
+            const data = await resp.json();
+
+            document.getElementById('calendarNavTitle').textContent = data.month_label || '--';
+
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+
+            const dows = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dows.forEach(d => {
+                const hdr = document.createElement('div');
+                hdr.className = 'calendar-dow-header';
+                hdr.textContent = d;
+                grid.appendChild(hdr);
+            });
+
+            // First day of month (0=Sun)
+            if (data.days && data.days.length > 0) {
+                const firstDate = new Date(`${data.days[0].date}T00:00:00`);
+                const firstDow = firstDate.getDay();
+                for (let i = 0; i < firstDow; i++) {
+                    const empty = document.createElement('div');
+                    empty.className = 'calendar-day empty';
+                    grid.appendChild(empty);
+                }
+            }
+
+            (data.days || []).forEach(dayEntry => {
+                const cell = document.createElement('div');
+                cell.className = 'calendar-day';
+                if (dayEntry.date === today) cell.classList.add('today');
+
+                const numDiv = document.createElement('div');
+                numDiv.className = 'calendar-day-num';
+                numDiv.textContent = dayEntry.day;
+
+                cell.appendChild(numDiv);
+
+                if (dayEntry.total_seconds > 0) {
+                    const timeDiv = document.createElement('div');
+                    timeDiv.className = 'calendar-day-time';
+                    const hrs = Math.floor(dayEntry.total_seconds / 3600);
+                    const mins = Math.floor((dayEntry.total_seconds % 3600) / 60);
+                    timeDiv.textContent = hrs > 0 ? `${hrs}h${mins > 0 ? mins + 'm' : ''}` : `${mins}m`;
+                    cell.appendChild(timeDiv);
+
+                    const dotsDiv = document.createElement('div');
+                    dotsDiv.className = 'calendar-day-colors';
+                    (dayEntry.colors || []).slice(0, 5).forEach(ce => {
+                        const dot = document.createElement('div');
+                        dot.className = 'calendar-day-dot';
+                        dot.style.background = ce.color;
+                        dotsDiv.appendChild(dot);
+                    });
+                    cell.appendChild(dotsDiv);
+                }
+
+                cell.onclick = () => openDayLogsModal(dayEntry.date);
+                grid.appendChild(cell);
+            });
+        }
+
+        function calendarPrev() {
+            calendarMonth -= 1;
+            if (calendarMonth < 1) { calendarMonth = 12; calendarYear -= 1; }
+            renderCalendar();
+        }
+
+        function calendarNext() {
+            calendarMonth += 1;
+            if (calendarMonth > 12) { calendarMonth = 1; calendarYear += 1; }
+            renderCalendar();
+        }
+
+        async function openDayLogsModal(dateIso) {
+            const modal = document.getElementById('dayLogsModal');
+            const titleEl = document.getElementById('dayLogsModalTitle');
+            const totalEl = document.getElementById('dayLogsModalTotal');
+            const bodyEl = document.getElementById('dayLogsModalBody');
+
+            titleEl.textContent = formatDisplayDate(dateIso);
+            totalEl.textContent = 'Loading...';
+            bodyEl.innerHTML = '';
+            modal.classList.add('open');
+
+            await refreshDayLogsModal(dateIso);
+        }
+
+        async function refreshDayLogsModal(dateIso) {
+            const totalEl = document.getElementById('dayLogsModalTotal');
+            const bodyEl = document.getElementById('dayLogsModalBody');
+
+            const resp = await fetch(`/api/day_logs?date=${dateIso}`);
+            const data = await resp.json();
+            const logs = data.logs || [];
+
+            const totalSecs = logs.reduce((s, l) => s + l.seconds, 0);
+            totalEl.textContent = `Total: ${formatTime(totalSecs)}`;
+
+            bodyEl.innerHTML = '';
+
+            if (logs.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'modal-empty';
+                empty.textContent = 'No activity logged for this day.';
+                bodyEl.appendChild(empty);
+                return;
+            }
+
+            logs.forEach(log => {
+                const row = document.createElement('div');
+                row.className = 'log-entry';
+
+                const dot = document.createElement('div');
+                dot.className = 'log-entry-dot';
+                dot.style.background = log.task_color || '#007bff';
+
+                const name = document.createElement('div');
+                name.className = 'log-entry-name';
+                name.textContent = log.task_name;
+
+                const minsInput = document.createElement('input');
+                minsInput.type = 'number';
+                minsInput.min = '1';
+                minsInput.step = '1';
+                minsInput.className = 'log-entry-mins-input';
+                minsInput.value = String(Math.round(log.seconds / 60));
+                minsInput.title = 'Minutes';
+
+                const saveBtn = document.createElement('button');
+                saveBtn.className = 'log-entry-save-btn';
+                saveBtn.textContent = 'Save';
+                saveBtn.onclick = async () => {
+                    const newMins = Number(minsInput.value || 0);
+                    if (newMins <= 0) { alert('Enter a valid number of minutes.'); return; }
+                    await fetch(`/api/work_logs/${log.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ seconds: Math.round(newMins * 60) })
+                    });
+                    await loadTasks();
+                    await refreshDayLogsModal(dateIso);
+                    renderCalendar();
+                };
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'log-entry-del-btn';
+                delBtn.textContent = 'Delete';
+                delBtn.onclick = async () => {
+                    if (!confirm(`Delete this log entry for "${log.task_name}"?`)) return;
+                    await fetch(`/api/work_logs/${log.id}`, { method: 'DELETE' });
+                    await loadTasks();
+                    await refreshDayLogsModal(dateIso);
+                    renderCalendar();
+                };
+
+                row.appendChild(dot);
+                row.appendChild(name);
+                row.appendChild(minsInput);
+                row.appendChild(saveBtn);
+                row.appendChild(delBtn);
+                bodyEl.appendChild(row);
+            });
+        }
+
+        function closeDayLogsModal() {
+            document.getElementById('dayLogsModal').classList.remove('open');
+        }
+
+        document.getElementById('dayLogsModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDayLogsModal();
+        });
 
         function renderSettings() {
             const settingsTaskList = document.getElementById('settingsTaskList');
@@ -1157,7 +1592,14 @@
                 colorInput.value = task.task_color || '#007bff';
                 colorInput.onchange = () => updateTaskColor(task.id, colorInput.value);
 
+                const settingsDeleteBtn = document.createElement('button');
+                settingsDeleteBtn.className = 'delete-btn';
+                settingsDeleteBtn.textContent = 'Delete';
+                settingsDeleteBtn.style.padding = '6px 12px';
+                settingsDeleteBtn.onclick = () => deleteTask(task.id);
+
                 colorControl.appendChild(colorInput);
+                colorControl.appendChild(settingsDeleteBtn);
 
                 li.appendChild(taskInfo);
                 li.appendChild(colorControl);
