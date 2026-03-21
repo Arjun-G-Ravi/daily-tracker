@@ -260,13 +260,14 @@
         }
         .settings-list li {
             padding: 12px;
-            background: #f9f9f9;
+            background: #f8f9fb;
             margin-bottom: 10px;
-            border-radius: 4px;
+            border-radius: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 12px;
+            border: 1px solid #eceff3;
         }
         .settings-task-name {
             color: #333;
@@ -294,11 +295,13 @@
         .settings-create-form {
             display: flex;
             gap: 8px;
-            margin-bottom: 14px;
+            margin-bottom: 0;
             align-items: center;
+            flex-wrap: wrap;
         }
         .settings-create-form input[type="text"] {
             flex: 1;
+            min-width: 180px;
         }
         .settings-create-form input[type="number"] {
             width: 100px;
@@ -312,17 +315,19 @@
             background: white;
         }
         .settings-section-title {
-            font-size: 14px;
-            font-weight: 700;
-            color: #333;
-            margin: 12px 0 8px;
+            font-size: 12px;
+            font-weight: 800;
+            color: #6b7280;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            margin: 0 0 10px;
         }
         .settings-day-start-form,
         .settings-past-log-form {
             display: flex;
             gap: 8px;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 0;
             flex-wrap: wrap;
         }
         .settings-day-start-form input[type="number"] {
@@ -343,6 +348,50 @@
         }
         .settings-past-log-form input[type="number"] {
             width: 100px;
+        }
+        .settings-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .settings-card {
+            border: 1px solid #e9edf2;
+            border-radius: 10px;
+            padding: 14px;
+            background: #fcfdff;
+        }
+        .settings-card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        .settings-field-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .settings-field-row:last-child {
+            margin-bottom: 0;
+        }
+        .settings-field-row span {
+            color: #5f6977;
+            font-size: 13px;
+        }
+        .settings-field-row select,
+        .settings-field-row input[type="number"] {
+            height: 38px;
+            border: 1px solid #dde3ea;
+            border-radius: 6px;
+            padding: 0 10px;
+            background: #fff;
+        }
+        .settings-divider {
+            height: 1px;
+            background: #edf1f5;
+            margin: 12px 0;
         }
         .chart-title {
             font-size: 15px;
@@ -739,6 +788,70 @@
             text-align: center;
             padding: 20px 0;
         }
+        .modal-add-wrap {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .modal-add-toggle {
+            align-self: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            padding: 0;
+            font-size: 20px;
+            line-height: 1;
+            font-weight: 600;
+            background: #e9ecef;
+            color: #444;
+        }
+        .modal-add-toggle:hover {
+            background: #dde2e6;
+        }
+        .modal-add-form {
+            display: none;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .modal-add-form.open {
+            display: flex;
+        }
+        .modal-add-form select,
+        .modal-add-form input[type="number"] {
+            height: 34px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 0 8px;
+            background: #fff;
+        }
+        .modal-add-form select {
+            flex: 1;
+            min-width: 160px;
+        }
+        .modal-add-form input[type="number"] {
+            width: 92px;
+            flex: 0 0 92px;
+        }
+        .modal-add-save-btn {
+            background: #17a2b8;
+            padding: 7px 11px;
+            font-size: 12px;
+        }
+        .modal-add-save-btn:hover {
+            background: #138496;
+        }
+        .modal-add-cancel-btn {
+            background: #6c757d;
+            padding: 7px 11px;
+            font-size: 12px;
+        }
+        .modal-add-cancel-btn:hover {
+            background: #5a6268;
+        }
 
         /* ── Daily Tasks Tab ───────────────────── */
         .dt-section-title {
@@ -853,6 +966,24 @@
             color: #999;
             margin-top: 2px;
         }
+        .dt-end-text {
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 6px;
+        }
+        .dt-end-text.today {
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .dt-end-green {
+            color: #28a745;
+        }
+        .dt-end-orange {
+            color: #fd7e14;
+        }
+        .dt-end-red {
+            color: #dc3545;
+        }
         .dt-weekly-bar-wrap {
             width: 70px;
             flex: 0 0 70px;
@@ -949,10 +1080,25 @@
             flex: 1;
             font-size: 13px;
             color: #333;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            min-width: 0;
         }
         .dtp-name.done {
             text-decoration: line-through;
             color: #aaa;
+        }
+        .dtp-repeat-prefix {
+            font-size: 13px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        .dtp-main-text {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .dtp-mins-input {
             width: 62px;
@@ -963,6 +1109,29 @@
         .dtp-progress {
             font-size: 11px;
             color: #888;
+            white-space: nowrap;
+        }
+        .dtp-end-text {
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .dtp-end-text.today {
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .dtp-end-text.dt-end-green { color: #28a745; }
+        .dtp-end-text.dt-end-orange { color: #fd7e14; }
+        .dtp-end-text.dt-end-red { color: #dc3545; }
+        .dtp-count-label {
+            font-size: 11px;
+            color: #8b95a3;
+            font-weight: 600;
+        }
+        .dtp-count-value {
+            font-size: 11px;
+            color: #6f7b89;
+            font-weight: 700;
             white-space: nowrap;
         }
         .dtp-progress.complete {
@@ -1021,102 +1190,119 @@
                 </div>
 
                 <div id="tasks" class="tab-content">
-                    <!-- Add Forms Section -->
-                    <div class="dt-section-title">Weekly Tasks <span class="dt-section-badge" id="dtWeeklyBadge">0</span></div>
+                    <div class="dt-section-title">Task Manager <span class="dt-section-badge" id="dtAllBadge">0</span></div>
                     <div class="dt-add-form">
                         <div class="dt-field-group">
                             <label>Name</label>
-                            <input type="text" id="dtWeeklyName" placeholder="Task name" style="width:120px">
-                        </div>
-                        <div class="dt-field-group">
-                            <label>Kind</label>
-                            <select id="dtWeeklyKind">
-                                <option value="checkbox">Checkbox</option>
-                                <option value="timed">Timed</option>
-                                <option value="integer">Integer</option>
-                            </select>
-                        </div>
-                        <div class="dt-field-group" id="dtWeeklyTargetGroup">
-                            <label>Target</label>
-                            <input type="number" min="1" id="dtWeeklyTarget" placeholder="e.g. 120">
-                        </div>
-                        <button onclick="addDailyTask('weekly')">Add</button>
-                    </div>
-
-                    <div class="dt-section-title" style="margin-top:20px">Daily &amp; Ongoing <span class="dt-section-badge" id="dtDailyBadge">0</span></div>
-                    <div class="dt-add-form">
-                        <div class="dt-field-group">
-                            <label>Name</label>
-                            <input type="text" id="dtDailyName" placeholder="Task name" style="width:110px">
+                            <input type="text" id="dtTaskName" placeholder="Task name" style="width:150px">
                         </div>
                         <div class="dt-field-group">
                             <label>Repeats</label>
-                            <select id="dtDailyRecurrence">
+                            <select id="dtTaskRecurrence">
                                 <option value="daily">Daily</option>
-                                <option value="none">No expiry</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="one_time">One-time</option>
                             </select>
                         </div>
                         <div class="dt-field-group">
-                            <label>Kind</label>
-                            <select id="dtDailyKind">
-                                <option value="checkbox">Checkbox</option>
-                                <option value="timed">Timed</option>
-                                <option value="integer">Integer</option>
+                            <label>Mode</label>
+                            <select id="dtTaskKind">
+                                <option value="checkbox">Tick</option>
+                                <option value="integer">Number</option>
                             </select>
                         </div>
-                        <div class="dt-field-group" id="dtDailyTargetGroup">
+                        <div class="dt-field-group" id="dtTaskTargetGroup" style="display:none">
                             <label>Target</label>
-                            <input type="number" min="1" id="dtDailyTarget" placeholder="e.g. 30">
+                            <input type="number" min="1" id="dtTaskTarget" placeholder="e.g. 100">
                         </div>
-                        <button onclick="addDailyTask('daily')">Add</button>
+                        <div class="dt-field-group">
+                            <label>Due Date (optional)</label>
+                            <input type="date" id="dtTaskDueDate">
+                        </div>
+                        <button onclick="addUnifiedTask()">Add Task</button>
                     </div>
 
-                    <!-- Tasks Lists Section -->
-                    <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #ddd;">
-                        <div class="dt-section-title">Weekly Tasks</div>
-                        <ul class="dt-list" id="dtWeeklyList"></ul>
+                    <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #ddd;">
+                        <div class="dt-section-title">All Tasks (sorted by days left)</div>
+                        <ul class="dt-list" id="dtUnifiedList"></ul>
+                    </div>
 
-                        <div class="dt-section-title" style="margin-top:20px">Daily Tasks</div>
-                        <ul class="dt-list" id="dtDailyList"></ul>
-
-                        <div class="dt-sub-label" id="dtNoExpirySubLabel" style="display:none">Ongoing (no expiry)</div>
-                        <ul class="dt-list" id="dtNoExpiryList"></ul>
+                    <div class="calendar-section" style="margin-top: 24px; padding-top: 14px; border-top: 1px solid #ddd;">
+                        <div class="chart-title">Tasks Calendar</div>
+                        <div class="calendar-nav">
+                            <button onclick="dtCalendarPrev()">&lsaquo;</button>
+                            <div class="calendar-nav-title" id="dtCalendarNavTitle">--</div>
+                            <button onclick="dtCalendarNext()">&rsaquo;</button>
+                        </div>
+                        <div class="calendar-grid" id="dtCalendarGrid"></div>
                     </div>
                 </div>
 
                 <div id="settings" class="tab-content">
-                    <div class="settings-section-title">Day Start</div>
-                    <div class="settings-day-start-form">
-                        <span>New day starts at</span>
-                        <input type="number" min="0" max="23" step="1" id="settingsDayStartHour">
-                        <span>:00</span>
-                        <button onclick="saveDayStartHour()">Save</button>
-                    </div>
+                    <div class="settings-layout">
+                        <div class="settings-card">
+                            <div class="settings-card-title">General</div>
 
-                    <div class="settings-section-title">Add Time for Any Day</div>
-                    <div class="settings-past-log-form">
-                        <select id="settingsPastTaskSelect"></select>
-                        <input type="date" id="settingsPastDate">
-                        <input type="number" min="1" step="1" id="settingsPastMinutes" placeholder="Minutes">
-                        <button onclick="addTimeForAnyDay()">Add Time</button>
-                    </div>
+                            <div class="settings-section-title">Day Start</div>
+                            <div class="settings-field-row settings-day-start-form">
+                                <span>New day starts at</span>
+                                <input type="number" min="0" max="23" step="1" id="settingsDayStartHour">
+                                <span>:00</span>
+                                <button onclick="saveDayStartHour()">Save</button>
+                            </div>
 
-                    <div class="settings-section-title">Create Task</div>
-                    <div class="settings-create-form">
-                        <input type="text" id="settingsTaskInput" placeholder="Add reusable task...">
-                        <select id="settingsTaskType">
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                        </select>
-                        <input type="number" min="0" step="1" id="settingsTaskMinutes" placeholder="Minutes">
-                        <input type="color" id="settingsTaskColor" value="#007bff" title="Task color">
-                        <button onclick="addTaskFromSettings()">Add Task</button>
+                            <div class="settings-section-title">Week Start</div>
+                            <div class="settings-field-row">
+                                <span>New week starts on</span>
+                                <select id="settingsWeekStartDay">
+                                    <option value="sunday">Sunday</option>
+                                    <option value="monday">Monday</option>
+                                    <option value="tuesday">Tuesday</option>
+                                    <option value="wednesday">Wednesday</option>
+                                    <option value="thursday">Thursday</option>
+                                    <option value="friday">Friday</option>
+                                    <option value="saturday">Saturday</option>
+                                </select>
+                                <button onclick="saveWeekStartDay()">Save</button>
+                            </div>
+
+                            <div class="settings-divider"></div>
+
+                            <div class="settings-section-title">Add Time for Any Day</div>
+                            <div class="settings-past-log-form">
+                                <select id="settingsPastTaskSelect"></select>
+                                <input type="date" id="settingsPastDate">
+                                <input type="number" min="1" step="1" id="settingsPastMinutes" placeholder="Minutes">
+                                <button onclick="addTimeForAnyDay()">Add Time</button>
+                            </div>
+                        </div>
+
+                        <div class="settings-card">
+                            <div class="settings-card-title">Jobs</div>
+
+                            <div class="settings-section-title">Create Job</div>
+                            <div class="settings-create-form">
+                                <input type="text" id="settingsTaskInput" placeholder="Add reusable job...">
+                                <select id="settingsTaskType">
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                                <input type="number" min="0" step="1" id="settingsTaskMinutes" placeholder="Minutes">
+                                <input type="color" id="settingsTaskColor" value="#007bff" title="Task color">
+                                <button onclick="addTaskFromSettings()">Add Job</button>
+                            </div>
+                        </div>
+
+                        <div class="settings-card">
+                            <div class="settings-card-title">Job List</div>
+                            <ul class="settings-list" id="settingsTaskList"></ul>
+                        </div>
                     </div>
-                    <ul class="settings-list" id="settingsTaskList"></ul>
                 </div>
             </div>
             <div class="right-panel" id="weeklyRightPanel">
-                <div class="chart-title">This Week (Sun-Sat)</div>
+                <div class="chart-title" id="weeklyChartTitle">This Week</div>
                 <div class="chart-outer">
                     <div class="chart-y-axis" id="chartYAxis"></div>
                     <div class="chart-body">
@@ -1125,12 +1311,8 @@
                     </div>
                 </div>
                 <div class="daily-tasks-panel" id="weeklyTasksPanel">
-                    <div class="daily-tasks-panel-title">Weekly Tasks</div>
-                    <ul class="dtp-list" id="dtpWeeklyList"></ul>
-                </div>
-                <div class="daily-tasks-panel" id="dailyTasksPanel">
-                    <div class="daily-tasks-panel-title">Today's Tasks</div>
-                    <ul class="dtp-list" id="dtpList"></ul>
+                    <div class="daily-tasks-panel-title">Tasks (due soon first)</div>
+                    <ul class="dtp-list" id="dtpUnifiedList"></ul>
                 </div>
             </div>
         </div>
@@ -1150,6 +1332,17 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="dailyTaskLogsModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title" id="dailyTaskLogsModalTitle">--</div>
+                <button class="modal-close" onclick="closeDailyTaskLogsModal()">&times;</button>
+            </div>
+            <div class="modal-total" id="dailyTaskLogsModalTotal"></div>
+            <div id="dailyTaskLogsModalBody"></div>
+        </div>
+    </div>
+
     <script>
         const tasks = {
             weekly: [],
@@ -1162,11 +1355,14 @@
         let monthlyOverview = [];
         let weeklyChartMaxSeconds = 14 * 3600;
         let dayStartHour = 2;
+        let weekStartDay = 'sunday';
         let currentLogicalDate = '';
         let activeTab = 'weekly';
         let calendarYear = null;
         let calendarMonth = null;
-        let dailyTasks = { weekly: [], daily: [], no_expiry: [], today: '', week_start: '' };
+        let dtCalendarYear = null;
+        let dtCalendarMonth = null;
+        let dailyTasks = { items: [], today: '', week_start: '' };
 
         function switchTab(tabName, buttonElement) {
             document.querySelectorAll('.tab-content').forEach(tab => {
@@ -1182,6 +1378,10 @@
 
             const rightPanel = document.getElementById('weeklyRightPanel');
             rightPanel.style.display = (tabName === 'monthly') ? 'none' : '';
+
+            if (tabName === 'tasks') {
+                renderDailyTasksCalendar();
+            }
         }
 
         async function loadTasks() {
@@ -1201,11 +1401,10 @@
             monthlyOverview = data.monthly_overview || [];
             weeklyChartMaxSeconds = data.weekly_chart_max_seconds || (14 * 3600);
             dayStartHour = Number(data.day_start_hour ?? 2);
+            weekStartDay = data.week_start_day || 'sunday';
             currentLogicalDate = data.current_logical_date || '';
             dailyTasks = {
-                weekly: dtData.weekly || [],
-                daily: dtData.daily || [],
-                no_expiry: dtData.no_expiry || [],
+                items: dtData.items || [],
                 today: dtData.today || '',
                 week_start: dtData.week_start || '',
             };
@@ -1214,6 +1413,12 @@
                 const todayParts = (data.current_logical_date || '').split('-');
                 calendarYear = Number(todayParts[0]) || new Date().getFullYear();
                 calendarMonth = Number(todayParts[1]) || (new Date().getMonth() + 1);
+            }
+
+            if (dtCalendarYear === null) {
+                const todayParts = (dailyTasks.today || data.current_logical_date || '').split('-');
+                dtCalendarYear = Number(todayParts[0]) || new Date().getFullYear();
+                dtCalendarMonth = Number(todayParts[1]) || (new Date().getMonth() + 1);
             }
 
             updateTodayTotal();
@@ -1225,6 +1430,31 @@
             renderWeeklyChart();
             renderDailyTasksTab();
             renderDailyTasksPanel();
+            renderDailyTasksCalendar();
+            updateWeeklyChartTitle();
+        }
+
+        function formatWeekStartLabel(dayKey) {
+            const labels = {
+                sunday: 'Sun',
+                monday: 'Mon',
+                tuesday: 'Tue',
+                wednesday: 'Wed',
+                thursday: 'Thu',
+                friday: 'Fri',
+                saturday: 'Sat',
+            };
+            return labels[dayKey] || 'Sun';
+        }
+
+        function updateWeeklyChartTitle() {
+            const titleEl = document.getElementById('weeklyChartTitle');
+            if (!titleEl) return;
+
+            const order = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const startIdx = Math.max(0, order.indexOf(weekStartDay));
+            const endIdx = (startIdx + 6) % 7;
+            titleEl.textContent = `This Week (${formatWeekStartLabel(order[startIdx])}-${formatWeekStartLabel(order[endIdx])})`;
         }
 
         function formatDisplayDate(dateIso) {
@@ -1356,6 +1586,23 @@
                 },
                 body: JSON.stringify({
                     day_start_hour: value
+                })
+            });
+
+            await loadTasks();
+        }
+
+        async function saveWeekStartDay() {
+            const weekStartInput = document.getElementById('settingsWeekStartDay');
+            const value = String(weekStartInput.value || 'sunday').toLowerCase();
+
+            await fetch('/api/settings/week_start', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    week_start_day: value
                 })
             });
 
@@ -1972,63 +2219,148 @@
                 empty.className = 'modal-empty';
                 empty.textContent = 'No activity logged for this day.';
                 bodyEl.appendChild(empty);
-                return;
+            } else {
+                logs.forEach(log => {
+                    const row = document.createElement('div');
+                    row.className = 'log-entry';
+
+                    const dot = document.createElement('div');
+                    dot.className = 'log-entry-dot';
+                    dot.style.background = log.task_color || '#007bff';
+
+                    const name = document.createElement('div');
+                    name.className = 'log-entry-name';
+                    name.textContent = log.task_name;
+
+                    const minsInput = document.createElement('input');
+                    minsInput.type = 'number';
+                    minsInput.min = '1';
+                    minsInput.step = '1';
+                    minsInput.className = 'log-entry-mins-input';
+                    minsInput.value = String(Math.round(log.seconds / 60));
+                    minsInput.title = 'Minutes';
+
+                    const saveBtn = document.createElement('button');
+                    saveBtn.className = 'log-entry-save-btn';
+                    saveBtn.textContent = 'Save';
+                    saveBtn.onclick = async () => {
+                        const newMins = Number(minsInput.value || 0);
+                        if (newMins <= 0) { alert('Enter a valid number of minutes.'); return; }
+                        await fetch(`/api/work_logs/${log.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ seconds: Math.round(newMins * 60) })
+                        });
+                        await loadTasks();
+                        await refreshDayLogsModal(dateIso);
+                        renderCalendar();
+                    };
+
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'log-entry-del-btn';
+                    delBtn.textContent = 'Delete';
+                    delBtn.onclick = async () => {
+                        if (!confirm(`Delete this log entry for "${log.task_name}"?`)) return;
+                        await fetch(`/api/work_logs/${log.id}`, { method: 'DELETE' });
+                        await loadTasks();
+                        await refreshDayLogsModal(dateIso);
+                        renderCalendar();
+                    };
+
+                    row.appendChild(dot);
+                    row.appendChild(name);
+                    row.appendChild(minsInput);
+                    row.appendChild(saveBtn);
+                    row.appendChild(delBtn);
+                    bodyEl.appendChild(row);
+                });
             }
 
-            logs.forEach(log => {
-                const row = document.createElement('div');
-                row.className = 'log-entry';
+            const addWrap = document.createElement('div');
+            addWrap.className = 'modal-add-wrap';
 
-                const dot = document.createElement('div');
-                dot.className = 'log-entry-dot';
-                dot.style.background = log.task_color || '#007bff';
+            const plusBtn = document.createElement('button');
+            plusBtn.className = 'modal-add-toggle';
+            plusBtn.textContent = '+';
+            plusBtn.title = 'Add task time for this day';
 
-                const name = document.createElement('div');
-                name.className = 'log-entry-name';
-                name.textContent = log.task_name;
+            const addForm = document.createElement('div');
+            addForm.className = 'modal-add-form';
 
-                const minsInput = document.createElement('input');
-                minsInput.type = 'number';
-                minsInput.min = '1';
-                minsInput.step = '1';
-                minsInput.className = 'log-entry-mins-input';
-                minsInput.value = String(Math.round(log.seconds / 60));
-                minsInput.title = 'Minutes';
+            const taskSelect = document.createElement('select');
+            const allTasks = [...tasks.weekly, ...tasks.monthly];
+            if (allTasks.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No tasks available';
+                taskSelect.appendChild(option);
+                taskSelect.disabled = true;
+            } else {
+                allTasks.forEach(task => {
+                    const option = document.createElement('option');
+                    option.value = String(task.id);
+                    option.textContent = task.name;
+                    taskSelect.appendChild(option);
+                });
+            }
 
-                const saveBtn = document.createElement('button');
-                saveBtn.className = 'log-entry-save-btn';
-                saveBtn.textContent = 'Save';
-                saveBtn.onclick = async () => {
-                    const newMins = Number(minsInput.value || 0);
-                    if (newMins <= 0) { alert('Enter a valid number of minutes.'); return; }
-                    await fetch(`/api/work_logs/${log.id}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ seconds: Math.round(newMins * 60) })
-                    });
-                    await loadTasks();
-                    await refreshDayLogsModal(dateIso);
-                    renderCalendar();
-                };
+            const minsInput = document.createElement('input');
+            minsInput.type = 'number';
+            minsInput.min = '1';
+            minsInput.step = '1';
+            minsInput.placeholder = 'Minutes';
 
-                const delBtn = document.createElement('button');
-                delBtn.className = 'log-entry-del-btn';
-                delBtn.textContent = 'Delete';
-                delBtn.onclick = async () => {
-                    if (!confirm(`Delete this log entry for "${log.task_name}"?`)) return;
-                    await fetch(`/api/work_logs/${log.id}`, { method: 'DELETE' });
-                    await loadTasks();
-                    await refreshDayLogsModal(dateIso);
-                    renderCalendar();
-                };
+            const addBtn = document.createElement('button');
+            addBtn.className = 'modal-add-save-btn';
+            addBtn.textContent = 'Add';
 
-                row.appendChild(dot);
-                row.appendChild(name);
-                row.appendChild(minsInput);
-                row.appendChild(saveBtn);
-                row.appendChild(delBtn);
-                bodyEl.appendChild(row);
-            });
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'modal-add-cancel-btn';
+            cancelBtn.textContent = 'Cancel';
+
+            function closeAddForm() {
+                minsInput.value = '';
+                addForm.classList.remove('open');
+                plusBtn.style.display = '';
+            }
+
+            plusBtn.onclick = () => {
+                if (allTasks.length === 0) {
+                    alert('Create a task first in Settings.');
+                    return;
+                }
+                addForm.classList.add('open');
+                plusBtn.style.display = 'none';
+                minsInput.focus();
+            };
+
+            addBtn.onclick = async () => {
+                const taskId = Number(taskSelect.value || 0);
+                const minutes = Number(minsInput.value || 0);
+                if (!taskId) {
+                    alert('Please select a task.');
+                    return;
+                }
+                if (minutes <= 0) {
+                    alert('Please enter minutes greater than 0.');
+                    return;
+                }
+                await addManualSeconds(taskId, minutes * 60, dateIso);
+                await refreshDayLogsModal(dateIso);
+                renderCalendar();
+                closeAddForm();
+            };
+
+            cancelBtn.onclick = closeAddForm;
+
+            addForm.appendChild(taskSelect);
+            addForm.appendChild(minsInput);
+            addForm.appendChild(addBtn);
+            addForm.appendChild(cancelBtn);
+
+            addWrap.appendChild(plusBtn);
+            addWrap.appendChild(addForm);
+            bodyEl.appendChild(addWrap);
         }
 
         function closeDayLogsModal() {
@@ -2045,6 +2377,11 @@
 
             const settingsDayStartHour = document.getElementById('settingsDayStartHour');
             settingsDayStartHour.value = String(dayStartHour);
+
+            const settingsWeekStartDay = document.getElementById('settingsWeekStartDay');
+            if (settingsWeekStartDay) {
+                settingsWeekStartDay.value = weekStartDay || 'sunday';
+            }
 
             const allTasks = [
                 ...tasks.weekly.map(task => ({ ...task, task_type: 'weekly' })),
@@ -2119,52 +2456,84 @@
 
         // ── Daily Tasks Tab ─────────────────────────────────────────────────
 
-        function wireKindSelect(kindId, targetGroupId) {
-            const sel = document.getElementById(kindId);
-            if (!sel) return;
+        function wireUnifiedTaskKindSelect() {
+            const sel = document.getElementById('dtTaskKind');
+            const grp = document.getElementById('dtTaskTargetGroup');
+            if (!sel || !grp) return;
             function toggle() {
-                const grp = document.getElementById(targetGroupId);
-                if (grp) grp.style.display = (sel.value === 'timed' || sel.value === 'integer') ? '' : 'none';
+                grp.style.display = sel.value === 'integer' ? '' : 'none';
             }
             sel.addEventListener('change', toggle);
             toggle();
         }
-        wireKindSelect('dtWeeklyKind', 'dtWeeklyTargetGroup');
-        wireKindSelect('dtDailyKind', 'dtDailyTargetGroup');
+        wireUnifiedTaskKindSelect();
 
-        async function addDailyTask(formType) {
-            let recurrence, nameEl, kindEl, targetEl;
-            if (formType === 'weekly') {
-                recurrence = 'weekly';
-                nameEl = document.getElementById('dtWeeklyName');
-                kindEl = document.getElementById('dtWeeklyKind');
-                targetEl = document.getElementById('dtWeeklyTarget');
-            } else {
-                // daily form handles both daily + no_expiry via dropdown
-                nameEl = document.getElementById('dtDailyName');
-                kindEl = document.getElementById('dtDailyKind');
-                targetEl = document.getElementById('dtDailyTarget');
-                recurrence = document.getElementById('dtDailyRecurrence').value || 'daily';
-            }
+        function formatEndsIn(task) {
+            const days = task.ends_in_days;
+            if (days === null || days === undefined) return 'No end date';
+            if (days < 0) return `Overdue by ${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'}`;
+            if (days === 0) return 'Ends today';
+            if (days === 1) return 'Ends in 1 day';
+            return `Ends in ${days} days`;
+        }
+
+        function formatRecurrenceLabel(recurrence) {
+            if (recurrence === 'one_time') return 'One-time';
+            if (recurrence === 'monthly') return 'Monthly';
+            if (recurrence === 'weekly') return 'Weekly';
+            return 'Daily';
+        }
+
+        function getEndsToneClass(task) {
+            const days = task.ends_in_days;
+            if (days === null || days === undefined) return '';
+            if (days > 7) return 'dt-end-green';
+            if (days < 3) return 'dt-end-red';
+            return 'dt-end-orange';
+        }
+
+        async function addUnifiedTask() {
+            const nameEl = document.getElementById('dtTaskName');
+            const recurrenceEl = document.getElementById('dtTaskRecurrence');
+            const kindEl = document.getElementById('dtTaskKind');
+            const targetEl = document.getElementById('dtTaskTarget');
+            const dueDateEl = document.getElementById('dtTaskDueDate');
 
             const name = nameEl.value.trim();
-            if (!name) { nameEl.focus(); return; }
+            if (!name) {
+                nameEl.focus();
+                return;
+            }
 
             const payload = {
                 name,
-                recurrence,
+                recurrence: recurrenceEl.value,
                 task_kind: kindEl.value,
-                target_minutes: (kindEl.value === 'timed' || kindEl.value === 'integer') && targetEl && targetEl.value ? Number(targetEl.value) : null,
+                target_minutes: kindEl.value === 'integer' && targetEl.value ? Number(targetEl.value) : null,
+                due_date: dueDateEl.value || null,
             };
 
-            await fetch('/api/daily_tasks', {
+            const resp = await fetch('/api/daily_tasks', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
 
+            if (!resp.ok) {
+                let message = 'Failed to create task.';
+                try {
+                    const data = await resp.json();
+                    if (data && data.error) message = data.error;
+                } catch (e) {
+                    // ignore parse errors
+                }
+                alert(message);
+                return;
+            }
+
             nameEl.value = '';
-            if (targetEl) targetEl.value = '';
+            targetEl.value = '';
+            dueDateEl.value = '';
             await loadTasks();
         }
 
@@ -2174,186 +2543,78 @@
             await loadTasks();
         }
 
-        function renderDailyTasksTab() {
-            const weekly = dailyTasks.weekly;
-            const daily = dailyTasks.daily;
-            const noExpiry = dailyTasks.no_expiry;
-
-            document.getElementById('dtWeeklyBadge').textContent = weekly.length;
-            document.getElementById('dtDailyBadge').textContent = daily.length + noExpiry.length;
-
-            renderDtList(weekly, 'dtWeeklyList');
-            renderDtList(daily, 'dtDailyList');
-            renderDtList(noExpiry, 'dtNoExpiryList');
-
-            // Show sub-label divider only if both daily and no-expiry have items
-            const subLabel = document.getElementById('dtNoExpirySubLabel');
-            subLabel.style.display = (daily.length > 0 && noExpiry.length > 0) ? '' : 'none';
-        }
-
-        function renderDtList(list, containerId) {
-            const ul = document.getElementById(containerId);
-            if (!ul) return;
-            ul.innerHTML = '';
-            if (list.length === 0) {
-                // Only show empty message for the main lists, not the no-expiry sub-list when daily is also empty
-                if (containerId === 'dtWeeklyList' || containerId === 'dtDailyList') {
-                    const empty = document.createElement('li');
-                    empty.className = 'dt-empty';
-                    empty.textContent = 'No tasks yet.';
-                    ul.appendChild(empty);
-                }
-                return;
-            }
-            list.forEach(task => {
-                const li = document.createElement('li');
-                li.className = 'dt-item';
-
-                const colorBar = document.createElement('div');
-                colorBar.className = 'dt-color-bar';
-                colorBar.style.background = task.color || '#007bff';
-
-                const info = document.createElement('div');
-                info.className = 'dt-info';
-
-                const name = document.createElement('div');
-                name.className = 'dt-name';
-                name.textContent = task.name;
-
-                const meta = document.createElement('div');
-                meta.className = 'dt-meta';
-                let kindLabel;
-                if (task.task_kind === 'timed') {
-                    kindLabel = `Timed${task.target_minutes ? ' · ' + task.target_minutes + 'min' : ''}`;
-                } else if (task.task_kind === 'integer') {
-                    kindLabel = `Count${task.target_minutes ? ' · target ' + task.target_minutes : ''}`;
-                } else {
-                    kindLabel = 'Checkbox';
-                }
-                const recLabel = task.recurrence === 'weekly' ? ' · Weekly'
-                    : task.recurrence === 'none' ? ' · No expiry'
-                    : ' · Daily';
-                meta.textContent = kindLabel + recLabel;
-
-                info.appendChild(name);
-                info.appendChild(meta);
-
-                // For weekly tasks: show this week's progress bar
-                if (task.recurrence === 'weekly' && task.target_minutes) {
-                    const done = task.done_minutes || 0;
-                    const pct = Math.min(100, (done / task.target_minutes) * 100);
-                    const barWrap = document.createElement('div');
-                    barWrap.className = 'dt-weekly-bar-wrap';
-                    const bar = document.createElement('div');
-                    bar.className = 'dt-weekly-bar';
-                    bar.style.background = task.color || '#6610f2';
-                    bar.style.width = pct + '%';
-                    barWrap.appendChild(bar);
-                    info.appendChild(barWrap);
-                    const wLabel = document.createElement('div');
-                    wLabel.className = 'dt-meta';
-                    wLabel.textContent = `This week: ${done}/${task.target_minutes} min`;
-                    info.appendChild(wLabel);
-                }
-
-                const actions = document.createElement('div');
-                actions.className = 'dt-actions';
-                const delBtn = document.createElement('button');
-                delBtn.className = 'dt-del-btn';
-                delBtn.textContent = 'Delete';
-                delBtn.onclick = () => deleteDailyTask(task.id);
-                actions.appendChild(delBtn);
-
-                li.appendChild(colorBar);
-                li.appendChild(info);
-                li.appendChild(actions);
-                ul.appendChild(li);
+        async function updateUnifiedTaskProgress(task, updates) {
+            await fetch(`/api/daily_tasks/${task.id}/progress`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates),
             });
+            await loadTasks();
         }
 
-        // ── Right Panel: Weekly Tasks + Today's Tasks ───────────────────────
-
-        function renderDailyTasksPanel() {
-            renderDtpWeeklyList();
-            renderDtpTodayList();
-        }
-
-        function renderDtpWeeklyList() {
-            const panel = document.getElementById('dtpWeeklyList');
-            panel.innerHTML = '';
-            const weeklyPanel = document.getElementById('weeklyTasksPanel');
-            const incomplete = dailyTasks.weekly.filter(t => !t.done);
-            const completed = dailyTasks.weekly.filter(t => t.done);
-
-            if (incomplete.length === 0 && completed.length === 0) {
-                weeklyPanel.style.display = 'none';
-                return;
-            }
-            weeklyPanel.style.display = '';
-
-            incomplete.forEach(task => {
-                const li = buildDtpItem(task);
-                panel.appendChild(li);
-            });
-
-            if (completed.length > 0) {
-                const divider = document.createElement('li');
-                divider.style.cssText = 'list-style:none;font-size:10px;font-weight:700;color:#ccc;text-transform:uppercase;letter-spacing:0.5px;padding:10px 0 4px;margin:8px 0 0;border-top:1px solid #eee;text-align:center;';
-                divider.textContent = '— Completed —';
-                panel.appendChild(divider);
-
-                completed.forEach(task => {
-                    const li = buildDtpItem(task);
-                    panel.appendChild(li);
-                });
-            }
-        }
-
-        function renderDtpTodayList() {
-            const panel = document.getElementById('dtpList');
-            panel.innerHTML = '';
-            const incomplete = dailyTasks.daily.filter(t => !t.done).concat(dailyTasks.no_expiry.filter(t => !t.done));
-            const completed = dailyTasks.daily.filter(t => t.done).concat(dailyTasks.no_expiry.filter(t => t.done));
-
-            if (incomplete.length === 0 && completed.length === 0) {
-                const empty = document.createElement('li');
-                empty.style.cssText = 'color:#bbb;font-size:12px;padding:8px 2px;';
-                empty.textContent = 'No tasks for today.';
-                panel.appendChild(empty);
-                return;
-            }
-
-            incomplete.forEach(task => {
-                const li = buildDtpItem(task);
-                panel.appendChild(li);
-            });
-
-            if (completed.length > 0) {
-                const divider = document.createElement('li');
-                divider.style.cssText = 'list-style:none;font-size:10px;font-weight:700;color:#ccc;text-transform:uppercase;letter-spacing:0.5px;padding:10px 0 4px;margin:8px 0 0;border-top:1px solid #eee;text-align:center;';
-                divider.textContent = '— Completed —';
-                panel.appendChild(divider);
-
-                completed.forEach(task => {
-                    const li = buildDtpItem(task);
-                    panel.appendChild(li);
-                });
-            }
-        }
-
-        function buildDtpItem(task) {
+        function buildUnifiedTaskItem(task, compact = false) {
             const li = document.createElement('li');
-            li.className = 'dtp-item';
+            li.className = compact ? 'dtp-item' : 'dt-item';
 
             const dot = document.createElement('div');
-            dot.className = 'dtp-color-dot';
+            dot.className = compact ? 'dtp-color-dot' : 'dt-color-bar';
             dot.style.background = task.color || '#007bff';
 
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'dtp-name' + (task.done ? ' done' : '');
-            nameSpan.textContent = task.name;
+            const info = document.createElement(compact ? 'div' : 'div');
+            info.className = compact ? 'dtp-name' + (task.done ? ' done' : '') : 'dt-info';
+
+            const name = document.createElement(compact ? 'span' : 'div');
+            name.className = compact ? '' : 'dt-name';
+            name.textContent = task.name;
+
+            const meta = document.createElement(compact ? 'span' : 'div');
+            meta.className = compact ? 'dtp-progress' : 'dt-meta';
+            const target = Number(task.target_minutes || 0);
+            const doneValue = Number(task.done_minutes || 0);
+            const kindLabel = task.task_kind === 'integer'
+                ? `Count${target > 0 ? ` ${doneValue}/${target}` : ` ${doneValue}`}`
+                : 'Tick';
+            const endsText = formatEndsIn(task);
+            const isRepeating = task.recurrence !== 'one_time';
+
+            if (!compact && isRepeating) {
+                const repeatSuffix = document.createElement('span');
+                repeatSuffix.className = 'dtp-repeat-prefix';
+                repeatSuffix.textContent = ' 🔁';
+                name.appendChild(repeatSuffix);
+            }
+
+            if (!compact) {
+                meta.textContent = `${formatRecurrenceLabel(task.recurrence)} · ${kindLabel}`;
+                const endsSpan = document.createElement('span');
+                endsSpan.className = `dt-end-text ${getEndsToneClass(task)}${endsText === 'Ends today' ? ' today' : ''}`;
+                endsSpan.textContent = endsText;
+                meta.appendChild(endsSpan);
+                info.appendChild(name);
+                info.appendChild(meta);
+            } else {
+                info.className = 'dtp-name' + (task.done ? ' done' : '');
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'dtp-main-text';
+                nameSpan.textContent = `${task.name} · `;
+                const endsSpan = document.createElement('span');
+                endsSpan.className = `dtp-end-text ${getEndsToneClass(task)}${endsText === 'Ends today' ? ' today' : ''}`;
+                endsSpan.textContent = endsText;
+                info.appendChild(nameSpan);
+                info.appendChild(endsSpan);
+                if (isRepeating) {
+                    const repeatSuffix = document.createElement('span');
+                    repeatSuffix.className = 'dtp-repeat-prefix';
+                    repeatSuffix.textContent = '🔁';
+                    info.appendChild(repeatSuffix);
+                }
+            }
+
+            const actions = document.createElement('div');
+            actions.className = compact ? 'dt-actions' : 'dt-actions';
 
             li.appendChild(dot);
+            li.appendChild(info);
 
             if (task.task_kind === 'checkbox') {
                 const chk = document.createElement('input');
@@ -2361,55 +2622,16 @@
                 chk.className = 'dtp-check';
                 chk.checked = !!task.done;
                 chk.onchange = async () => {
-                    await fetch(`/api/daily_tasks/${task.id}/complete`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ done: chk.checked }),
-                    });
-                    await loadTasks();
+                    await updateUnifiedTaskProgress(task, { done: chk.checked });
                 };
-                li.appendChild(chk);
-                li.appendChild(nameSpan);
-            } else if (task.task_kind === 'timed') {
-                const chk = document.createElement('input');
-                chk.type = 'checkbox';
-                chk.className = 'dtp-check';
-                chk.checked = !!task.done;
-
-                const minsInput = document.createElement('input');
-                minsInput.type = 'number';
-                minsInput.min = '0';
-                minsInput.className = 'dtp-mins-input';
-                minsInput.placeholder = 'min';
-                minsInput.value = task.done_minutes != null && task.done_minutes > 0 ? task.done_minutes : '';
-                minsInput.title = 'Minutes done';
-
-                const target = task.target_minutes;
-                const done = task.done_minutes || 0;
-                const progressSpan = document.createElement('span');
-                progressSpan.className = 'dtp-progress' + (target && done >= target ? ' complete' : '');
-                progressSpan.textContent = target ? `${done}/${target}m` : `${done}m`;
-
-                async function saveTimed() {
-                    const mins = Number(minsInput.value || 0);
-                    const isDone = target ? mins >= target : chk.checked;
-                    await fetch(`/api/daily_tasks/${task.id}/complete`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ done: isDone, done_minutes: mins }),
-                    });
-                    await loadTasks();
+                actions.appendChild(chk);
+            } else {
+                if (compact) {
+                    const countValue = document.createElement('span');
+                    countValue.className = 'dtp-count-value';
+                    countValue.textContent = target > 0 ? `${doneValue}/${target}` : `${doneValue}`;
+                    actions.appendChild(countValue);
                 }
-
-                chk.onchange = saveTimed;
-                minsInput.addEventListener('change', saveTimed);
-
-                li.appendChild(chk);
-                li.appendChild(nameSpan);
-                li.appendChild(minsInput);
-                li.appendChild(progressSpan);
-            } else if (task.task_kind === 'integer') {
-                // integer task - no checkbox, just integer value
                 const intInput = document.createElement('input');
                 intInput.type = 'number';
                 intInput.min = '0';
@@ -2418,32 +2640,197 @@
                 intInput.value = task.done_minutes != null ? task.done_minutes : '';
                 intInput.title = 'Count';
 
-                const target = task.target_minutes;
-                const done = task.done_minutes || 0;
-                const progressSpan = document.createElement('span');
-                progressSpan.className = 'dtp-progress' + (target && done >= target ? ' complete' : '');
-                progressSpan.textContent = target ? `${done}/${target}` : `${done}`;
-
-                async function saveInteger() {
+                intInput.addEventListener('change', async () => {
                     const val = Number(intInput.value || 0);
-                    const isDone = target ? val >= target : false;
-                    await fetch(`/api/daily_tasks/${task.id}/complete`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ done: isDone, done_minutes: val }),
-                    });
-                    await loadTasks();
-                }
-
-                intInput.addEventListener('change', saveInteger);
-
-                li.appendChild(nameSpan);
-                li.appendChild(intInput);
-                li.appendChild(progressSpan);
+                    const isDone = target > 0 ? val >= target : false;
+                    await updateUnifiedTaskProgress(task, { done: isDone, done_minutes: val });
+                });
+                actions.appendChild(intInput);
             }
+
+            if (!compact) {
+                const delBtn = document.createElement('button');
+                delBtn.className = 'dt-del-btn';
+                delBtn.textContent = 'Delete';
+                delBtn.onclick = () => deleteDailyTask(task.id);
+                actions.appendChild(delBtn);
+            }
+
+            li.appendChild(actions);
 
             return li;
         }
+
+        function renderDailyTasksTab() {
+            const list = dailyTasks.items || [];
+            const badge = document.getElementById('dtAllBadge');
+            if (badge) badge.textContent = list.length;
+
+            const ul = document.getElementById('dtUnifiedList');
+            ul.innerHTML = '';
+            if (list.length === 0) {
+                const empty = document.createElement('li');
+                empty.className = 'dt-empty';
+                empty.textContent = 'No tasks yet.';
+                ul.appendChild(empty);
+                return;
+            }
+
+            list.forEach(task => {
+                ul.appendChild(buildUnifiedTaskItem(task, false));
+            });
+        }
+
+        function renderDailyTasksPanel() {
+            const panel = document.getElementById('dtpUnifiedList');
+            panel.innerHTML = '';
+
+            const list = dailyTasks.items || [];
+            if (list.length === 0) {
+                const empty = document.createElement('li');
+                empty.style.cssText = 'color:#bbb;font-size:12px;padding:8px 2px;';
+                empty.textContent = 'No recurring/one-time tasks yet.';
+                panel.appendChild(empty);
+                return;
+            }
+
+            list.forEach(task => {
+                panel.appendChild(buildUnifiedTaskItem(task, true));
+            });
+        }
+
+        async function renderDailyTasksCalendar() {
+            const grid = document.getElementById('dtCalendarGrid');
+            const title = document.getElementById('dtCalendarNavTitle');
+            if (!grid || !title || dtCalendarYear === null || dtCalendarMonth === null) return;
+
+            const resp = await fetch(`/api/daily_tasks_calendar?year=${dtCalendarYear}&month=${dtCalendarMonth}`);
+            const data = await resp.json();
+            title.textContent = data.month_label || '--';
+
+            grid.innerHTML = '';
+            const dows = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dows.forEach(d => {
+                const hdr = document.createElement('div');
+                hdr.className = 'calendar-dow-header';
+                hdr.textContent = d;
+                grid.appendChild(hdr);
+            });
+
+            if (data.days && data.days.length > 0) {
+                const firstDate = new Date(`${data.days[0].date}T00:00:00`);
+                const firstDow = firstDate.getDay();
+                for (let i = 0; i < firstDow; i++) {
+                    const empty = document.createElement('div');
+                    empty.className = 'calendar-day empty';
+                    grid.appendChild(empty);
+                }
+            }
+
+            (data.days || []).forEach(dayEntry => {
+                const cell = document.createElement('div');
+                cell.className = 'calendar-day';
+                if (dayEntry.date === (dailyTasks.today || currentLogicalDate)) cell.classList.add('today');
+
+                const numDiv = document.createElement('div');
+                numDiv.className = 'calendar-day-num';
+                numDiv.textContent = dayEntry.day;
+                cell.appendChild(numDiv);
+
+                if (dayEntry.log_count > 0) {
+                    const logsDiv = document.createElement('div');
+                    logsDiv.className = 'calendar-day-time';
+                    logsDiv.textContent = `${dayEntry.done_count || 0}/${dayEntry.log_count} logs`;
+                    cell.appendChild(logsDiv);
+
+                    const dotsDiv = document.createElement('div');
+                    dotsDiv.className = 'calendar-day-colors';
+                    (dayEntry.colors || []).slice(0, 5).forEach(ce => {
+                        const dot = document.createElement('div');
+                        dot.className = 'calendar-day-dot';
+                        dot.style.background = ce.color;
+                        dotsDiv.appendChild(dot);
+                    });
+                    cell.appendChild(dotsDiv);
+                }
+
+                cell.onclick = () => openDailyTaskLogsModal(dayEntry.date);
+                grid.appendChild(cell);
+            });
+        }
+
+        function dtCalendarPrev() {
+            dtCalendarMonth -= 1;
+            if (dtCalendarMonth < 1) {
+                dtCalendarMonth = 12;
+                dtCalendarYear -= 1;
+            }
+            renderDailyTasksCalendar();
+        }
+
+        function dtCalendarNext() {
+            dtCalendarMonth += 1;
+            if (dtCalendarMonth > 12) {
+                dtCalendarMonth = 1;
+                dtCalendarYear += 1;
+            }
+            renderDailyTasksCalendar();
+        }
+
+        async function openDailyTaskLogsModal(dateIso) {
+            const modal = document.getElementById('dailyTaskLogsModal');
+            const titleEl = document.getElementById('dailyTaskLogsModalTitle');
+            const totalEl = document.getElementById('dailyTaskLogsModalTotal');
+            const bodyEl = document.getElementById('dailyTaskLogsModalBody');
+
+            titleEl.textContent = `Task Logs · ${formatDisplayDate(dateIso)}`;
+            totalEl.textContent = 'Loading...';
+            bodyEl.innerHTML = '';
+            modal.classList.add('open');
+
+            const resp = await fetch(`/api/daily_task_logs?date=${dateIso}`);
+            const data = await resp.json();
+            const logs = data.logs || [];
+
+            totalEl.textContent = logs.length > 0 ? `${logs.length} logs` : 'No logs';
+            bodyEl.innerHTML = '';
+
+            if (logs.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'modal-empty';
+                empty.textContent = 'No recurring/one-time task updates for this day.';
+                bodyEl.appendChild(empty);
+                return;
+            }
+
+            logs.forEach(log => {
+                const row = document.createElement('div');
+                row.className = 'log-entry';
+
+                const dot = document.createElement('div');
+                dot.className = 'log-entry-dot';
+                dot.style.background = log.color || '#007bff';
+
+                const name = document.createElement('div');
+                name.className = 'log-entry-name';
+                const suffix = log.task_kind === 'integer'
+                    ? ` (${log.value || 0}${log.done ? ' ✓' : ''})`
+                    : (log.done ? ' (✓)' : '');
+                name.textContent = `${log.task_name}${suffix}`;
+
+                row.appendChild(dot);
+                row.appendChild(name);
+                bodyEl.appendChild(row);
+            });
+        }
+
+        function closeDailyTaskLogsModal() {
+            document.getElementById('dailyTaskLogsModal').classList.remove('open');
+        }
+
+        document.getElementById('dailyTaskLogsModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDailyTaskLogsModal();
+        });
     </script>
 </body>
 </html>
