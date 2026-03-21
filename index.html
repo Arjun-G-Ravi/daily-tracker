@@ -967,12 +967,12 @@
             margin-top: 2px;
         }
         .dt-end-text {
-            font-size: 11px;
+            font-size: 8px;
             font-weight: 700;
             margin-left: 6px;
         }
         .dt-end-text.today {
-            font-size: 10px;
+            font-size: 8px;
             font-weight: 600;
         }
         .dt-end-green {
@@ -1090,7 +1090,7 @@
             color: #aaa;
         }
         .dtp-repeat-prefix {
-            font-size: 13px;
+            font-size: 8px;
             line-height: 1;
             flex-shrink: 0;
         }
@@ -1112,12 +1112,12 @@
             white-space: nowrap;
         }
         .dtp-end-text {
-            font-size: 11px;
+            font-size: 8px;
             font-weight: 700;
             white-space: nowrap;
         }
         .dtp-end-text.today {
-            font-size: 10px;
+            font-size: 8px;
             font-weight: 600;
         }
         .dtp-end-text.dt-end-green { color: #28a745; }
@@ -1157,10 +1157,10 @@
                     </div>
                 </div>
                 <div class="tabs">
-                    <button class="tab-button active" onclick="switchTab('weekly', this)">Weekly</button>
-                    <button class="tab-button" onclick="switchTab('monthly', this)">Monthly</button>
-                    <button class="tab-button" onclick="switchTab('tasks', this)">Tasks</button>
-                    <button class="tab-button" onclick="switchTab('settings', this)">Settings</button>
+                    <button id="tabBtnWeekly" class="tab-button active" onclick="switchTab('weekly', this)">Weekly</button>
+                    <button id="tabBtnMonthly" class="tab-button" onclick="switchTab('monthly', this)">Monthly</button>
+                    <button id="tabBtnTasks" class="tab-button" onclick="switchTab('tasks', this)">Tasks</button>
+                    <button id="tabBtnSettings" class="tab-button" onclick="switchTab('settings', this)">Settings</button>
                 </div>
 
                 <div id="weekly" class="tab-content active">
@@ -1363,6 +1363,7 @@
         let dtCalendarYear = null;
         let dtCalendarMonth = null;
         let dailyTasks = { items: [], today: '', week_start: '' };
+        const ACTIVE_TAB_STORAGE_KEY = 'dailyTracker.activeTab';
 
         function switchTab(tabName, buttonElement) {
             document.querySelectorAll('.tab-content').forEach(tab => {
@@ -1376,11 +1377,44 @@
             buttonElement.classList.add('active');
             activeTab = tabName;
 
+            try {
+                localStorage.setItem(ACTIVE_TAB_STORAGE_KEY, tabName);
+            } catch (e) {
+                // Ignore storage failures
+            }
+
             const rightPanel = document.getElementById('weeklyRightPanel');
             rightPanel.style.display = (tabName === 'monthly') ? 'none' : '';
 
             if (tabName === 'tasks') {
                 renderDailyTasksCalendar();
+            }
+        }
+
+        function getTabButton(tabName) {
+            const map = {
+                weekly: document.getElementById('tabBtnWeekly'),
+                monthly: document.getElementById('tabBtnMonthly'),
+                tasks: document.getElementById('tabBtnTasks'),
+                settings: document.getElementById('tabBtnSettings'),
+            };
+            return map[tabName] || null;
+        }
+
+        function restoreLastOpenedTab() {
+            let saved = '';
+            try {
+                saved = String(localStorage.getItem(ACTIVE_TAB_STORAGE_KEY) || '').trim();
+            } catch (e) {
+                saved = '';
+            }
+
+            if (!saved) return;
+            if (!['weekly', 'monthly', 'tasks', 'settings'].includes(saved)) return;
+
+            const btn = getTabButton(saved);
+            if (btn) {
+                switchTab(saved, btn);
             }
         }
 
@@ -2452,6 +2486,7 @@
         }
 
         setInterval(tickRunningTimers, 1000);
+        restoreLastOpenedTab();
         loadTasks();
 
         // ── Daily Tasks Tab ─────────────────────────────────────────────────
