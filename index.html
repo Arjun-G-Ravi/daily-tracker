@@ -760,6 +760,12 @@
             color: #333;
             font-weight: 500;
         }
+        .log-entry-total {
+            font-size: 13px;
+            color: #444;
+            font-weight: 600;
+            white-space: nowrap;
+        }
         .log-entry-mins-input {
             width: 80px;
             flex: 0 0 80px;
@@ -921,6 +927,24 @@
             display: flex;
             flex-direction: column;
             gap: 2px;
+        }
+        .dt-add-advanced {
+            display: none;
+            width: 100%;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .dt-add-advanced.open {
+            display: flex;
+        }
+        .dt-show-more-btn {
+            background: #6c757d;
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+        .dt-show-more-btn:hover {
+            background: #5a6268;
         }
         .dt-list {
             list-style: none;
@@ -1214,11 +1238,22 @@
                         </div>
                         <div class="dt-field-group" id="dtTaskTargetGroup" style="display:none">
                             <label>Target</label>
-                            <input type="number" min="1" id="dtTaskTarget" placeholder="e.g. 100">
+                            <input type="number" min="1" id="dtTaskTarget" placeholder="e.g. 3">
                         </div>
-                        <div class="dt-field-group">
-                            <label>Due Date (optional)</label>
-                            <input type="date" id="dtTaskDueDate">
+                        <button class="dt-show-more-btn" id="dtTaskAdvancedToggle" type="button">Show</button>
+                        <div class="dt-add-advanced" id="dtTaskAdvancedFields">
+                            <div class="dt-field-group" id="dtTaskUnitGroup" style="display:none">
+                                <label>Unit (optional)</label>
+                                <input type="text" id="dtTaskUnit" maxlength="20" placeholder="e.g. km" style="width:110px">
+                            </div>
+                            <div class="dt-field-group">
+                                <label>Due Date (optional)</label>
+                                <input type="date" id="dtTaskDueDate">
+                            </div>
+                            <div class="dt-field-group">
+                                <label>Color</label>
+                                <input type="color" id="dtTaskColor" value="#007bff" title="Task color">
+                            </div>
                         </div>
                         <button onclick="addUnifiedTask()">Add Task</button>
                     </div>
@@ -1365,6 +1400,26 @@
         let dailyTasks = { items: [], today: '', week_start: '' };
         const ACTIVE_TAB_STORAGE_KEY = 'dailyTracker.activeTab';
 
+        async function apiRequest(url, options = {}) {
+            const resp = await fetch(url, options);
+            if (!resp.ok) {
+                let message = `Request failed (${resp.status})`;
+                try {
+                    const data = await resp.json();
+                    if (data && data.error) message = data.error;
+                } catch (e) {
+                    // Ignore JSON parse failures for non-JSON errors.
+                }
+                throw new Error(message);
+            }
+
+            const contentType = String(resp.headers.get('content-type') || '').toLowerCase();
+            if (contentType.includes('application/json')) {
+                return resp.json();
+            }
+            return null;
+        }
+
         function switchTab(tabName, buttonElement) {
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
@@ -1419,12 +1474,10 @@
         }
 
         async function loadTasks() {
-            const [response, dtResponse] = await Promise.all([
-                fetch('/api/tasks'),
-                fetch('/api/daily_tasks'),
+            const [data, dtData] = await Promise.all([
+                apiRequest('/api/tasks'),
+                apiRequest('/api/daily_tasks'),
             ]);
-            const data = await response.json();
-            const dtData = await dtResponse.json();
 
             tasks.weekly = data.weekly || [];
             tasks.monthly = data.monthly || [];
@@ -1509,138 +1562,174 @@
         }
 
         async function addTaskFromSettings() {
-            const nameInput = document.getElementById('settingsTaskInput');
-            const typeInput = document.getElementById('settingsTaskType');
-            const minutesInput = document.getElementById('settingsTaskMinutes');
-            const colorInput = document.getElementById('settingsTaskColor');
+            try {
+                const nameInput = document.getElementById('settingsTaskInput');
+                const typeInput = document.getElementById('settingsTaskType');
+                const minutesInput = document.getElementById('settingsTaskMinutes');
+                const colorInput = document.getElementById('settingsTaskColor');
 
-            const name = nameInput.value.trim();
-            if (!name) return;
+                const name = nameInput.value.trim();
+                if (!name) return;
 
-            const minutes = Number(minutesInput.value || 0);
-            if (minutes < 0) return;
+                const minutes = Number(minutesInput.value || 0);
+                if (minutes < 0) return;
 
-            await fetch('/api/tasks', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    name,
-                    task_type: typeInput.value,
-                    initial_seconds: Math.floor(minutes * 60),
-                    task_color: colorInput.value || '#007bff'
-                })
-            });
+                await apiRequest('/api/tasks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name,
+                        task_type: typeInput.value,
+                        initial_seconds: Math.floor(minutes * 60),
+                        task_color: colorInput.value || '#007bff'
+                    })
+                });
 
-            nameInput.value = '';
-            minutesInput.value = '';
-            await loadTasks();
+                nameInput.value = '';
+                minutesInput.value = '';
+                await loadTasks();
+            } catch (e) {
+                alert(e.message || 'Failed to add job.');
+            }
         }
 
         async function startTask(taskId) {
-            await fetch(`/api/tasks/${taskId}/start`, {
-                method: 'POST'
-            });
-            await loadTasks();
+            try {
+                await apiRequest(`/api/tasks/${taskId}/start`, {
+                    method: 'POST'
+                });
+                await loadTasks();
+            } catch (e) {
+                alert(e.message || 'Failed to start task.');
+            }
         }
 
         async function stopTask(taskId) {
-            await fetch(`/api/tasks/${taskId}/stop`, {
-                method: 'POST'
-            });
-            await loadTasks();
+            try {
+                await apiRequest(`/api/tasks/${taskId}/stop`, {
+                    method: 'POST'
+                });
+                await loadTasks();
+            } catch (e) {
+                alert(e.message || 'Failed to stop task.');
+            }
         }
 
         async function deleteTask(taskId) {
-            await fetch(`/api/tasks/${taskId}`, {
-                method: 'DELETE'
-            });
-            await loadTasks();
+            try {
+                await apiRequest(`/api/tasks/${taskId}`, {
+                    method: 'DELETE'
+                });
+                await loadTasks();
+            } catch (e) {
+                alert(e.message || 'Failed to delete task.');
+            }
         }
 
         async function updateTaskIsWork(taskId, isWork) {
-            await fetch(`/api/tasks/${taskId}/is_work`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ is_work: isWork })
-            });
-            await loadTasks();
+            try {
+                await apiRequest(`/api/tasks/${taskId}/is_work`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_work: isWork })
+                });
+                await loadTasks();
+            } catch (e) {
+                alert(e.message || 'Failed to update task setting.');
+            }
         }
 
         async function updateTaskColor(taskId, taskColor) {
             if (!/^#[0-9a-fA-F]{6}$/.test(taskColor)) return;
-            await fetch(`/api/tasks/${taskId}/color`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    task_color: taskColor
-                })
-            });
-            await loadTasks();
+            try {
+                await apiRequest(`/api/tasks/${taskId}/color`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        task_color: taskColor
+                    })
+                });
+                await loadTasks();
+            } catch (e) {
+                alert(e.message || 'Failed to update color.');
+            }
         }
 
         async function addManualSeconds(taskId, seconds, workDate = '') {
-            const totalSeconds = Math.floor(Number(seconds || 0));
-            if (totalSeconds <= 0) {
-                alert('Please enter a valid duration.');
-                return;
+            try {
+                const totalSeconds = Math.floor(Number(seconds || 0));
+                if (totalSeconds <= 0) {
+                    alert('Please enter a valid duration.');
+                    return;
+                }
+
+                const payload = {
+                    seconds: totalSeconds
+                };
+                if (workDate) payload.work_date = workDate;
+
+                await apiRequest(`/api/tasks/${taskId}/manual_time`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                await loadTasks();
+            } catch (e) {
+                alert(e.message || 'Failed to add time.');
             }
-
-            const payload = {
-                seconds: totalSeconds
-            };
-            if (workDate) payload.work_date = workDate;
-
-            await fetch(`/api/tasks/${taskId}/manual_time`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-
-            await loadTasks();
         }
 
         async function saveDayStartHour() {
-            const hourInput = document.getElementById('settingsDayStartHour');
-            const value = Number(hourInput.value);
-            if (!Number.isInteger(value) || value < 0 || value > 23) {
-                alert('Day start hour must be between 0 and 23.');
-                return;
+            try {
+                const hourInput = document.getElementById('settingsDayStartHour');
+                const value = Number(hourInput.value);
+                if (!Number.isInteger(value) || value < 0 || value > 23) {
+                    alert('Day start hour must be between 0 and 23.');
+                    return;
+                }
+
+                await apiRequest('/api/settings/day_start', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        day_start_hour: value
+                    })
+                });
+
+                await loadTasks();
+            } catch (e) {
+                alert(e.message || 'Failed to save day start hour.');
             }
-
-            await fetch('/api/settings/day_start', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    day_start_hour: value
-                })
-            });
-
-            await loadTasks();
         }
 
         async function saveWeekStartDay() {
-            const weekStartInput = document.getElementById('settingsWeekStartDay');
-            const value = String(weekStartInput.value || 'sunday').toLowerCase();
+            try {
+                const weekStartInput = document.getElementById('settingsWeekStartDay');
+                const value = String(weekStartInput.value || 'sunday').toLowerCase();
 
-            await fetch('/api/settings/week_start', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    week_start_day: value
-                })
-            });
+                await apiRequest('/api/settings/week_start', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        week_start_day: value
+                    })
+                });
 
-            await loadTasks();
+                await loadTasks();
+            } catch (e) {
+                alert(e.message || 'Failed to save week start day.');
+            }
         }
 
         async function addTimeForAnyDay() {
@@ -2243,18 +2332,40 @@
             const data = await resp.json();
             const logs = data.logs || [];
 
-            const totalSecs = logs.reduce((s, l) => s + l.seconds, 0);
+            const groupedLogs = [];
+            const groupedMap = new Map();
+            logs.forEach(log => {
+                const taskName = String(log.task_name || '').trim();
+                const key = taskName.toLowerCase();
+                const seconds = Math.max(0, Number(log.seconds || 0));
+
+                if (!groupedMap.has(key)) {
+                    const grouped = {
+                        task_name: taskName || 'Untitled task',
+                        task_color: log.task_color || '#007bff',
+                        seconds: 0,
+                    };
+                    groupedMap.set(key, grouped);
+                    groupedLogs.push(grouped);
+                }
+
+                groupedMap.get(key).seconds += seconds;
+            });
+
+            groupedLogs.sort((a, b) => b.seconds - a.seconds || a.task_name.localeCompare(b.task_name));
+
+            const totalSecs = groupedLogs.reduce((s, l) => s + l.seconds, 0);
             totalEl.textContent = `Total: ${formatTime(totalSecs)}`;
 
             bodyEl.innerHTML = '';
 
-            if (logs.length === 0) {
+            if (groupedLogs.length === 0) {
                 const empty = document.createElement('div');
                 empty.className = 'modal-empty';
                 empty.textContent = 'No activity logged for this day.';
                 bodyEl.appendChild(empty);
             } else {
-                logs.forEach(log => {
+                groupedLogs.forEach(log => {
                     const row = document.createElement('div');
                     row.className = 'log-entry';
 
@@ -2266,46 +2377,13 @@
                     name.className = 'log-entry-name';
                     name.textContent = log.task_name;
 
-                    const minsInput = document.createElement('input');
-                    minsInput.type = 'number';
-                    minsInput.min = '1';
-                    minsInput.step = '1';
-                    minsInput.className = 'log-entry-mins-input';
-                    minsInput.value = String(Math.round(log.seconds / 60));
-                    minsInput.title = 'Minutes';
-
-                    const saveBtn = document.createElement('button');
-                    saveBtn.className = 'log-entry-save-btn';
-                    saveBtn.textContent = 'Save';
-                    saveBtn.onclick = async () => {
-                        const newMins = Number(minsInput.value || 0);
-                        if (newMins <= 0) { alert('Enter a valid number of minutes.'); return; }
-                        await fetch(`/api/work_logs/${log.id}`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ seconds: Math.round(newMins * 60) })
-                        });
-                        await loadTasks();
-                        await refreshDayLogsModal(dateIso);
-                        renderCalendar();
-                    };
-
-                    const delBtn = document.createElement('button');
-                    delBtn.className = 'log-entry-del-btn';
-                    delBtn.textContent = 'Delete';
-                    delBtn.onclick = async () => {
-                        if (!confirm(`Delete this log entry for "${log.task_name}"?`)) return;
-                        await fetch(`/api/work_logs/${log.id}`, { method: 'DELETE' });
-                        await loadTasks();
-                        await refreshDayLogsModal(dateIso);
-                        renderCalendar();
-                    };
+                    const total = document.createElement('div');
+                    total.className = 'log-entry-total';
+                    total.textContent = formatTime(log.seconds);
 
                     row.appendChild(dot);
                     row.appendChild(name);
-                    row.appendChild(minsInput);
-                    row.appendChild(saveBtn);
-                    row.appendChild(delBtn);
+                    row.appendChild(total);
                     bodyEl.appendChild(row);
                 });
             }
@@ -2487,19 +2565,41 @@
 
         setInterval(tickRunningTimers, 1000);
         restoreLastOpenedTab();
-        loadTasks();
+        loadTasks().catch((e) => {
+            alert(e.message || 'Failed to load data from server.');
+        });
 
         // ── Daily Tasks Tab ─────────────────────────────────────────────────
 
+        function toggleUnifiedTaskAdvancedFields() {
+            const advanced = document.getElementById('dtTaskAdvancedFields');
+            const btn = document.getElementById('dtTaskAdvancedToggle');
+            if (!advanced || !btn) return;
+            const isOpen = advanced.classList.toggle('open');
+            btn.textContent = isOpen ? 'Hide' : 'Show';
+            updateUnifiedTaskKindVisibility();
+        }
+
+        function updateUnifiedTaskKindVisibility() {
+            const kindSel = document.getElementById('dtTaskKind');
+            const targetGroup = document.getElementById('dtTaskTargetGroup');
+            const unitGroup = document.getElementById('dtTaskUnitGroup');
+            const advanced = document.getElementById('dtTaskAdvancedFields');
+            const isAdvancedOpen = !!(advanced && advanced.classList.contains('open'));
+            const isIntegerMode = !!(kindSel && kindSel.value === 'integer');
+            if (targetGroup) targetGroup.style.display = isIntegerMode ? '' : 'none';
+            if (unitGroup) unitGroup.style.display = (isIntegerMode && isAdvancedOpen) ? '' : 'none';
+        }
+
         function wireUnifiedTaskKindSelect() {
             const sel = document.getElementById('dtTaskKind');
-            const grp = document.getElementById('dtTaskTargetGroup');
-            if (!sel || !grp) return;
-            function toggle() {
-                grp.style.display = sel.value === 'integer' ? '' : 'none';
+            const advancedBtn = document.getElementById('dtTaskAdvancedToggle');
+            if (!sel) return;
+            sel.addEventListener('change', updateUnifiedTaskKindVisibility);
+            if (advancedBtn) {
+                advancedBtn.addEventListener('click', toggleUnifiedTaskAdvancedFields);
             }
-            sel.addEventListener('change', toggle);
-            toggle();
+            updateUnifiedTaskKindVisibility();
         }
         wireUnifiedTaskKindSelect();
 
@@ -2528,63 +2628,72 @@
         }
 
         async function addUnifiedTask() {
-            const nameEl = document.getElementById('dtTaskName');
-            const recurrenceEl = document.getElementById('dtTaskRecurrence');
-            const kindEl = document.getElementById('dtTaskKind');
-            const targetEl = document.getElementById('dtTaskTarget');
-            const dueDateEl = document.getElementById('dtTaskDueDate');
+            try {
+                const nameEl = document.getElementById('dtTaskName');
+                const recurrenceEl = document.getElementById('dtTaskRecurrence');
+                const kindEl = document.getElementById('dtTaskKind');
+                const targetEl = document.getElementById('dtTaskTarget');
+                const unitEl = document.getElementById('dtTaskUnit');
+                const dueDateEl = document.getElementById('dtTaskDueDate');
+                const colorEl = document.getElementById('dtTaskColor');
 
-            const name = nameEl.value.trim();
-            if (!name) {
-                nameEl.focus();
-                return;
-            }
-
-            const payload = {
-                name,
-                recurrence: recurrenceEl.value,
-                task_kind: kindEl.value,
-                target_minutes: kindEl.value === 'integer' && targetEl.value ? Number(targetEl.value) : null,
-                due_date: dueDateEl.value || null,
-            };
-
-            const resp = await fetch('/api/daily_tasks', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-
-            if (!resp.ok) {
-                let message = 'Failed to create task.';
-                try {
-                    const data = await resp.json();
-                    if (data && data.error) message = data.error;
-                } catch (e) {
-                    // ignore parse errors
+                const name = nameEl.value.trim();
+                if (!name) {
+                    nameEl.focus();
+                    return;
                 }
-                alert(message);
-                return;
-            }
 
-            nameEl.value = '';
-            targetEl.value = '';
-            dueDateEl.value = '';
-            await loadTasks();
+                const taskUnit = String(unitEl.value || '').trim();
+                const taskColor = String(colorEl.value || '#007bff').trim() || '#007bff';
+
+                const payload = {
+                    name,
+                    recurrence: recurrenceEl.value,
+                    task_kind: kindEl.value,
+                    target_minutes: kindEl.value === 'integer' && targetEl.value ? Number(targetEl.value) : null,
+                    task_unit: kindEl.value === 'integer' ? taskUnit : '',
+                    due_date: dueDateEl.value || null,
+                    color: taskColor,
+                };
+
+                await apiRequest('/api/daily_tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                nameEl.value = '';
+                targetEl.value = '';
+                unitEl.value = '';
+                dueDateEl.value = '';
+                colorEl.value = '#007bff';
+                await loadTasks();
+            } catch (e) {
+                alert(e.message || 'Failed to create task.');
+            }
         }
 
         async function deleteDailyTask(id) {
-            if (!confirm('Delete this task?')) return;
-            await fetch(`/api/daily_tasks/${id}`, { method: 'DELETE' });
-            await loadTasks();
+            try {
+                if (!confirm('Delete this task?')) return;
+                await apiRequest(`/api/daily_tasks/${id}`, { method: 'DELETE' });
+                await loadTasks();
+            } catch (e) {
+                alert(e.message || 'Failed to delete task.');
+            }
         }
 
         async function updateUnifiedTaskProgress(task, updates) {
-            await fetch(`/api/daily_tasks/${task.id}/progress`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updates),
-            });
-            await loadTasks();
+            try {
+                await apiRequest(`/api/daily_tasks/${task.id}/progress`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updates),
+                });
+                await loadTasks();
+            } catch (e) {
+                alert(e.message || 'Failed to update task progress.');
+            }
         }
 
         function buildUnifiedTaskItem(task, compact = false) {
@@ -2606,8 +2715,11 @@
             meta.className = compact ? 'dtp-progress' : 'dt-meta';
             const target = Number(task.target_minutes || 0);
             const doneValue = Number(task.done_minutes || 0);
+            const taskUnit = String(task.task_unit || '').trim();
+            const countProgress = target > 0 ? `${doneValue}/${target}` : `${doneValue}`;
+            const countLabel = taskUnit ? `${countProgress} ${taskUnit}` : countProgress;
             const kindLabel = task.task_kind === 'integer'
-                ? `Count${target > 0 ? ` ${doneValue}/${target}` : ` ${doneValue}`}`
+                ? countLabel
                 : 'Tick';
             const endsText = formatEndsIn(task);
             const isRepeating = task.recurrence !== 'one_time';
@@ -2664,7 +2776,7 @@
                 if (compact) {
                     const countValue = document.createElement('span');
                     countValue.className = 'dtp-count-value';
-                    countValue.textContent = target > 0 ? `${doneValue}/${target}` : `${doneValue}`;
+                    countValue.textContent = countLabel;
                     actions.appendChild(countValue);
                 }
                 const intInput = document.createElement('input');

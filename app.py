@@ -88,6 +88,7 @@ def init_db():
             category TEXT NOT NULL DEFAULT 'daily',
             task_kind TEXT NOT NULL DEFAULT 'checkbox',
             target_minutes INTEGER,
+            task_unit TEXT NOT NULL DEFAULT '',
             weekly_target_minutes INTEGER,
             color TEXT NOT NULL DEFAULT '#007bff',
             no_expiry INTEGER NOT NULL DEFAULT 0,
@@ -146,6 +147,8 @@ def init_db():
         db.execute("ALTER TABLE daily_tasks ADD COLUMN persistent_done_minutes INTEGER NOT NULL DEFAULT 0")
     if 'due_date' not in dt_column_names:
         db.execute("ALTER TABLE daily_tasks ADD COLUMN due_date TEXT")
+    if 'task_unit' not in dt_column_names:
+        db.execute("ALTER TABLE daily_tasks ADD COLUMN task_unit TEXT NOT NULL DEFAULT ''")
 
     db.execute("UPDATE daily_tasks SET recurrence = 'one_time' WHERE recurrence = 'none'")
     db.execute("UPDATE daily_tasks SET task_kind = 'integer' WHERE task_kind = 'timed'")
@@ -966,6 +969,7 @@ def daily_task_to_dict(row):
         'recurrence': recurrence,
         'task_kind': task_kind,
         'target_minutes': row['target_minutes'],
+        'task_unit': str(row['task_unit'] or '').strip(),
         'color': row['color'] or DEFAULT_TASK_COLOR,
         'sort_order': int(row['sort_order']),
         'due_date': row['due_date'] if 'due_date' in keys else None,
@@ -1072,6 +1076,10 @@ def create_daily_task():
     if target_minutes is not None:
         target_minutes = max(1, int(target_minutes))
 
+    task_unit = str(data.get('task_unit', '')).strip()
+    if len(task_unit) > 20:
+        task_unit = task_unit[:20]
+
     due_date_raw = data.get('due_date', '')
     due_date = '' if due_date_raw is None else str(due_date_raw).strip()
     due_date_value = None
@@ -1089,9 +1097,9 @@ def create_daily_task():
     db = get_db()
     max_order = db.execute('SELECT COALESCE(MAX(sort_order), -1) FROM daily_tasks').fetchone()[0]
     cursor = db.execute(
-        '''INSERT INTO daily_tasks (name, category, task_kind, target_minutes, color, no_expiry, recurrence, sort_order, due_date)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-        (name, recurrence, task_kind, target_minutes, color, no_expiry, recurrence, int(max_order) + 1, due_date_value),
+          '''INSERT INTO daily_tasks (name, category, task_kind, target_minutes, task_unit, color, no_expiry, recurrence, sort_order, due_date)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          (name, recurrence, task_kind, target_minutes, task_unit, color, no_expiry, recurrence, int(max_order) + 1, due_date_value),
     )
     db.commit()
     return flask.jsonify({'ok': True, 'id': cursor.lastrowid}), 201
@@ -1116,6 +1124,10 @@ def update_daily_task(task_id):
     if target_minutes is not None:
         target_minutes = max(1, int(target_minutes))
 
+    task_unit = str(data.get('task_unit', row['task_unit'])).strip()
+    if len(task_unit) > 20:
+        task_unit = task_unit[:20]
+
     current_due = row['due_date']
     due_date_raw = data.get('due_date', current_due)
     if due_date_raw is None:
@@ -1133,8 +1145,8 @@ def update_daily_task(task_id):
 
     no_expiry = 1 if recurrence == 'one_time' else 0
     db.execute(
-        'UPDATE daily_tasks SET name=?, recurrence=?, task_kind=?, target_minutes=?, color=?, no_expiry=?, due_date=? WHERE id=?',
-        (name, recurrence, task_kind, target_minutes, color, no_expiry, due_date_value, task_id),
+        'UPDATE daily_tasks SET name=?, recurrence=?, task_kind=?, target_minutes=?, task_unit=?, color=?, no_expiry=?, due_date=? WHERE id=?',
+        (name, recurrence, task_kind, target_minutes, task_unit, color, no_expiry, due_date_value, task_id),
     )
     db.commit()
     return flask.jsonify({'ok': True})
