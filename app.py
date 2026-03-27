@@ -52,6 +52,7 @@ VALID_WEEK_START_DAYS = {
     'friday': 4,
     'saturday': 5,
 }
+PUBLIC_API_PATHS = {'/api/health'}
 
 
 @app.errorhandler(RuntimeError)
@@ -72,6 +73,14 @@ def is_postgres_enabled():
 
 def is_vercel_without_persistent_db():
     return bool(os.getenv('VERCEL')) and not is_postgres_enabled()
+
+
+def get_db_mode_label():
+    if is_postgres_enabled():
+        return 'postgres'
+    if is_vercel_without_persistent_db():
+        return 'misconfigured'
+    return 'sqlite'
 
 
 def ensure_postgres_driver():
@@ -213,6 +222,9 @@ def get_current_user_id():
 @app.before_request
 def require_api_authentication():
     if not flask.request.path.startswith('/api/'):
+        return None
+
+    if flask.request.path in PUBLIC_API_PATHS:
         return None
 
     if is_vercel_without_persistent_db():
@@ -1787,6 +1799,21 @@ def get_daily_task_logs():
 @app.route('/api/auth/me', methods=['GET'])
 def auth_me():
     return flask.jsonify({'user_id': get_current_user_id()})
+
+
+@app.route('/api/health', methods=['GET'])
+def health():
+    mode = get_db_mode_label()
+    is_ok = mode != 'misconfigured'
+    payload = {
+        'ok': is_ok,
+        'db_mode': mode,
+        'vercel': bool(os.getenv('VERCEL')),
+        'postgres_configured': is_postgres_enabled(),
+        'time': datetime.utcnow().isoformat() + 'Z',
+    }
+    status_code = 200 if is_ok else 503
+    return flask.jsonify(payload), status_code
 
 
 if not is_vercel_without_persistent_db():
