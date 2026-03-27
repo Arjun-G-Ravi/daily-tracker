@@ -1181,25 +1181,37 @@
             color: #28a745;
             font-weight: 600;
         }
-        .auth-gate {
-            max-width: 560px;
-            margin: 48px auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e8edf3;
+        .auth-shell {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 24px;
+            background:
+                radial-gradient(1200px 500px at 10% -20%, rgba(23, 162, 184, 0.2), transparent 55%),
+                radial-gradient(900px 500px at 90% 120%, rgba(0, 123, 255, 0.2), transparent 55%),
+                linear-gradient(180deg, #f3f7fb 0%, #edf3fa 100%);
+        }
+        .auth-gate {
+            width: min(100%, 700px);
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(6px);
+            border-radius: 14px;
+            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.15);
+            border: 1px solid rgba(11, 106, 133, 0.18);
+            padding: 28px;
         }
         .auth-title {
-            font-size: 24px;
+            font-size: 30px;
             font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 8px;
+            color: #12263a;
+            margin-bottom: 6px;
+            letter-spacing: -0.02em;
         }
         .auth-subtitle {
-            color: #5b6677;
-            margin-bottom: 18px;
-            font-size: 14px;
+            color: #38526a;
+            margin-bottom: 16px;
+            font-size: 15px;
         }
         .auth-row {
             display: flex;
@@ -1208,6 +1220,10 @@
         }
         .auth-row input {
             flex: 1;
+            height: 42px;
+            border-radius: 8px;
+            border: 1px solid #d3dee9;
+            background: white;
         }
         .auth-actions {
             display: flex;
@@ -1221,7 +1237,7 @@
         }
         .auth-note {
             margin-top: 10px;
-            color: #6b7280;
+            color: #4f657c;
             font-size: 12px;
         }
         .auth-status {
@@ -1239,30 +1255,49 @@
             font-size: 13px;
             color: #374151;
         }
+        .auth-help {
+            margin-top: 8px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #f5b8b2;
+            background: #fff5f4;
+            color: #8a2419;
+            font-size: 12px;
+            line-height: 1.45;
+            display: none;
+        }
+        @media (max-width: 700px) {
+            .auth-title { font-size: 25px; }
+            .auth-gate { padding: 20px; }
+            .auth-row { flex-direction: column; }
+        }
     </style>
 </head>
 <body>
-    <div id="authGate" class="auth-gate">
-        <div class="auth-title">Sign in to Daily Tracker</div>
-        <div class="auth-subtitle">Use Google or create an account with email and password.</div>
-        <div class="auth-status" id="authStatus"></div>
-        <div class="auth-user-row" id="authUserRow" style="display:none;">
-            <span id="authUserEmail">Signed in</span>
-            <button type="button" onclick="handleSignOut()">Sign out</button>
+    <div class="auth-shell" id="authShell">
+        <div id="authGate" class="auth-gate">
+            <div class="auth-title">Sign in to Daily Tracker</div>
+            <div class="auth-subtitle">Use Google or create an account with email and password.</div>
+            <div class="auth-status" id="authStatus"></div>
+            <div class="auth-user-row" id="authUserRow" style="display:none;">
+                <span id="authUserEmail">Signed in</span>
+                <button type="button" onclick="handleSignOut()">Sign out</button>
+            </div>
+            <div class="auth-actions" id="authLoginActions">
+                <button type="button" onclick="signInWithGoogle()">Continue with Google</button>
+            </div>
+            <div class="auth-divider" id="authDivider"></div>
+            <div class="auth-row">
+                <input type="email" id="authEmail" placeholder="Email">
+                <input type="password" id="authPassword" placeholder="Password">
+            </div>
+            <div class="auth-actions" id="authEmailActions">
+                <button type="button" onclick="signInWithPassword()">Sign in</button>
+                <button type="button" onclick="signUpWithPassword()">Create account</button>
+            </div>
+            <div class="auth-help" id="authHelp"></div>
+            <div class="auth-note">You stay signed in on this browser until you sign out.</div>
         </div>
-        <div class="auth-actions" id="authLoginActions">
-            <button type="button" onclick="signInWithGoogle()">Continue with Google</button>
-        </div>
-        <div class="auth-divider" id="authDivider"></div>
-        <div class="auth-row">
-            <input type="email" id="authEmail" placeholder="Email">
-            <input type="password" id="authPassword" placeholder="Password">
-        </div>
-        <div class="auth-actions" id="authEmailActions">
-            <button type="button" onclick="signInWithPassword()">Sign in</button>
-            <button type="button" onclick="signUpWithPassword()">Create account</button>
-        </div>
-        <div class="auth-note">You stay signed in on this browser until you sign out.</div>
     </div>
 
     <div class="container" id="appRoot" style="display:none;">
@@ -1478,10 +1513,19 @@
         </div>
     </div>
 
+    <script id="appConfig" type="application/json">{{ {'supabase_url': supabase_url, 'supabase_anon_key': supabase_anon_key} | tojson }}</script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        const SUPABASE_URL = '{{ supabase_url|e }}';
-        const SUPABASE_ANON_KEY = '{{ supabase_anon_key|e }}';
+        const rawConfig = document.getElementById('appConfig');
+        let parsedConfig = {};
+        try {
+            parsedConfig = JSON.parse(rawConfig ? rawConfig.textContent : '{}');
+        } catch (e) {
+            parsedConfig = {};
+        }
+
+        const SUPABASE_URL = String(parsedConfig.supabase_url || '').trim();
+        const SUPABASE_ANON_KEY = String(parsedConfig.supabase_anon_key || '').trim();
         const SUPABASE_READY = !!(SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase && window.supabase.createClient);
         const supabaseClient = SUPABASE_READY ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
         let authSession = null;
@@ -1520,9 +1564,27 @@
 
         function setAppVisible(isVisible) {
             const gate = document.getElementById('authGate');
+            const shell = document.getElementById('authShell');
             const root = document.getElementById('appRoot');
             if (gate) gate.style.display = isVisible ? 'none' : '';
+            if (shell) shell.style.display = isVisible ? 'none' : '';
             if (root) root.style.display = isVisible ? '' : 'none';
+        }
+
+        function updateMissingEnvHelp() {
+            const helpEl = document.getElementById('authHelp');
+            if (!helpEl) return;
+            const missing = [];
+            if (!SUPABASE_URL) missing.push('SUPABASE_URL');
+            if (!SUPABASE_ANON_KEY) missing.push('SUPABASE_ANON_KEY');
+            if (missing.length === 0) {
+                helpEl.style.display = 'none';
+                helpEl.textContent = '';
+                return;
+            }
+
+            helpEl.style.display = 'block';
+            helpEl.textContent = `Missing ${missing.join(', ')}. Add these in Vercel: Project -> Settings -> Environment Variables, then redeploy.`;
         }
 
         function refreshAuthUi() {
@@ -1578,6 +1640,7 @@
         async function ensureAuthenticatedUser() {
             if (!SUPABASE_READY) {
                 setAuthStatus('Missing SUPABASE_URL or SUPABASE_ANON_KEY environment values.', true);
+                updateMissingEnvHelp();
                 return false;
             }
 
@@ -3227,6 +3290,7 @@
         });
 
         ensureAuthenticatedUser().then((ok) => {
+            updateMissingEnvHelp();
             if (!ok) return;
             loadTasks().catch((e) => {
                 alert(e.message || 'Failed to load data from server.');
