@@ -74,9 +74,33 @@ def parse_bearer_token(auth_header):
 
 
 def verify_supabase_token(token):
+    header = jwt.get_unverified_header(token)
+    algorithm = str(header.get('alg', '')).upper()
+    issuer = get_supabase_issuer()
+
+    # Supabase can use asymmetric RS256 (JWKS) or legacy HS256 signing.
+    if algorithm == 'HS256':
+        signing_secret = (
+            str(os.getenv('SUPABASE_JWT_SECRET', '')).strip()
+            or str(os.getenv('SUPABASE_LEGACY_JWT_SECRET', '')).strip()
+            or str(os.getenv('JWT_SECRET', '')).strip()
+        )
+        if not signing_secret:
+            raise RuntimeError('Missing SUPABASE_JWT_SECRET for HS256 token verification')
+
+        return jwt.decode(
+            token,
+            signing_secret,
+            algorithms=['HS256'],
+            issuer=issuer,
+            options={'verify_aud': False},
+        )
+
+    if algorithm != 'RS256':
+        raise RuntimeError(f'Unsupported token algorithm: {algorithm or "unknown"}')
+
     jwks_client = get_supabase_jwks_client()
     signing_key = jwks_client.get_signing_key_from_jwt(token)
-    issuer = get_supabase_issuer()
     return jwt.decode(
         token,
         signing_key.key,
@@ -101,7 +125,8 @@ def require_api_authentication():
 
     try:
         claims = verify_supabase_token(token)
-    except Exception:
+    except Exception as exc:
+        app.logger.warning('Auth verification failed: %s', exc)
         return flask.jsonify({'error': 'Unauthorized'}), 401
 
     user_id = str(claims.get('sub', '')).strip()
@@ -1485,11 +1510,6 @@ def get_daily_task_logs():
         (parsed_date.isoformat(), user_id),
     ).fetchall()
 
-
-@app.route('/api/auth/me', methods=['GET'])
-def auth_me():
-    return flask.jsonify({'user_id': get_current_user_id()})
-
     logs = []
     for row in rows:
         logs.append({
@@ -1506,6 +1526,11 @@ def auth_me():
         })
 
     return flask.jsonify({'date': parsed_date.isoformat(), 'logs': logs})
+
+
+@app.route('/api/auth/me', methods=['GET'])
+def auth_me():
+    return flask.jsonify({'user_id': get_current_user_id()})
 
 
 with app.app_context():
