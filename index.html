@@ -1454,11 +1454,6 @@
                             <div class="settings-section-title">Create Job</div>
                             <div class="settings-create-form">
                                 <input type="text" id="settingsTaskInput" placeholder="Add reusable job...">
-                                <select id="settingsTaskType">
-                                    <option value="weekly">Weekly</option>
-                                    <option value="monthly">Monthly</option>
-                                </select>
-                                <input type="number" min="0" step="1" id="settingsTaskMinutes" placeholder="Minutes">
                                 <input type="color" id="settingsTaskColor" value="#007bff" title="Task color">
                                 <button onclick="addTaskFromSettings()">Add Job</button>
                             </div>
@@ -1881,15 +1876,10 @@
         async function addTaskFromSettings() {
             try {
                 const nameInput = document.getElementById('settingsTaskInput');
-                const typeInput = document.getElementById('settingsTaskType');
-                const minutesInput = document.getElementById('settingsTaskMinutes');
                 const colorInput = document.getElementById('settingsTaskColor');
 
                 const name = nameInput.value.trim();
                 if (!name) return;
-
-                const minutes = Number(minutesInput.value || 0);
-                if (minutes < 0) return;
 
                 await apiRequest('/api/tasks', {
                     method: 'POST',
@@ -1898,14 +1888,12 @@
                     },
                     body: JSON.stringify({
                         name,
-                        task_type: typeInput.value,
-                        initial_seconds: Math.floor(minutes * 60),
+                        initial_seconds: 0,
                         task_color: colorInput.value || '#007bff'
                     })
                 });
 
                 nameInput.value = '';
-                minutesInput.value = '';
                 await loadTasks();
             } catch (e) {
                 alert(e.message || 'Failed to add job.');

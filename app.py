@@ -23,6 +23,14 @@ def get_default_database_path():
     return 'user_data.db'
 
 
+def should_bootstrap_from_legacy_db():
+    # On Vercel, each instance has isolated /tmp storage, so copying a bundled
+    # legacy DB causes stale seed data to reappear across cold starts.
+    if os.getenv('VERCEL'):
+        return False
+    return True
+
+
 app = flask.Flask(__name__, template_folder='.')
 DATABASE_PATH = get_default_database_path()
 LEGACY_DATABASE_PATH = 'weekly_tracker.db'
@@ -142,7 +150,11 @@ def get_db():
         database_dir = os.path.dirname(DATABASE_PATH)
         if database_dir:
             os.makedirs(database_dir, exist_ok=True)
-        if (not os.path.exists(DATABASE_PATH)) and os.path.exists(LEGACY_DATABASE_PATH):
+        if (
+            should_bootstrap_from_legacy_db()
+            and (not os.path.exists(DATABASE_PATH))
+            and os.path.exists(LEGACY_DATABASE_PATH)
+        ):
             shutil.copy2(LEGACY_DATABASE_PATH, DATABASE_PATH)
         flask.g.db = sqlite3.connect(DATABASE_PATH)
         flask.g.db.row_factory = sqlite3.Row
@@ -751,7 +763,8 @@ def get_tasks():
 def create_task():
     data = flask.request.get_json(silent=True) or {}
     name = str(data.get('name', '')).strip()
-    task_type = data.get('task_type')
+    requested_task_type = str(data.get('task_type', '')).strip().lower()
+    task_type = requested_task_type or 'weekly'
     initial_seconds = int(data.get('initial_seconds', 0) or 0)
     task_color = str(data.get('task_color', DEFAULT_TASK_COLOR)).strip() or DEFAULT_TASK_COLOR
 
