@@ -5,8 +5,10 @@ import os
 import shutil
 import calendar as cal_module
 from datetime import datetime, timedelta
+from functools import lru_cache
 
 import flask
+import jwt
 
 
 def get_default_database_path():
@@ -39,6 +41,77 @@ VALID_WEEK_START_DAYS = {
 }
 
 
+@lru_cache(maxsize=1)
+def get_supabase_jwks_client():
+    supabase_url = str(os.getenv('SUPABASE_URL', '')).strip().rstrip('/')
+    jwks_url = str(os.getenv('SUPABASE_JWKS_URL', '')).strip()
+    if not jwks_url:
+        if not supabase_url:
+            raise RuntimeError('Missing SUPABASE_URL or SUPABASE_JWKS_URL')
+        jwks_url = f'{supabase_url}/auth/v1/.well-known/jwks.json'
+    return jwt.PyJWKClient(jwks_url)
+
+
+@lru_cache(maxsize=1)
+def get_supabase_issuer():
+    env_issuer = str(os.getenv('SUPABASE_ISSUER', '')).strip()
+    if env_issuer:
+        return env_issuer
+    supabase_url = str(os.getenv('SUPABASE_URL', '')).strip().rstrip('/')
+    if not supabase_url:
+        raise RuntimeError('Missing SUPABASE_URL or SUPABASE_ISSUER')
+    return f'{supabase_url}/auth/v1'
+
+
+def parse_bearer_token(auth_header):
+    if not auth_header:
+        return None
+    auth_value = str(auth_header).strip()
+    if not auth_value.lower().startswith('bearer '):
+        return None
+    token = auth_value[7:].strip()
+    return token or None
+
+
+def verify_supabase_token(token):
+    jwks_client = get_supabase_jwks_client()
+    signing_key = jwks_client.get_signing_key_from_jwt(token)
+    issuer = get_supabase_issuer()
+    return jwt.decode(
+        token,
+        signing_key.key,
+        algorithms=['RS256'],
+        issuer=issuer,
+        options={'verify_aud': False},
+    )
+
+
+def get_current_user_id():
+    return str(flask.g.user_id)
+
+
+@app.before_request
+def require_api_authentication():
+    if not flask.request.path.startswith('/api/'):
+        return None
+
+    token = parse_bearer_token(flask.request.headers.get('Authorization'))
+    if not token:
+        return flask.jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        claims = verify_supabase_token(token)
+    except Exception:
+        return flask.jsonify({'error': 'Unauthorized'}), 401
+
+    user_id = str(claims.get('sub', '')).strip()
+    if not user_id:
+        return flask.jsonify({'error': 'Unauthorized'}), 401
+
+    flask.g.user_id = user_id
+    return None
+
+
 def get_db():
     if 'db' not in flask.g:
         database_dir = os.path.dirname(DATABASE_PATH)
@@ -65,6 +138,7 @@ def init_db():
         '''
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            owner_id TEXT NOT NULL DEFAULT 'legacy',
             name TEXT NOT NULL,
             task_type TEXT NOT NULL CHECK(task_type IN ('weekly', 'monthly')),
             task_color TEXT NOT NULL DEFAULT '#007bff',
@@ -98,8 +172,19 @@ def init_db():
     )
     db.execute(
         '''
+        CREATE TABLE IF NOT EXISTS user_settings (
+            owner_id TEXT NOT NULL,
+            key TEXT NOT NULL,
+            value TEXT NOT NULL,
+            PRIMARY KEY(owner_id, key)
+        )
+        '''
+    )
+    db.execute(
+        '''
         CREATE TABLE IF NOT EXISTS daily_tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            owner_id TEXT NOT NULL DEFAULT 'legacy',
             name TEXT NOT NULL,
             category TEXT NOT NULL DEFAULT 'daily',
             task_kind TEXT NOT NULL DEFAULT 'checkbox',
@@ -146,6 +231,10 @@ def init_db():
         db.execute(
             "ALTER TABLE tasks ADD COLUMN task_color TEXT NOT NULL DEFAULT '#007bff'"
         )
+    if 'owner_id' not in column_names:
+        db.execute(
+            "ALTER TABLE tasks ADD COLUMN owner_id TEXT NOT NULL DEFAULT 'legacy'"
+        )
     if 'is_work' not in column_names:
         db.execute(
             "ALTER TABLE tasks ADD COLUMN is_work INTEGER NOT NULL DEFAULT 0"
@@ -153,6 +242,8 @@ def init_db():
     # Migrate daily_tasks table for recurrence-based design
     dt_columns = db.execute("PRAGMA table_info(daily_tasks)").fetchall()
     dt_column_names = {col['name'] for col in dt_columns}
+    if 'owner_id' not in dt_column_names:
+        db.execute("ALTER TABLE daily_tasks ADD COLUMN owner_id TEXT NOT NULL DEFAULT 'legacy'")
     if 'recurrence' not in dt_column_names:
         db.execute("ALTER TABLE daily_tasks ADD COLUMN recurrence TEXT NOT NULL DEFAULT 'daily'")
         db.execute("UPDATE daily_tasks SET recurrence = 'none' WHERE no_expiry = 1")
@@ -168,30 +259,21 @@ def init_db():
 
     db.execute("UPDATE daily_tasks SET recurrence = 'one_time' WHERE recurrence = 'none'")
     db.execute("UPDATE daily_tasks SET task_kind = 'integer' WHERE task_kind = 'timed'")
-    existing_day_start = db.execute(
-        "SELECT value FROM app_settings WHERE key = 'day_start_hour'"
-    ).fetchone()
-    if not existing_day_start:
-        db.execute(
-            "INSERT INTO app_settings (key, value) VALUES (?, ?)",
-            ('day_start_hour', str(DEFAULT_DAY_START_HOUR)),
-        )
-
-    existing_week_start = db.execute(
-        "SELECT value FROM app_settings WHERE key = 'week_start_day'"
-    ).fetchone()
-    if not existing_week_start:
-        db.execute(
-            "INSERT INTO app_settings (key, value) VALUES (?, ?)",
-            ('week_start_day', DEFAULT_WEEK_START_DAY),
-        )
+    db.execute('CREATE INDEX IF NOT EXISTS idx_tasks_owner ON tasks(owner_id)')
+    db.execute('CREATE INDEX IF NOT EXISTS idx_tasks_owner_running ON tasks(owner_id, running)')
+    db.execute('CREATE INDEX IF NOT EXISTS idx_daily_tasks_owner ON daily_tasks(owner_id)')
+    db.execute('CREATE INDEX IF NOT EXISTS idx_work_logs_task_date ON work_logs(task_id, work_date)')
+    db.execute('CREATE INDEX IF NOT EXISTS idx_daily_logs_task_date ON daily_task_logs(daily_task_id, log_date)')
+    db.execute('CREATE INDEX IF NOT EXISTS idx_daily_completions_task_date ON daily_task_completions(daily_task_id, completion_date)')
     db.commit()
 
 
 def get_day_start_hour():
     db = get_db()
+    user_id = get_current_user_id()
     row = db.execute(
-        "SELECT value FROM app_settings WHERE key = 'day_start_hour'"
+        "SELECT value FROM user_settings WHERE owner_id = ? AND key = 'day_start_hour'",
+        (user_id,),
     ).fetchone()
     if not row:
         return DEFAULT_DAY_START_HOUR
@@ -210,8 +292,10 @@ def get_logical_now(day_start_hour):
 
 def get_week_start_day():
     db = get_db()
+    user_id = get_current_user_id()
     row = db.execute(
-        "SELECT value FROM app_settings WHERE key = 'week_start_day'"
+        "SELECT value FROM user_settings WHERE owner_id = ? AND key = 'week_start_day'",
+        (user_id,),
     ).fetchone()
     if not row:
         return DEFAULT_WEEK_START_DAY
@@ -335,6 +419,7 @@ def task_to_dict(task_row):
 
 def get_today_color_breakdown():
     db = get_db()
+    user_id = get_current_user_id()
     day_start_hour = get_day_start_hour()
     today = get_logical_now(day_start_hour).date().isoformat()
 
@@ -345,10 +430,10 @@ def get_today_color_breakdown():
         SELECT t.task_color, COALESCE(SUM(w.seconds), 0) AS total_seconds
         FROM work_logs w
         JOIN tasks t ON t.id = w.task_id
-        WHERE w.work_date = ?
+        WHERE w.work_date = ? AND t.owner_id = ?
         GROUP BY t.task_color
         ''',
-        (today,),
+        (today, user_id),
     ).fetchall()
 
     for row in logged_rows:
@@ -356,7 +441,8 @@ def get_today_color_breakdown():
         totals[color] = totals.get(color, 0) + int(row['total_seconds'])
 
     running_rows = db.execute(
-        'SELECT started_at, task_color FROM tasks WHERE running = 1 AND started_at IS NOT NULL'
+        'SELECT started_at, task_color FROM tasks WHERE owner_id = ? AND running = 1 AND started_at IS NOT NULL',
+        (user_id,),
     ).fetchall()
 
     now_ts = int(time.time())
@@ -378,16 +464,23 @@ def get_today_color_breakdown():
 
 def get_today_total_seconds():
     db = get_db()
+    user_id = get_current_user_id()
     day_start_hour = get_day_start_hour()
     today = get_logical_now(day_start_hour).date().isoformat()
     row = db.execute(
-        'SELECT COALESCE(SUM(seconds), 0) AS total FROM work_logs WHERE work_date = ?',
-        (today,),
+        '''
+        SELECT COALESCE(SUM(w.seconds), 0) AS total
+        FROM work_logs w
+        JOIN tasks t ON t.id = w.task_id
+        WHERE w.work_date = ? AND t.owner_id = ?
+        ''',
+        (today, user_id),
     ).fetchone()
     logged_total = int(row['total']) if row else 0
 
     running_rows = db.execute(
-        'SELECT started_at FROM tasks WHERE running = 1 AND started_at IS NOT NULL'
+        'SELECT started_at FROM tasks WHERE owner_id = ? AND running = 1 AND started_at IS NOT NULL',
+        (user_id,),
     ).fetchall()
 
     now_ts = int(time.time())
@@ -402,12 +495,19 @@ def get_today_total_seconds():
 
 def get_today_task_seconds():
     db = get_db()
+    user_id = get_current_user_id()
     day_start_hour = get_day_start_hour()
     today = get_logical_now(day_start_hour).date().isoformat()
 
     rows = db.execute(
-        'SELECT task_id, COALESCE(SUM(seconds), 0) AS total FROM work_logs WHERE work_date = ? GROUP BY task_id',
-        (today,),
+        '''
+        SELECT w.task_id, COALESCE(SUM(w.seconds), 0) AS total
+        FROM work_logs w
+        JOIN tasks t ON t.id = w.task_id
+        WHERE w.work_date = ? AND t.owner_id = ?
+        GROUP BY w.task_id
+        ''',
+        (today, user_id),
     ).fetchall()
 
     result = {}
@@ -415,7 +515,8 @@ def get_today_task_seconds():
         result[int(row['task_id'])] = int(row['total'])
 
     running_rows = db.execute(
-        'SELECT id, started_at FROM tasks WHERE running = 1 AND started_at IS NOT NULL'
+        'SELECT id, started_at FROM tasks WHERE owner_id = ? AND running = 1 AND started_at IS NOT NULL',
+        (user_id,),
     ).fetchall()
 
     now_ts = int(time.time())
@@ -431,6 +532,7 @@ def get_today_task_seconds():
 
 def get_weekly_color_breakdown():
     db = get_db()
+    user_id = get_current_user_id()
     day_start_hour = get_day_start_hour()
     week_start_day = get_week_start_day()
     today_date = get_logical_now(day_start_hour).date()
@@ -453,10 +555,10 @@ def get_weekly_color_breakdown():
         SELECT w.work_date, t.task_color, COALESCE(SUM(w.seconds), 0) AS total_seconds
         FROM work_logs w
         JOIN tasks t ON t.id = w.task_id
-        WHERE w.work_date BETWEEN ? AND ? AND t.is_work = 1
+        WHERE w.work_date BETWEEN ? AND ? AND t.is_work = 1 AND t.owner_id = ?
         GROUP BY w.work_date, t.task_color
         ''',
-        (week_start.isoformat(), week_end.isoformat()),
+        (week_start.isoformat(), week_end.isoformat(), user_id),
     ).fetchall()
 
     for row in logged_rows:
@@ -469,7 +571,8 @@ def get_weekly_color_breakdown():
         day_data[work_date]['total_seconds'] += seconds
 
     running_rows = db.execute(
-        'SELECT started_at, task_color FROM tasks WHERE running = 1 AND started_at IS NOT NULL AND is_work = 1'
+        'SELECT started_at, task_color FROM tasks WHERE owner_id = ? AND running = 1 AND started_at IS NOT NULL AND is_work = 1',
+        (user_id,),
     ).fetchall()
 
     today_key = today_date.isoformat()
@@ -509,6 +612,7 @@ def get_weekly_color_breakdown():
 
 def get_monthly_overview(month_count=6):
     db = get_db()
+    user_id = get_current_user_id()
     day_start_hour = get_day_start_hour()
     logical_today = get_logical_now(day_start_hour).date()
     current_month_start = logical_today.replace(day=1)
@@ -533,10 +637,10 @@ def get_monthly_overview(month_count=6):
                COALESCE(SUM(w.seconds), 0) AS total_seconds
         FROM work_logs w
         JOIN tasks t ON t.id = w.task_id
-        WHERE w.work_date >= ? AND t.is_work = 1
+        WHERE w.work_date >= ? AND t.is_work = 1 AND t.owner_id = ?
         GROUP BY substr(w.work_date, 1, 7), t.task_color
         ''',
-        (oldest_month_start.isoformat(),),
+        (oldest_month_start.isoformat(), user_id),
     ).fetchall()
 
     for row in logged_rows:
@@ -548,7 +652,8 @@ def get_monthly_overview(month_count=6):
             month_map[month_key]['colors'][color] = month_map[month_key]['colors'].get(color, 0) + secs
 
     running_rows = db.execute(
-        'SELECT started_at, task_color FROM tasks WHERE running = 1 AND started_at IS NOT NULL AND is_work = 1'
+        'SELECT started_at, task_color FROM tasks WHERE owner_id = ? AND running = 1 AND started_at IS NOT NULL AND is_work = 1',
+        (user_id,),
     ).fetchall()
 
     now_ts = int(time.time())
@@ -579,14 +684,20 @@ def get_monthly_overview(month_count=6):
 
 @app.route('/')
 def hello():
-    return flask.render_template('index.html')
+    return flask.render_template(
+        'index.html',
+        supabase_url=str(os.getenv('SUPABASE_URL', '')).strip(),
+        supabase_anon_key=str(os.getenv('SUPABASE_ANON_KEY', '')).strip(),
+    )
 
 
 @app.route('/api/tasks', methods=['GET'])
 def get_tasks():
     db = get_db()
+    user_id = get_current_user_id()
     rows = db.execute(
-        'SELECT id, name, task_type, task_color, is_work, elapsed_seconds, running, started_at FROM tasks ORDER BY created_at DESC, id DESC'
+        'SELECT id, name, task_type, task_color, is_work, elapsed_seconds, running, started_at FROM tasks WHERE owner_id = ? ORDER BY created_at DESC, id DESC',
+        (user_id,),
     ).fetchall()
 
     day_start_hour = get_day_start_hour()
@@ -629,9 +740,10 @@ def create_task():
         return flask.jsonify({'error': 'Invalid task color'}), 400
 
     db = get_db()
+    user_id = get_current_user_id()
     cursor = db.execute(
-        'INSERT INTO tasks (name, task_type, task_color, elapsed_seconds) VALUES (?, ?, ?, ?)',
-        (name, task_type, task_color, initial_seconds),
+        'INSERT INTO tasks (owner_id, name, task_type, task_color, elapsed_seconds) VALUES (?, ?, ?, ?, ?)',
+        (user_id, name, task_type, task_color, initial_seconds),
     )
     task_id = cursor.lastrowid
 
@@ -650,9 +762,10 @@ def create_task():
 @app.route('/api/tasks/<int:task_id>/start', methods=['POST'])
 def start_task(task_id):
     db = get_db()
+    user_id = get_current_user_id()
     task = db.execute(
-        'SELECT id, running FROM tasks WHERE id = ?',
-        (task_id,),
+        'SELECT id, running FROM tasks WHERE id = ? AND owner_id = ?',
+        (task_id, user_id),
     ).fetchone()
 
     if not task:
@@ -661,8 +774,8 @@ def start_task(task_id):
         return flask.jsonify({'ok': True})
 
     db.execute(
-        'UPDATE tasks SET running = 1, started_at = ? WHERE id = ?',
-        (int(time.time()), task_id),
+        'UPDATE tasks SET running = 1, started_at = ? WHERE id = ? AND owner_id = ?',
+        (int(time.time()), task_id, user_id),
     )
     db.commit()
     return flask.jsonify({'ok': True})
@@ -671,9 +784,10 @@ def start_task(task_id):
 @app.route('/api/tasks/<int:task_id>/stop', methods=['POST'])
 def stop_task(task_id):
     db = get_db()
+    user_id = get_current_user_id()
     task = db.execute(
-        'SELECT id, elapsed_seconds, running, started_at FROM tasks WHERE id = ?',
-        (task_id,),
+        'SELECT id, elapsed_seconds, running, started_at FROM tasks WHERE id = ? AND owner_id = ?',
+        (task_id, user_id),
     ).fetchone()
 
     if not task:
@@ -687,8 +801,8 @@ def stop_task(task_id):
     new_elapsed = int(task['elapsed_seconds']) + duration
 
     db.execute(
-        'UPDATE tasks SET elapsed_seconds = ?, running = 0, started_at = NULL WHERE id = ?',
-        (new_elapsed, task_id),
+        'UPDATE tasks SET elapsed_seconds = ?, running = 0, started_at = NULL WHERE id = ? AND owner_id = ?',
+        (new_elapsed, task_id, user_id),
     )
 
     if duration > 0:
@@ -722,9 +836,10 @@ def add_manual_time(task_id):
         work_date = get_logical_now(day_start_hour).date().isoformat()
 
     db = get_db()
+    user_id = get_current_user_id()
     task = db.execute(
-        'SELECT id, elapsed_seconds FROM tasks WHERE id = ?',
-        (task_id,),
+        'SELECT id, elapsed_seconds FROM tasks WHERE id = ? AND owner_id = ?',
+        (task_id, user_id),
     ).fetchone()
 
     if not task:
@@ -732,8 +847,8 @@ def add_manual_time(task_id):
 
     new_elapsed = int(task['elapsed_seconds']) + seconds
     db.execute(
-        'UPDATE tasks SET elapsed_seconds = ? WHERE id = ?',
-        (new_elapsed, task_id),
+        'UPDATE tasks SET elapsed_seconds = ? WHERE id = ? AND owner_id = ?',
+        (new_elapsed, task_id, user_id),
     )
 
     db.execute(
@@ -754,12 +869,13 @@ def update_day_start_hour():
         return flask.jsonify({'error': 'day_start_hour must be between 0 and 23'}), 400
 
     db = get_db()
+    user_id = get_current_user_id()
     db.execute(
         '''
-        INSERT INTO app_settings (key, value) VALUES (?, ?)
-        ON CONFLICT(key) DO UPDATE SET value = excluded.value
+        INSERT INTO user_settings (owner_id, key, value) VALUES (?, ?, ?)
+        ON CONFLICT(owner_id, key) DO UPDATE SET value = excluded.value
         ''',
-        ('day_start_hour', str(day_start_hour)),
+        (user_id, 'day_start_hour', str(day_start_hour)),
     )
     db.commit()
     return flask.jsonify({'ok': True, 'day_start_hour': day_start_hour})
@@ -774,12 +890,13 @@ def update_week_start_day():
         return flask.jsonify({'error': 'week_start_day must be one of sunday..saturday'}), 400
 
     db = get_db()
+    user_id = get_current_user_id()
     db.execute(
         '''
-        INSERT INTO app_settings (key, value) VALUES (?, ?)
-        ON CONFLICT(key) DO UPDATE SET value = excluded.value
+        INSERT INTO user_settings (owner_id, key, value) VALUES (?, ?, ?)
+        ON CONFLICT(owner_id, key) DO UPDATE SET value = excluded.value
         ''',
-        ('week_start_day', week_start_day),
+        (user_id, 'week_start_day', week_start_day),
     )
     db.commit()
     return flask.jsonify({'ok': True, 'week_start_day': week_start_day})
@@ -791,11 +908,12 @@ def update_task_is_work(task_id):
     is_work = 1 if data.get('is_work') else 0
 
     db = get_db()
-    task = db.execute('SELECT id FROM tasks WHERE id = ?', (task_id,)).fetchone()
+    user_id = get_current_user_id()
+    task = db.execute('SELECT id FROM tasks WHERE id = ? AND owner_id = ?', (task_id, user_id)).fetchone()
     if not task:
         return flask.jsonify({'error': 'Task not found'}), 404
 
-    db.execute('UPDATE tasks SET is_work = ? WHERE id = ?', (is_work, task_id))
+    db.execute('UPDATE tasks SET is_work = ? WHERE id = ? AND owner_id = ?', (is_work, task_id, user_id))
     db.commit()
     return flask.jsonify({'ok': True})
 
@@ -809,11 +927,12 @@ def update_task_color(task_id):
         return flask.jsonify({'error': 'Invalid task color'}), 400
 
     db = get_db()
-    task = db.execute('SELECT id FROM tasks WHERE id = ?', (task_id,)).fetchone()
+    user_id = get_current_user_id()
+    task = db.execute('SELECT id FROM tasks WHERE id = ? AND owner_id = ?', (task_id, user_id)).fetchone()
     if not task:
         return flask.jsonify({'error': 'Task not found'}), 404
 
-    db.execute('UPDATE tasks SET task_color = ? WHERE id = ?', (task_color, task_id))
+    db.execute('UPDATE tasks SET task_color = ? WHERE id = ? AND owner_id = ?', (task_color, task_id, user_id))
     db.commit()
     return flask.jsonify({'ok': True})
 
@@ -821,7 +940,8 @@ def update_task_color(task_id):
 @app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
 def delete_task(task_id):
     db = get_db()
-    db.execute('DELETE FROM tasks WHERE id = ?', (task_id,))
+    user_id = get_current_user_id()
+    db.execute('DELETE FROM tasks WHERE id = ? AND owner_id = ?', (task_id, user_id))
     db.commit()
     return flask.jsonify({'ok': True})
 
@@ -837,16 +957,17 @@ def get_day_logs():
         return flask.jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
 
     db = get_db()
+    user_id = get_current_user_id()
     rows = db.execute(
         '''
         SELECT w.id, w.task_id, w.work_date, w.seconds, w.entry_type, w.created_at,
                t.name AS task_name, t.task_color
         FROM work_logs w
         JOIN tasks t ON t.id = w.task_id
-        WHERE w.work_date = ?
+        WHERE w.work_date = ? AND t.owner_id = ?
         ORDER BY w.created_at DESC, w.id DESC
         ''',
-        (work_date,),
+        (work_date, user_id),
     ).fetchall()
 
     logs = []
@@ -874,7 +995,16 @@ def update_work_log(log_id):
         return flask.jsonify({'error': 'Seconds must be greater than 0'}), 400
 
     db = get_db()
-    log = db.execute('SELECT id, task_id, seconds FROM work_logs WHERE id = ?', (log_id,)).fetchone()
+    user_id = get_current_user_id()
+    log = db.execute(
+        '''
+        SELECT w.id, w.task_id, w.seconds
+        FROM work_logs w
+        JOIN tasks t ON t.id = w.task_id
+        WHERE w.id = ? AND t.owner_id = ?
+        ''',
+        (log_id, user_id),
+    ).fetchone()
     if not log:
         return flask.jsonify({'error': 'Work log not found'}), 404
 
@@ -882,8 +1012,8 @@ def update_work_log(log_id):
     diff = seconds - old_seconds
     db.execute('UPDATE work_logs SET seconds = ? WHERE id = ?', (seconds, log_id))
     db.execute(
-        'UPDATE tasks SET elapsed_seconds = MAX(0, elapsed_seconds + ?) WHERE id = ?',
-        (diff, int(log['task_id'])),
+        'UPDATE tasks SET elapsed_seconds = MAX(0, elapsed_seconds + ?) WHERE id = ? AND owner_id = ?',
+        (diff, int(log['task_id']), user_id),
     )
     db.commit()
     return flask.jsonify({'ok': True})
@@ -892,15 +1022,24 @@ def update_work_log(log_id):
 @app.route('/api/work_logs/<int:log_id>', methods=['DELETE'])
 def delete_work_log(log_id):
     db = get_db()
-    log = db.execute('SELECT id, task_id, seconds FROM work_logs WHERE id = ?', (log_id,)).fetchone()
+    user_id = get_current_user_id()
+    log = db.execute(
+        '''
+        SELECT w.id, w.task_id, w.seconds
+        FROM work_logs w
+        JOIN tasks t ON t.id = w.task_id
+        WHERE w.id = ? AND t.owner_id = ?
+        ''',
+        (log_id, user_id),
+    ).fetchone()
     if not log:
         return flask.jsonify({'error': 'Work log not found'}), 404
 
     seconds = int(log['seconds'])
     db.execute('DELETE FROM work_logs WHERE id = ?', (log_id,))
     db.execute(
-        'UPDATE tasks SET elapsed_seconds = MAX(0, elapsed_seconds - ?) WHERE id = ?',
-        (seconds, int(log['task_id'])),
+        'UPDATE tasks SET elapsed_seconds = MAX(0, elapsed_seconds - ?) WHERE id = ? AND owner_id = ?',
+        (seconds, int(log['task_id']), user_id),
     )
     db.commit()
     return flask.jsonify({'ok': True})
@@ -928,16 +1067,17 @@ def get_monthly_calendar():
     month_end = month_start.replace(day=days_in_month)
 
     db = get_db()
+    user_id = get_current_user_id()
     rows = db.execute(
         '''
         SELECT w.work_date, t.task_color, COALESCE(SUM(w.seconds), 0) AS total_seconds
         FROM work_logs w
         JOIN tasks t ON t.id = w.task_id
-        WHERE w.work_date BETWEEN ? AND ?
+        WHERE w.work_date BETWEEN ? AND ? AND t.owner_id = ?
         GROUP BY w.work_date, t.task_color
         ORDER BY w.work_date
         ''',
-        (month_start.isoformat(), month_end.isoformat()),
+        (month_start.isoformat(), month_end.isoformat(), user_id),
     ).fetchall()
 
     day_map = {}
@@ -995,13 +1135,14 @@ def daily_task_to_dict(row):
 @app.route('/api/daily_tasks', methods=['GET'])
 def get_daily_tasks():
     db = get_db()
+    user_id = get_current_user_id()
     day_start_hour = get_day_start_hour()
     week_start_day = get_week_start_day()
     today_date = get_logical_now(day_start_hour).date()
     today = today_date.isoformat()
     week_start = get_week_start_date(today_date, week_start_day).isoformat()
 
-    rows = db.execute('SELECT * FROM daily_tasks ORDER BY sort_order, id').fetchall()
+    rows = db.execute('SELECT * FROM daily_tasks WHERE owner_id = ? ORDER BY sort_order, id', (user_id,)).fetchall()
     task_ids = [int(r['id']) for r in rows]
 
     completions_by_task = {}
@@ -1111,11 +1252,12 @@ def create_daily_task():
 
     no_expiry = 1 if recurrence == 'one_time' else 0
     db = get_db()
-    max_order = db.execute('SELECT COALESCE(MAX(sort_order), -1) FROM daily_tasks').fetchone()[0]
+    user_id = get_current_user_id()
+    max_order = db.execute('SELECT COALESCE(MAX(sort_order), -1) FROM daily_tasks WHERE owner_id = ?', (user_id,)).fetchone()[0]
     cursor = db.execute(
-          '''INSERT INTO daily_tasks (name, category, task_kind, target_minutes, task_unit, color, no_expiry, recurrence, sort_order, due_date)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-          (name, recurrence, task_kind, target_minutes, task_unit, color, no_expiry, recurrence, int(max_order) + 1, due_date_value),
+          '''INSERT INTO daily_tasks (owner_id, name, category, task_kind, target_minutes, task_unit, color, no_expiry, recurrence, sort_order, due_date)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          (user_id, name, recurrence, task_kind, target_minutes, task_unit, color, no_expiry, recurrence, int(max_order) + 1, due_date_value),
     )
     db.commit()
     return flask.jsonify({'ok': True, 'id': cursor.lastrowid}), 201
@@ -1125,7 +1267,8 @@ def create_daily_task():
 def update_daily_task(task_id):
     data = flask.request.get_json(silent=True) or {}
     db = get_db()
-    row = db.execute('SELECT * FROM daily_tasks WHERE id = ?', (task_id,)).fetchone()
+    user_id = get_current_user_id()
+    row = db.execute('SELECT * FROM daily_tasks WHERE id = ? AND owner_id = ?', (task_id, user_id)).fetchone()
     if not row:
         return flask.jsonify({'error': 'Not found'}), 404
 
@@ -1161,8 +1304,8 @@ def update_daily_task(task_id):
 
     no_expiry = 1 if recurrence == 'one_time' else 0
     db.execute(
-        'UPDATE daily_tasks SET name=?, recurrence=?, task_kind=?, target_minutes=?, task_unit=?, color=?, no_expiry=?, due_date=? WHERE id=?',
-        (name, recurrence, task_kind, target_minutes, task_unit, color, no_expiry, due_date_value, task_id),
+        'UPDATE daily_tasks SET name=?, recurrence=?, task_kind=?, target_minutes=?, task_unit=?, color=?, no_expiry=?, due_date=? WHERE id=? AND owner_id = ?',
+        (name, recurrence, task_kind, target_minutes, task_unit, color, no_expiry, due_date_value, task_id, user_id),
     )
     db.commit()
     return flask.jsonify({'ok': True})
@@ -1171,7 +1314,8 @@ def update_daily_task(task_id):
 @app.route('/api/daily_tasks/<int:task_id>', methods=['DELETE'])
 def delete_daily_task(task_id):
     db = get_db()
-    db.execute('DELETE FROM daily_tasks WHERE id = ?', (task_id,))
+    user_id = get_current_user_id()
+    db.execute('DELETE FROM daily_tasks WHERE id = ? AND owner_id = ?', (task_id, user_id))
     db.commit()
     return flask.jsonify({'ok': True})
 
@@ -1190,7 +1334,11 @@ def update_daily_task_progress(task_id):
         done_minutes = max(0, int(done_minutes))
 
     db = get_db()
-    task = db.execute('SELECT id, recurrence, no_expiry, task_kind, target_minutes, due_date FROM daily_tasks WHERE id = ?', (task_id,)).fetchone()
+    user_id = get_current_user_id()
+    task = db.execute(
+        'SELECT id, recurrence, no_expiry, task_kind, target_minutes, due_date FROM daily_tasks WHERE id = ? AND owner_id = ?',
+        (task_id, user_id),
+    ).fetchone()
     if not task:
         return flask.jsonify({'error': 'Not found'}), 404
 
@@ -1263,15 +1411,16 @@ def get_daily_tasks_calendar():
     month_end = month_start.replace(day=days_in_month)
 
     db = get_db()
+    user_id = get_current_user_id()
     rows = db.execute(
         '''
         SELECT l.log_date, l.done, dt.color
         FROM daily_task_logs l
         JOIN daily_tasks dt ON dt.id = l.daily_task_id
-        WHERE l.log_date BETWEEN ? AND ?
+        WHERE l.log_date BETWEEN ? AND ? AND dt.owner_id = ?
         ORDER BY l.log_date
         ''',
-        (month_start.isoformat(), month_end.isoformat()),
+        (month_start.isoformat(), month_end.isoformat(), user_id),
     ).fetchall()
 
     day_map = {}
@@ -1323,17 +1472,23 @@ def get_daily_task_logs():
         return flask.jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
 
     db = get_db()
+    user_id = get_current_user_id()
     rows = db.execute(
         '''
         SELECT l.id, l.log_date, l.value, l.done, l.created_at,
                dt.id AS task_id, dt.name AS task_name, dt.color, dt.task_kind, dt.recurrence
         FROM daily_task_logs l
         JOIN daily_tasks dt ON dt.id = l.daily_task_id
-        WHERE l.log_date = ?
+        WHERE l.log_date = ? AND dt.owner_id = ?
         ORDER BY l.created_at DESC, l.id DESC
         ''',
-        (parsed_date.isoformat(),),
+        (parsed_date.isoformat(), user_id),
     ).fetchall()
+
+
+@app.route('/api/auth/me', methods=['GET'])
+def auth_me():
+    return flask.jsonify({'user_id': get_current_user_id()})
 
     logs = []
     for row in rows:
