@@ -8,8 +8,21 @@ from datetime import datetime, timedelta
 
 import flask
 
+
+def get_default_database_path():
+    env_database_path = os.getenv('DATABASE_PATH')
+    if env_database_path:
+        return env_database_path
+
+    # Vercel serverless functions can only write to /tmp.
+    if os.getenv('VERCEL'):
+        return '/tmp/user_data.db'
+
+    return 'user_data.db'
+
+
 app = flask.Flask(__name__, template_folder='.')
-DATABASE_PATH = 'user_data.db'
+DATABASE_PATH = get_default_database_path()
 LEGACY_DATABASE_PATH = 'weekly_tracker.db'
 DEFAULT_TASK_COLOR = '#007bff'
 DEFAULT_DAY_START_HOUR = 2
@@ -28,6 +41,9 @@ VALID_WEEK_START_DAYS = {
 
 def get_db():
     if 'db' not in flask.g:
+        database_dir = os.path.dirname(DATABASE_PATH)
+        if database_dir:
+            os.makedirs(database_dir, exist_ok=True)
         if (not os.path.exists(DATABASE_PATH)) and os.path.exists(LEGACY_DATABASE_PATH):
             shutil.copy2(LEGACY_DATABASE_PATH, DATABASE_PATH)
         flask.g.db = sqlite3.connect(DATABASE_PATH)
