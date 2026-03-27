@@ -96,7 +96,7 @@ def verify_supabase_token(token):
             options={'verify_aud': False},
         )
 
-    if algorithm != 'RS256':
+    if algorithm not in {'RS256', 'ES256'}:
         raise RuntimeError(f'Unsupported token algorithm: {algorithm or "unknown"}')
 
     jwks_client = get_supabase_jwks_client()
@@ -104,7 +104,7 @@ def verify_supabase_token(token):
     return jwt.decode(
         token,
         signing_key.key,
-        algorithms=['RS256'],
+        algorithms=[algorithm],
         issuer=issuer,
         options={'verify_aud': False},
     )
