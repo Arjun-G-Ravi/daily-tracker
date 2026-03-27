@@ -3,12 +3,16 @@ import time
 import re
 import os
 import shutil
+import importlib
 import calendar as cal_module
 from datetime import datetime, timedelta
 from functools import lru_cache
 
 import flask
 import jwt
+
+PSYCOPG2_MODULE = None
+REAL_DICT_CURSOR = None
 
 
 def get_default_database_path():
@@ -34,6 +38,7 @@ def should_bootstrap_from_legacy_db():
 app = flask.Flask(__name__, template_folder='.')
 DATABASE_PATH = get_default_database_path()
 LEGACY_DATABASE_PATH = 'weekly_tracker.db'
+POSTGRES_DSN = str(os.getenv('SUPABASE_DB_URL', '')).strip() or str(os.getenv('DATABASE_URL', '')).strip()
 DEFAULT_TASK_COLOR = '#007bff'
 DEFAULT_DAY_START_HOUR = 2
 DEFAULT_WEEK_START_DAY = 'sunday'
@@ -54,6 +59,70 @@ def normalize_hex_color(value):
     if HEX_COLOR_RE.match(color):
         return color
     return DEFAULT_TASK_COLOR
+
+
+def is_postgres_enabled():
+    return POSTGRES_DSN.startswith('postgres://') or POSTGRES_DSN.startswith('postgresql://')
+
+
+def ensure_postgres_driver():
+    global PSYCOPG2_MODULE, REAL_DICT_CURSOR
+    if PSYCOPG2_MODULE is not None and REAL_DICT_CURSOR is not None:
+        return
+
+    psycopg2_module = importlib.import_module('psycopg2')
+    extras_module = importlib.import_module('psycopg2.extras')
+    PSYCOPG2_MODULE = psycopg2_module
+    REAL_DICT_CURSOR = extras_module.RealDictCursor
+
+
+def build_postgres_dsn_with_ssl(dsn):
+    if 'sslmode=' in dsn:
+        return dsn
+    separator = '&' if '?' in dsn else '?'
+    return f'{dsn}{separator}sslmode=require'
+
+
+def translate_qmark_to_pg(query):
+    return query.replace('?', '%s')
+
+
+class PostgresCursorWrapper:
+    def __init__(self, cursor):
+        self._cursor = cursor
+
+    @property
+    def lastrowid(self):
+        return None
+
+    def fetchone(self):
+        return self._cursor.fetchone()
+
+    def fetchall(self):
+        return self._cursor.fetchall()
+
+
+class PostgresDbWrapper:
+    def __init__(self, connection):
+        self._connection = connection
+
+    def execute(self, query, params=()):
+        cursor = self._connection.cursor(cursor_factory=REAL_DICT_CURSOR)
+        cursor.execute(translate_qmark_to_pg(query), params or ())
+        return PostgresCursorWrapper(cursor)
+
+    def commit(self):
+        self._connection.commit()
+
+    def rollback(self):
+        self._connection.rollback()
+
+    def close(self):
+        self._connection.close()
+
+
+def is_postgres_db(db):
+    return isinstance(db, PostgresDbWrapper)
 
 
 @lru_cache(maxsize=1)
@@ -154,18 +223,24 @@ def require_api_authentication():
 
 def get_db():
     if 'db' not in flask.g:
-        database_dir = os.path.dirname(DATABASE_PATH)
-        if database_dir:
-            os.makedirs(database_dir, exist_ok=True)
-        if (
-            should_bootstrap_from_legacy_db()
-            and (not os.path.exists(DATABASE_PATH))
-            and os.path.exists(LEGACY_DATABASE_PATH)
-        ):
-            shutil.copy2(LEGACY_DATABASE_PATH, DATABASE_PATH)
-        flask.g.db = sqlite3.connect(DATABASE_PATH)
-        flask.g.db.row_factory = sqlite3.Row
-        flask.g.db.execute('PRAGMA foreign_keys = ON')
+        if is_postgres_enabled():
+            ensure_postgres_driver()
+            connection = PSYCOPG2_MODULE.connect(build_postgres_dsn_with_ssl(POSTGRES_DSN))
+            connection.autocommit = False
+            flask.g.db = PostgresDbWrapper(connection)
+        else:
+            database_dir = os.path.dirname(DATABASE_PATH)
+            if database_dir:
+                os.makedirs(database_dir, exist_ok=True)
+            if (
+                should_bootstrap_from_legacy_db()
+                and (not os.path.exists(DATABASE_PATH))
+                and os.path.exists(LEGACY_DATABASE_PATH)
+            ):
+                shutil.copy2(LEGACY_DATABASE_PATH, DATABASE_PATH)
+            flask.g.db = sqlite3.connect(DATABASE_PATH)
+            flask.g.db.row_factory = sqlite3.Row
+            flask.g.db.execute('PRAGMA foreign_keys = ON')
     return flask.g.db
 
 
@@ -176,8 +251,131 @@ def close_db(exception):
         db.close()
 
 
+def init_postgres_db(db):
+    db.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS tasks (
+            id BIGSERIAL PRIMARY KEY,
+            owner_id TEXT NOT NULL DEFAULT 'legacy',
+            name TEXT NOT NULL,
+            task_type TEXT NOT NULL CHECK(task_type IN ('weekly', 'monthly')),
+            task_color TEXT NOT NULL DEFAULT '#007bff',
+            elapsed_seconds INTEGER NOT NULL DEFAULT 0,
+            running INTEGER NOT NULL DEFAULT 0,
+            started_at BIGINT,
+            is_work INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        '''
+    )
+    db.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS work_logs (
+            id BIGSERIAL PRIMARY KEY,
+            task_id BIGINT NOT NULL,
+            work_date TEXT NOT NULL,
+            seconds INTEGER NOT NULL,
+            entry_type TEXT NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE
+        )
+        '''
+    )
+    db.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS app_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+        '''
+    )
+    db.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS user_settings (
+            owner_id TEXT NOT NULL,
+            key TEXT NOT NULL,
+            value TEXT NOT NULL,
+            PRIMARY KEY(owner_id, key)
+        )
+        '''
+    )
+    db.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS daily_tasks (
+            id BIGSERIAL PRIMARY KEY,
+            owner_id TEXT NOT NULL DEFAULT 'legacy',
+            name TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'daily',
+            task_kind TEXT NOT NULL DEFAULT 'checkbox',
+            target_minutes INTEGER,
+            task_unit TEXT NOT NULL DEFAULT '',
+            weekly_target_minutes INTEGER,
+            color TEXT NOT NULL DEFAULT '#007bff',
+            no_expiry INTEGER NOT NULL DEFAULT 0,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            recurrence TEXT NOT NULL DEFAULT 'daily',
+            persistent_done INTEGER NOT NULL DEFAULT 0,
+            persistent_done_minutes INTEGER NOT NULL DEFAULT 0,
+            due_date TEXT,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        '''
+    )
+    db.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS daily_task_completions (
+            id BIGSERIAL PRIMARY KEY,
+            daily_task_id BIGINT NOT NULL,
+            completion_date TEXT NOT NULL,
+            done INTEGER NOT NULL DEFAULT 0,
+            done_minutes INTEGER,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE(daily_task_id, completion_date),
+            FOREIGN KEY(daily_task_id) REFERENCES daily_tasks(id) ON DELETE CASCADE
+        )
+        '''
+    )
+    db.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS daily_task_logs (
+            id BIGSERIAL PRIMARY KEY,
+            daily_task_id BIGINT NOT NULL,
+            log_date TEXT NOT NULL,
+            value INTEGER,
+            done INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            FOREIGN KEY(daily_task_id) REFERENCES daily_tasks(id) ON DELETE CASCADE
+        )
+        '''
+    )
+
+    db.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_color TEXT NOT NULL DEFAULT '#007bff'")
+    db.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS owner_id TEXT NOT NULL DEFAULT 'legacy'")
+    db.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS is_work INTEGER NOT NULL DEFAULT 0")
+    db.execute("ALTER TABLE daily_tasks ADD COLUMN IF NOT EXISTS owner_id TEXT NOT NULL DEFAULT 'legacy'")
+    db.execute("ALTER TABLE daily_tasks ADD COLUMN IF NOT EXISTS recurrence TEXT NOT NULL DEFAULT 'daily'")
+    db.execute("ALTER TABLE daily_tasks ADD COLUMN IF NOT EXISTS persistent_done INTEGER NOT NULL DEFAULT 0")
+    db.execute("ALTER TABLE daily_tasks ADD COLUMN IF NOT EXISTS persistent_done_minutes INTEGER NOT NULL DEFAULT 0")
+    db.execute("ALTER TABLE daily_tasks ADD COLUMN IF NOT EXISTS due_date TEXT")
+    db.execute("ALTER TABLE daily_tasks ADD COLUMN IF NOT EXISTS task_unit TEXT NOT NULL DEFAULT ''")
+
+    db.execute("UPDATE daily_tasks SET recurrence = 'one_time' WHERE recurrence = 'none'")
+    db.execute("UPDATE daily_tasks SET task_kind = 'integer' WHERE task_kind = 'timed'")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_tasks_owner ON tasks(owner_id)")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_tasks_owner_running ON tasks(owner_id, running)")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_daily_tasks_owner ON daily_tasks(owner_id)")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_work_logs_task_date ON work_logs(task_id, work_date)")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_daily_logs_task_date ON daily_task_logs(daily_task_id, log_date)")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_daily_completions_task_date ON daily_task_completions(daily_task_id, completion_date)")
+    db.commit()
+
+
 def init_db():
     db = get_db()
+    if is_postgres_db(db):
+        init_postgres_db(db)
+        return
+
     db.execute(
         '''
         CREATE TABLE IF NOT EXISTS tasks (
@@ -783,11 +981,18 @@ def create_task():
         return flask.jsonify({'error': 'Initial time cannot be negative'}), 400
     db = get_db()
     user_id = get_current_user_id()
-    cursor = db.execute(
-        'INSERT INTO tasks (owner_id, name, task_type, task_color, elapsed_seconds) VALUES (?, ?, ?, ?, ?)',
-        (user_id, name, task_type, task_color, initial_seconds),
-    )
-    task_id = cursor.lastrowid
+    if is_postgres_db(db):
+        row = db.execute(
+            'INSERT INTO tasks (owner_id, name, task_type, task_color, elapsed_seconds) VALUES (?, ?, ?, ?, ?) RETURNING id',
+            (user_id, name, task_type, task_color, initial_seconds),
+        ).fetchone()
+        task_id = int(row['id'])
+    else:
+        cursor = db.execute(
+            'INSERT INTO tasks (owner_id, name, task_type, task_color, elapsed_seconds) VALUES (?, ?, ?, ?, ?)',
+            (user_id, name, task_type, task_color, initial_seconds),
+        )
+        task_id = cursor.lastrowid
 
     if initial_seconds > 0:
         day_start_hour = get_day_start_hour()
@@ -1040,7 +1245,7 @@ def update_work_log(log_id):
     user_id = get_current_user_id()
     log = db.execute(
         '''
-        SELECT w.id, w.task_id, w.seconds
+        SELECT w.id, w.task_id, w.seconds, t.elapsed_seconds
         FROM work_logs w
         JOIN tasks t ON t.id = w.task_id
         WHERE w.id = ? AND t.owner_id = ?
@@ -1052,10 +1257,11 @@ def update_work_log(log_id):
 
     old_seconds = int(log['seconds'])
     diff = seconds - old_seconds
+    new_elapsed = max(0, int(log['elapsed_seconds']) + diff)
     db.execute('UPDATE work_logs SET seconds = ? WHERE id = ?', (seconds, log_id))
     db.execute(
-        'UPDATE tasks SET elapsed_seconds = MAX(0, elapsed_seconds + ?) WHERE id = ? AND owner_id = ?',
-        (diff, int(log['task_id']), user_id),
+        'UPDATE tasks SET elapsed_seconds = ? WHERE id = ? AND owner_id = ?',
+        (new_elapsed, int(log['task_id']), user_id),
     )
     db.commit()
     return flask.jsonify({'ok': True})
@@ -1067,7 +1273,7 @@ def delete_work_log(log_id):
     user_id = get_current_user_id()
     log = db.execute(
         '''
-        SELECT w.id, w.task_id, w.seconds
+        SELECT w.id, w.task_id, w.seconds, t.elapsed_seconds
         FROM work_logs w
         JOIN tasks t ON t.id = w.task_id
         WHERE w.id = ? AND t.owner_id = ?
@@ -1078,10 +1284,11 @@ def delete_work_log(log_id):
         return flask.jsonify({'error': 'Work log not found'}), 404
 
     seconds = int(log['seconds'])
+    new_elapsed = max(0, int(log['elapsed_seconds']) - seconds)
     db.execute('DELETE FROM work_logs WHERE id = ?', (log_id,))
     db.execute(
-        'UPDATE tasks SET elapsed_seconds = MAX(0, elapsed_seconds - ?) WHERE id = ? AND owner_id = ?',
-        (seconds, int(log['task_id']), user_id),
+        'UPDATE tasks SET elapsed_seconds = ? WHERE id = ? AND owner_id = ?',
+        (new_elapsed, int(log['task_id']), user_id),
     )
     db.commit()
     return flask.jsonify({'ok': True})
@@ -1295,14 +1502,29 @@ def create_daily_task():
     no_expiry = 1 if recurrence == 'one_time' else 0
     db = get_db()
     user_id = get_current_user_id()
-    max_order = db.execute('SELECT COALESCE(MAX(sort_order), -1) FROM daily_tasks WHERE owner_id = ?', (user_id,)).fetchone()[0]
-    cursor = db.execute(
-          '''INSERT INTO daily_tasks (owner_id, name, category, task_kind, target_minutes, task_unit, color, no_expiry, recurrence, sort_order, due_date)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-          (user_id, name, recurrence, task_kind, target_minutes, task_unit, color, no_expiry, recurrence, int(max_order) + 1, due_date_value),
-    )
+    max_order_row = db.execute(
+        'SELECT COALESCE(MAX(sort_order), -1) AS max_sort_order FROM daily_tasks WHERE owner_id = ?',
+        (user_id,),
+    ).fetchone()
+    max_order = int(max_order_row['max_sort_order']) if max_order_row else -1
+
+    if is_postgres_db(db):
+        inserted = db.execute(
+            '''INSERT INTO daily_tasks (owner_id, name, category, task_kind, target_minutes, task_unit, color, no_expiry, recurrence, sort_order, due_date)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id''',
+            (user_id, name, recurrence, task_kind, target_minutes, task_unit, color, no_expiry, recurrence, int(max_order) + 1, due_date_value),
+        ).fetchone()
+        created_id = int(inserted['id'])
+    else:
+        cursor = db.execute(
+              '''INSERT INTO daily_tasks (owner_id, name, category, task_kind, target_minutes, task_unit, color, no_expiry, recurrence, sort_order, due_date)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+              (user_id, name, recurrence, task_kind, target_minutes, task_unit, color, no_expiry, recurrence, int(max_order) + 1, due_date_value),
+        )
+        created_id = cursor.lastrowid
+
     db.commit()
-    return flask.jsonify({'ok': True, 'id': cursor.lastrowid}), 201
+    return flask.jsonify({'ok': True, 'id': created_id}), 201
 
 
 @app.route('/api/daily_tasks/<int:task_id>', methods=['PUT'])
