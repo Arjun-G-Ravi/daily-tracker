@@ -882,30 +882,32 @@
         }
         .dt-add-form {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             align-items: center;
             flex-wrap: wrap;
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 12px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+            border: 1px solid rgba(148,163,184,0.25);
+            border-radius: 10px;
+            padding: 12px 14px;
             margin-bottom: 14px;
         }
         .dt-add-form input[type="text"] {
             flex: 1;
             min-width: 120px;
             padding: 8px 10px;
+            border-radius: 8px;
         }
         .dt-add-form input[type="number"] {
-            width: 80px;
-            flex: 0 0 80px;
-            padding: 8px 10px;
+            width: 70px;
+            flex: 0 0 70px;
+            padding: 8px;
+            border-radius: 8px;
         }
         .dt-add-form select {
             height: 38px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 0 8px;
+            border: 1px solid rgba(148,163,184,0.35);
+            border-radius: 8px;
+            padding: 0 10px;
             background: white;
             font-size: 14px;
         }
@@ -926,7 +928,18 @@
         .dt-add-form .dt-field-group {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 4px;
+        }
+        #dtTaskTarget {
+            width: 62px;
+            min-width: 62px;
+            text-align: center;
+            height: 28px;
+            min-height: 28px;
+            max-height: 28px;
+            padding: 2px 4px;
+            line-height: 1.1;
+            font-size: 13px;
         }
         .dt-add-advanced {
             display: none;
@@ -939,12 +952,18 @@
             display: flex;
         }
         .dt-show-more-btn {
-            background: #6c757d;
-            padding: 8px 12px;
-            font-size: 13px;
+            background: transparent;
+            color: #9aa4b2;
+            border: none;
+            padding: 4px 6px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 0;
+            box-shadow: none;
         }
         .dt-show-more-btn:hover {
-            background: #5a6268;
+            background: transparent;
+            color: #c1c8d2;
         }
         .dt-list {
             list-style: none;
@@ -1125,10 +1144,10 @@
             white-space: nowrap;
         }
         .dtp-mins-input {
-            width: 62px;
+            width: 50px;
             padding: 4px 6px;
             font-size: 12px;
-            flex: 0 0 62px;
+            flex: 0 0 54px;
         }
         .dtp-progress {
             font-size: 11px;
@@ -1136,12 +1155,12 @@
             white-space: nowrap;
         }
         .dtp-end-text {
-            font-size: 8px;
+            font-size: 7px;
             font-weight: 700;
             white-space: nowrap;
         }
         .dtp-end-text.today {
-            font-size: 8px;
+            font-size: 7px;
             font-weight: 600;
         }
         .dtp-end-text.dt-end-green { color: #28a745; }
@@ -1153,7 +1172,7 @@
             font-weight: 600;
         }
         .dtp-count-value {
-            font-size: 11px;
+            font-size: 10px;
             color: #6f7b89;
             font-weight: 700;
             white-space: nowrap;
@@ -1238,7 +1257,7 @@
                         </div>
                         <div class="dt-field-group" id="dtTaskTargetGroup" style="display:none">
                             <label>Target</label>
-                            <input type="number" min="1" id="dtTaskTarget" placeholder="e.g. 3">
+                            <input type="number" min="1" id="dtTaskTarget" placeholder="">
                         </div>
                         <button class="dt-show-more-btn" id="dtTaskAdvancedToggle" type="button">Show</button>
                         <div class="dt-add-advanced" id="dtTaskAdvancedFields">
