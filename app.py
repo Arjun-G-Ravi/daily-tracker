@@ -54,6 +54,11 @@ VALID_WEEK_START_DAYS = {
 }
 
 
+@app.errorhandler(RuntimeError)
+def handle_runtime_error(error):
+    return flask.jsonify({'error': str(error)}), 500
+
+
 def normalize_hex_color(value):
     color = str(value or '').strip().lower()
     if HEX_COLOR_RE.match(color):
@@ -70,8 +75,11 @@ def ensure_postgres_driver():
     if PSYCOPG2_MODULE is not None and REAL_DICT_CURSOR is not None:
         return
 
-    psycopg2_module = importlib.import_module('psycopg2')
-    extras_module = importlib.import_module('psycopg2.extras')
+    try:
+        psycopg2_module = importlib.import_module('psycopg2')
+        extras_module = importlib.import_module('psycopg2.extras')
+    except ImportError as exc:
+        raise RuntimeError('Missing psycopg2-binary. Install dependency or vendor the wheel for deployment.') from exc
     PSYCOPG2_MODULE = psycopg2_module
     REAL_DICT_CURSOR = extras_module.RealDictCursor
 
@@ -229,6 +237,9 @@ def get_db():
             connection.autocommit = False
             flask.g.db = PostgresDbWrapper(connection)
         else:
+            # On Vercel, falling back to SQLite causes data loss and task overwrites.
+            if os.getenv('VERCEL'):
+                raise RuntimeError('Persistent database not configured. Set SUPABASE_DB_URL (or DATABASE_URL) to a Postgres connection string.')
             database_dir = os.path.dirname(DATABASE_PATH)
             if database_dir:
                 os.makedirs(database_dir, exist_ok=True)
