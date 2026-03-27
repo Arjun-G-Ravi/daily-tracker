@@ -70,6 +70,10 @@ def is_postgres_enabled():
     return POSTGRES_DSN.startswith('postgres://') or POSTGRES_DSN.startswith('postgresql://')
 
 
+def is_vercel_without_persistent_db():
+    return bool(os.getenv('VERCEL')) and not is_postgres_enabled()
+
+
 def ensure_postgres_driver():
     global PSYCOPG2_MODULE, REAL_DICT_CURSOR
     if PSYCOPG2_MODULE is not None and REAL_DICT_CURSOR is not None:
@@ -211,6 +215,11 @@ def require_api_authentication():
     if not flask.request.path.startswith('/api/'):
         return None
 
+    if is_vercel_without_persistent_db():
+        return flask.jsonify({
+            'error': 'Server not configured: set SUPABASE_DB_URL (or DATABASE_URL) to a Postgres connection string in Vercel env vars.'
+        }), 503
+
     token = parse_bearer_token(flask.request.headers.get('Authorization'))
     if not token:
         return flask.jsonify({'error': 'Unauthorized'}), 401
@@ -237,9 +246,6 @@ def get_db():
             connection.autocommit = False
             flask.g.db = PostgresDbWrapper(connection)
         else:
-            # On Vercel, falling back to SQLite causes data loss and task overwrites.
-            if os.getenv('VERCEL'):
-                raise RuntimeError('Persistent database not configured. Set SUPABASE_DB_URL (or DATABASE_URL) to a Postgres connection string.')
             database_dir = os.path.dirname(DATABASE_PATH)
             if database_dir:
                 os.makedirs(database_dir, exist_ok=True)
@@ -1783,8 +1789,9 @@ def auth_me():
     return flask.jsonify({'user_id': get_current_user_id()})
 
 
-with app.app_context():
-    init_db()
+if not is_vercel_without_persistent_db():
+    with app.app_context():
+        init_db()
 
 
 if __name__ == '__main__':
