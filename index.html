@@ -46,6 +46,38 @@
             align-items: center;
             margin-bottom: 20px;
         }
+        .header-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+        .app-user-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+        .app-user-email {
+            color: #334155;
+            background: #eef2ff;
+            border: 1px solid #dbe3ff;
+            border-radius: 999px;
+            padding: 5px 10px;
+            max-width: 260px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .app-signout-btn {
+            padding: 7px 12px;
+            font-size: 12px;
+            line-height: 1;
+            background: #475569;
+        }
+        .app-signout-btn:hover {
+            background: #334155;
+        }
         h1 {
             color: #333;
             margin-bottom: 0;
@@ -1270,6 +1302,15 @@
             .auth-title { font-size: 25px; }
             .auth-gate { padding: 20px; }
             .auth-row { flex-direction: column; }
+            .header-right {
+                align-items: stretch;
+            }
+            .app-user-row {
+                justify-content: flex-end;
+            }
+            .app-user-email {
+                max-width: 180px;
+            }
         }
     </style>
 </head>
@@ -1308,10 +1349,16 @@
                         <h1>Task Tracker</h1>
                         <div class="current-day-label" id="currentDayLabel">Current Day: --</div>
                     </div>
-                    <div class="today-circle" id="todayCircle">
-                        <div class="today-circle-inner">
-                            <div class="today-label">Today Total</div>
-                            <div class="today-value" id="todayTotal">00:00:00</div>
+                    <div class="header-right">
+                        <div class="app-user-row" id="appUserRow" style="display:none;">
+                            <span class="app-user-email" id="appUserEmail">Signed in</span>
+                            <button type="button" class="app-signout-btn" onclick="handleSignOut()">Sign out</button>
+                        </div>
+                        <div class="today-circle" id="todayCircle">
+                            <div class="today-circle-inner">
+                                <div class="today-label">Today Total</div>
+                                <div class="today-value" id="todayTotal">00:00:00</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1529,6 +1576,7 @@
             weekly: [],
             monthly: []
         };
+        const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
         let todayTotalSeconds = 0;
         let todayColorBreakdown = [];
         let todayTaskSeconds = {};
@@ -1545,6 +1593,17 @@
         let dtCalendarMonth = null;
         let dailyTasks = { items: [], today: '', week_start: '' };
         const ACTIVE_TAB_STORAGE_KEY = 'dailyTracker.activeTab';
+
+        function normalizeHexColor(value, fallback = '#007bff') {
+            const color = String(value || '').trim().toLowerCase();
+            return HEX_COLOR_RE.test(color) ? color : fallback;
+        }
+
+        function normalizeTaskColor(task) {
+            return Object.assign({}, task, {
+                task_color: normalizeHexColor(task && task.task_color)
+            });
+        }
 
         function setAuthStatus(message, isError = true) {
             const statusEl = document.getElementById('authStatus');
@@ -1588,15 +1647,19 @@
             const emailActions = document.getElementById('authEmailActions');
             const divider = document.getElementById('authDivider');
             const userEmail = document.getElementById('authUserEmail');
+            const appUserRow = document.getElementById('appUserRow');
+            const appUserEmail = document.getElementById('appUserEmail');
             const hasSession = !!authSession;
 
             if (userRow) userRow.style.display = hasSession ? 'flex' : 'none';
             if (loginActions) loginActions.style.display = hasSession ? 'none' : 'flex';
             if (emailActions) emailActions.style.display = hasSession ? 'none' : 'flex';
             if (divider) divider.style.display = hasSession ? 'none' : 'block';
+            if (appUserRow) appUserRow.style.display = hasSession ? 'flex' : 'none';
             if (userEmail && hasSession) {
                 const email = (authSession.user && authSession.user.email) ? authSession.user.email : 'Signed in';
                 userEmail.textContent = email;
+                if (appUserEmail) appUserEmail.textContent = email;
             }
         }
 
@@ -1791,13 +1854,32 @@
                 apiRequest('/api/daily_tasks'),
             ]);
 
-            tasks.weekly = data.weekly || [];
-            tasks.monthly = data.monthly || [];
+            tasks.weekly = (data.weekly || []).map(normalizeTaskColor);
+            tasks.monthly = (data.monthly || []).map(normalizeTaskColor);
             todayTotalSeconds = data.today_total_seconds || 0;
-            todayColorBreakdown = data.today_color_breakdown || [];
+            todayColorBreakdown = (data.today_color_breakdown || []).map(entry => ({
+                color: normalizeHexColor(entry.color),
+                seconds: Number(entry.seconds || 0),
+            }));
             todayTaskSeconds = data.today_task_seconds || {};
-            weeklyColorBreakdown = data.weekly_color_breakdown || [];
-            monthlyOverview = data.monthly_overview || [];
+            weeklyColorBreakdown = (data.weekly_color_breakdown || []).map(day => ({
+                ...day,
+                colors: Array.isArray(day.colors)
+                    ? day.colors.map(entry => ({
+                        color: normalizeHexColor(entry.color),
+                        seconds: Number(entry.seconds || 0),
+                    }))
+                    : [],
+            }));
+            monthlyOverview = (data.monthly_overview || []).map(month => ({
+                ...month,
+                colors: Array.isArray(month.colors)
+                    ? month.colors.map(entry => ({
+                        color: normalizeHexColor(entry.color),
+                        seconds: Number(entry.seconds || 0),
+                    }))
+                    : [],
+            }));
             weeklyChartMaxSeconds = data.weekly_chart_max_seconds || (14 * 3600);
             dayStartHour = Number(data.day_start_hour ?? 2);
             weekStartDay = data.week_start_day || 'sunday';
@@ -1889,7 +1971,7 @@
                     body: JSON.stringify({
                         name,
                         initial_seconds: 0,
-                        task_color: colorInput.value || '#007bff'
+                        task_color: normalizeHexColor(colorInput.value)
                     })
                 });
 
@@ -1949,13 +2031,14 @@
         async function updateTaskColor(taskId, taskColor) {
             if (!/^#[0-9a-fA-F]{6}$/.test(taskColor)) return;
             try {
+                const normalizedTaskColor = normalizeHexColor(taskColor);
                 await apiRequest(`/api/tasks/${taskId}/color`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        task_color: taskColor
+                        task_color: normalizedTaskColor
                     })
                 });
                 await loadTasks();
@@ -2132,7 +2215,7 @@
         function buildColorTaskMap() {
             const map = {};
             [...tasks.weekly, ...tasks.monthly].forEach(t => {
-                const c = (t.task_color || '#007bff').toLowerCase();
+                const c = normalizeHexColor(t.task_color);
                 if (!map[c]) map[c] = [];
                 if (!map[c].includes(t.name)) map[c].push(t.name);
             });
@@ -2283,7 +2366,7 @@
             ['weekly', 'monthly'].forEach(tabType => {
                 tasks[tabType].forEach(task => {
                     if (task.running && task.is_work) {
-                        runningTaskColors.push(task.task_color || '#007bff');
+                        runningTaskColors.push(normalizeHexColor(task.task_color));
                     }
                 });
             });
@@ -2347,7 +2430,7 @@
                 taskName.className = 'task-name';
                 const colorDot = document.createElement('span');
                 colorDot.className = 'task-color-dot';
-                colorDot.style.background = task.task_color || '#007bff';
+                colorDot.style.background = normalizeHexColor(task.task_color);
                 taskName.appendChild(colorDot);
                 taskName.appendChild(document.createTextNode(task.name));
 
@@ -2645,7 +2728,7 @@
                 if (!groupedMap.has(key)) {
                     const grouped = {
                         task_name: taskName || 'Untitled task',
-                        task_color: log.task_color || '#007bff',
+                        task_color: normalizeHexColor(log.task_color),
                         seconds: 0,
                     };
                     groupedMap.set(key, grouped);
@@ -2674,7 +2757,7 @@
 
                     const dot = document.createElement('div');
                     dot.className = 'log-entry-dot';
-                    dot.style.background = log.task_color || '#007bff';
+                    dot.style.background = normalizeHexColor(log.task_color);
 
                     const name = document.createElement('div');
                     name.className = 'log-entry-name';
@@ -2838,7 +2921,7 @@
 
                 const colorInput = document.createElement('input');
                 colorInput.type = 'color';
-                colorInput.value = task.task_color || '#007bff';
+                colorInput.value = normalizeHexColor(task.task_color);
                 colorInput.onchange = () => updateTaskColor(task.id, colorInput.value);
 
                 const workLabel = document.createElement('label');
@@ -2944,7 +3027,7 @@
                 }
 
                 const taskUnit = String(unitEl.value || '').trim();
-                const taskColor = String(colorEl.value || '#007bff').trim() || '#007bff';
+                const taskColor = normalizeHexColor(colorEl.value);
 
                 const payload = {
                     name,
@@ -3002,7 +3085,7 @@
 
             const dot = document.createElement('div');
             dot.className = compact ? 'dtp-color-dot' : 'dt-color-bar';
-            dot.style.background = task.color || '#007bff';
+            dot.style.background = normalizeHexColor(task.color);
 
             const info = document.createElement(compact ? 'div' : 'div');
             info.className = compact ? 'dtp-name' + (task.done ? ' done' : '') : 'dt-info';
@@ -3254,7 +3337,7 @@
 
                 const dot = document.createElement('div');
                 dot.className = 'log-entry-dot';
-                dot.style.background = log.color || '#007bff';
+                dot.style.background = normalizeHexColor(log.color);
 
                 const name = document.createElement('div');
                 name.className = 'log-entry-name';

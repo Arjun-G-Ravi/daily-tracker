@@ -49,6 +49,13 @@ VALID_WEEK_START_DAYS = {
 }
 
 
+def normalize_hex_color(value):
+    color = str(value or '').strip().lower()
+    if HEX_COLOR_RE.match(color):
+        return color
+    return DEFAULT_TASK_COLOR
+
+
 @lru_cache(maxsize=1)
 def get_supabase_jwks_client():
     supabase_url = str(os.getenv('SUPABASE_URL', '')).strip().rstrip('/')
@@ -447,7 +454,7 @@ def task_to_dict(task_row):
         'id': int(task_row['id']),
         'name': task_row['name'],
         'task_type': task_row['task_type'],
-        'task_color': task_row['task_color'] or DEFAULT_TASK_COLOR,
+        'task_color': normalize_hex_color(task_row['task_color']),
         'is_work': bool(task_row['is_work']),
         'elapsed': base_elapsed,
         'running': running,
@@ -474,7 +481,7 @@ def get_today_color_breakdown():
     ).fetchall()
 
     for row in logged_rows:
-        color = row['task_color'] or DEFAULT_TASK_COLOR
+        color = normalize_hex_color(row['task_color'])
         totals[color] = totals.get(color, 0) + int(row['total_seconds'])
 
     running_rows = db.execute(
@@ -485,7 +492,7 @@ def get_today_color_breakdown():
     now_ts = int(time.time())
     logical_day_start_ts = get_logical_day_start_timestamp(now_ts, day_start_hour)
     for running_row in running_rows:
-        color = running_row['task_color'] or DEFAULT_TASK_COLOR
+        color = normalize_hex_color(running_row['task_color'])
         started_at = int(running_row['started_at'])
         duration = max(0, now_ts - max(started_at, logical_day_start_ts))
         totals[color] = totals.get(color, 0) + duration
@@ -602,7 +609,7 @@ def get_weekly_color_breakdown():
         work_date = row['work_date']
         if work_date not in day_data:
             continue
-        color = row['task_color'] or DEFAULT_TASK_COLOR
+        color = normalize_hex_color(row['task_color'])
         seconds = int(row['total_seconds'])
         day_data[work_date]['colors'][color] = day_data[work_date]['colors'].get(color, 0) + seconds
         day_data[work_date]['total_seconds'] += seconds
@@ -620,7 +627,7 @@ def get_weekly_color_breakdown():
         duration = max(0, now_ts - max(started_at, logical_day_start_ts))
         if duration <= 0 or today_key not in day_data:
             continue
-        color = running_row['task_color'] or DEFAULT_TASK_COLOR
+        color = normalize_hex_color(running_row['task_color'])
         day_data[today_key]['colors'][color] = day_data[today_key]['colors'].get(color, 0) + duration
         day_data[today_key]['total_seconds'] += duration
 
@@ -683,7 +690,7 @@ def get_monthly_overview(month_count=6):
     for row in logged_rows:
         month_key = row['month_key']
         if month_key in month_map:
-            color = row['task_color'] or DEFAULT_TASK_COLOR
+            color = normalize_hex_color(row['task_color'])
             secs = int(row['total_seconds'])
             month_map[month_key]['total_seconds'] += secs
             month_map[month_key]['colors'][color] = month_map[month_key]['colors'].get(color, 0) + secs
@@ -699,7 +706,7 @@ def get_monthly_overview(month_count=6):
     if current_month_key in month_map:
         for row in running_rows:
             started_at = int(row['started_at'])
-            color = row['task_color'] or DEFAULT_TASK_COLOR
+            color = normalize_hex_color(row['task_color'])
             duration = max(0, now_ts - max(started_at, logical_day_start_ts))
             if duration > 0:
                 month_map[current_month_key]['total_seconds'] += duration
@@ -766,7 +773,7 @@ def create_task():
     requested_task_type = str(data.get('task_type', '')).strip().lower()
     task_type = requested_task_type or 'weekly'
     initial_seconds = int(data.get('initial_seconds', 0) or 0)
-    task_color = str(data.get('task_color', DEFAULT_TASK_COLOR)).strip() or DEFAULT_TASK_COLOR
+    task_color = normalize_hex_color(data.get('task_color', DEFAULT_TASK_COLOR))
 
     if not name:
         return flask.jsonify({'error': 'Task name is required'}), 400
@@ -774,9 +781,6 @@ def create_task():
         return flask.jsonify({'error': 'Invalid task type'}), 400
     if initial_seconds < 0:
         return flask.jsonify({'error': 'Initial time cannot be negative'}), 400
-    if not HEX_COLOR_RE.match(task_color):
-        return flask.jsonify({'error': 'Invalid task color'}), 400
-
     db = get_db()
     user_id = get_current_user_id()
     cursor = db.execute(
@@ -959,9 +963,9 @@ def update_task_is_work(task_id):
 @app.route('/api/tasks/<int:task_id>/color', methods=['PUT'])
 def update_task_color(task_id):
     data = flask.request.get_json(silent=True) or {}
-    task_color = str(data.get('task_color', '')).strip()
+    task_color = normalize_hex_color(data.get('task_color', ''))
 
-    if not HEX_COLOR_RE.match(task_color):
+    if task_color == DEFAULT_TASK_COLOR and not HEX_COLOR_RE.match(str(data.get('task_color', '')).strip()):
         return flask.jsonify({'error': 'Invalid task color'}), 400
 
     db = get_db()
