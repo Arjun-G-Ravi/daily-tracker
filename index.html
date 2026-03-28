@@ -1606,6 +1606,33 @@
             });
         }
 
+        function getTaskArrayByType(taskType) {
+            if (taskType === 'monthly') return tasks.monthly;
+            return tasks.weekly;
+        }
+
+        function findTaskById(taskId) {
+            const idNum = Number(taskId);
+            for (const list of [tasks.weekly, tasks.monthly]) {
+                const found = list.find(task => Number(task.id) === idNum);
+                if (found) return found;
+            }
+            return null;
+        }
+
+        function removeTaskById(taskId) {
+            const idNum = Number(taskId);
+            tasks.weekly = tasks.weekly.filter(task => Number(task.id) !== idNum);
+            tasks.monthly = tasks.monthly.filter(task => Number(task.id) !== idNum);
+        }
+
+        function rerenderAfterTaskMutation() {
+            renderTasks('weekly');
+            renderTasks('monthly');
+            renderSettings();
+            renderDailyTasksPanel();
+        }
+
         function setAuthStatus(message, isError = true) {
             const statusEl = document.getElementById('authStatus');
             if (!statusEl) return;
@@ -1995,7 +2022,20 @@
                 const name = nameInput.value.trim();
                 if (!name) return;
 
-                await apiRequest('/api/tasks', {
+                const optimisticTask = normalizeTaskColor({
+                    id: `tmp-${Date.now()}`,
+                    name,
+                    task_type: 'weekly',
+                    task_color: normalizeHexColor(colorInput.value),
+                    is_work: false,
+                    elapsed: 0,
+                    running: false,
+                });
+                tasks.weekly.unshift(optimisticTask);
+                nameInput.value = '';
+                rerenderAfterTaskMutation();
+
+                const created = await apiRequest('/api/tasks', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -2007,68 +2047,101 @@
                     })
                 });
 
-                nameInput.value = '';
-                await loadTasksFast();
+                optimisticTask.id = Number(created.task_id || optimisticTask.id);
                 scheduleDeferredFullRefresh();
             } catch (e) {
+                tasks.weekly = tasks.weekly.filter(task => !String(task.id).startsWith('tmp-'));
+                rerenderAfterTaskMutation();
                 alert(e.message || 'Failed to add job.');
             }
         }
 
         async function startTask(taskId) {
             try {
+                const task = findTaskById(taskId);
+                if (task) task.running = true;
+                rerenderAfterTaskMutation();
                 await apiRequest(`/api/tasks/${taskId}/start`, {
                     method: 'POST'
                 });
-                await loadTasksFast();
                 scheduleDeferredFullRefresh();
             } catch (e) {
+                const task = findTaskById(taskId);
+                if (task) task.running = false;
+                rerenderAfterTaskMutation();
                 alert(e.message || 'Failed to start task.');
             }
         }
 
         async function stopTask(taskId) {
             try {
+                const task = findTaskById(taskId);
+                if (task) task.running = false;
+                rerenderAfterTaskMutation();
                 await apiRequest(`/api/tasks/${taskId}/stop`, {
                     method: 'POST'
                 });
-                await loadTasksFast();
                 scheduleDeferredFullRefresh();
             } catch (e) {
+                const task = findTaskById(taskId);
+                if (task) task.running = true;
+                rerenderAfterTaskMutation();
                 alert(e.message || 'Failed to stop task.');
             }
         }
 
         async function deleteTask(taskId) {
+            let beforeWeekly = null;
+            let beforeMonthly = null;
             try {
+                beforeWeekly = tasks.weekly.slice();
+                beforeMonthly = tasks.monthly.slice();
+                removeTaskById(taskId);
+                rerenderAfterTaskMutation();
                 await apiRequest(`/api/tasks/${taskId}`, {
                     method: 'DELETE'
                 });
-                await loadTasksFast();
                 scheduleDeferredFullRefresh();
             } catch (e) {
+                if (beforeWeekly && beforeMonthly) {
+                    tasks.weekly = beforeWeekly;
+                    tasks.monthly = beforeMonthly;
+                    rerenderAfterTaskMutation();
+                }
                 alert(e.message || 'Failed to delete task.');
             }
         }
 
         async function updateTaskIsWork(taskId, isWork) {
+            let previous = null;
             try {
+                const task = findTaskById(taskId);
+                previous = task ? !!task.is_work : null;
+                if (task) task.is_work = !!isWork;
+                rerenderAfterTaskMutation();
                 await apiRequest(`/api/tasks/${taskId}/is_work`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ is_work: isWork })
                 });
-                await loadTasksFast();
                 scheduleDeferredFullRefresh();
             } catch (e) {
+                const task = findTaskById(taskId);
+                if (task && previous !== null) task.is_work = previous;
+                rerenderAfterTaskMutation();
                 alert(e.message || 'Failed to update task setting.');
             }
         }
 
         async function updateTaskColor(taskId, taskColor) {
             if (!/^#[0-9a-fA-F]{6}$/.test(taskColor)) return;
+            let previous = null;
             try {
                 const normalizedTaskColor = normalizeHexColor(taskColor);
+                const task = findTaskById(taskId);
+                previous = task ? task.task_color : null;
+                if (task) task.task_color = normalizedTaskColor;
+                rerenderAfterTaskMutation();
                 await apiRequest(`/api/tasks/${taskId}/color`, {
                     method: 'PUT',
                     headers: {
@@ -2078,9 +2151,11 @@
                         task_color: normalizedTaskColor
                     })
                 });
-                await loadTasksFast();
                 scheduleDeferredFullRefresh();
             } catch (e) {
+                const task = findTaskById(taskId);
+                if (task && previous) task.task_color = previous;
+                rerenderAfterTaskMutation();
                 alert(e.message || 'Failed to update color.');
             }
         }
@@ -2106,7 +2181,13 @@
                     body: JSON.stringify(payload)
                 });
 
-                await loadTasksFast();
+                if (!workDate || workDate === currentLogicalDate) {
+                    const increment = Math.max(0, totalSeconds);
+                    todayTaskSeconds[taskId] = Number(todayTaskSeconds[taskId] || 0) + increment;
+                    todayTotalSeconds += increment;
+                    updateTodayTotal();
+                    rerenderAfterTaskMutation();
+                }
                 scheduleDeferredFullRefresh();
             } catch (e) {
                 alert(e.message || 'Failed to add time.');
