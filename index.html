@@ -2269,10 +2269,23 @@
 
                 if (!workDate || workDate === currentLogicalDate) {
                     const increment = Math.max(0, totalSeconds);
+                    const task = findTaskById(taskId);
+                    const taskColor = task ? task.task_color : '#007bff';
+                    const todayIso = getCurrentLogicalDateClient();
+                    const todayEntry = weeklyColorBreakdown.find(entry => entry.date === todayIso);
+
                     todayTaskSeconds[taskId] = Number(todayTaskSeconds[taskId] || 0) + increment;
                     todayTotalSeconds += increment;
+                    addSecondsToColorBreakdown(todayColorBreakdown, taskColor, increment);
+                    if (todayEntry) {
+                        if (!Array.isArray(todayEntry.colors)) todayEntry.colors = [];
+                        todayEntry.total_seconds = Number(todayEntry.total_seconds || 0) + increment;
+                        addSecondsToColorBreakdown(todayEntry.colors, taskColor, increment);
+                    }
+
                     updateTodayTotal();
                     rerenderAfterTaskMutation();
+                    renderWeeklyChart();
                 }
                 scheduleDeferredFullRefresh();
             } catch (e) {
@@ -2484,6 +2497,21 @@
             document.getElementById('chartTooltip').classList.remove('visible');
         }
 
+        function addSecondsToColorBreakdown(entries, color, seconds) {
+            const safeSeconds = Math.max(0, Number(seconds || 0));
+            if (safeSeconds <= 0) return;
+
+            const normalizedColor = normalizeHexColor(color);
+            let colorEntry = entries.find(entry => normalizeHexColor(entry.color) === normalizedColor);
+            if (!colorEntry) {
+                colorEntry = { color: normalizedColor, seconds: 0 };
+                entries.push(colorEntry);
+            }
+
+            colorEntry.seconds = Number(colorEntry.seconds || 0) + safeSeconds;
+            entries.sort((a, b) => Number(b.seconds || 0) - Number(a.seconds || 0));
+        }
+
         function renderWeeklyChart() {
             const CHART_AREA_PX = 240;
             const MAX_HOURS = 14;
@@ -2573,7 +2601,7 @@
             const runningTaskColors = [];
             ['weekly', 'monthly'].forEach(tabType => {
                 tasks[tabType].forEach(task => {
-                    if (task.running && task.is_work) {
+                    if (task.running) {
                         runningTaskColors.push(normalizeHexColor(task.task_color));
                     }
                 });
@@ -2582,32 +2610,26 @@
             if (runningTaskColors.length === 0) return;
 
             runningTaskColors.forEach(color => {
-                let colorEntry = todayEntry.colors.find(entry => entry.color === color);
-                if (!colorEntry) {
-                    colorEntry = { color, seconds: 0 };
-                    todayEntry.colors.push(colorEntry);
-                }
-                colorEntry.seconds += 1;
+                addSecondsToColorBreakdown(todayColorBreakdown, color, 1);
+                addSecondsToColorBreakdown(todayEntry.colors, color, 1);
                 todayEntry.total_seconds += 1;
             });
-
-            todayEntry.colors.sort((a, b) => b.seconds - a.seconds);
         }
 
         function tickRunningTimers() {
-            let hasRunningTask = false;
+            let runningTaskCount = 0;
             ['weekly', 'monthly'].forEach(tabType => {
                 tasks[tabType].forEach(task => {
                     if (task.running) {
                         task.elapsed += 1;
                         todayTaskSeconds[task.id] = (Number(todayTaskSeconds[task.id] || 0)) + 1;
-                        hasRunningTask = true;
+                        runningTaskCount += 1;
                     }
                 });
             });
 
-            if (hasRunningTask) {
-                todayTotalSeconds += 1;
+            if (runningTaskCount > 0) {
+                todayTotalSeconds += runningTaskCount;
                 currentLogicalDate = getCurrentLogicalDateClient();
                 incrementTodayWeeklyBreakdown();
                 updateTodayTotal();

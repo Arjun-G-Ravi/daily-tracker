@@ -826,7 +826,7 @@ def get_weekly_color_breakdown():
         SELECT w.work_date, t.task_color, COALESCE(SUM(w.seconds), 0) AS total_seconds
         FROM work_logs w
         JOIN tasks t ON t.id = w.task_id
-        WHERE w.work_date BETWEEN ? AND ? AND t.is_work = 1 AND t.owner_id = ?
+        WHERE w.work_date BETWEEN ? AND ? AND t.owner_id = ?
         GROUP BY w.work_date, t.task_color
         ''',
         (week_start.isoformat(), week_end.isoformat(), user_id),
@@ -842,7 +842,7 @@ def get_weekly_color_breakdown():
         day_data[work_date]['total_seconds'] += seconds
 
     running_rows = db.execute(
-        'SELECT started_at, task_color FROM tasks WHERE owner_id = ? AND running = 1 AND started_at IS NOT NULL AND is_work = 1',
+        'SELECT started_at, task_color FROM tasks WHERE owner_id = ? AND running = 1 AND started_at IS NOT NULL',
         (user_id,),
     ).fetchall()
 
@@ -908,7 +908,7 @@ def get_monthly_overview(month_count=6):
                COALESCE(SUM(w.seconds), 0) AS total_seconds
         FROM work_logs w
         JOIN tasks t ON t.id = w.task_id
-        WHERE w.work_date >= ? AND t.is_work = 1 AND t.owner_id = ?
+        WHERE w.work_date >= ? AND t.owner_id = ?
         GROUP BY substr(w.work_date, 1, 7), t.task_color
         ''',
         (oldest_month_start.isoformat(), user_id),
@@ -923,7 +923,7 @@ def get_monthly_overview(month_count=6):
             month_map[month_key]['colors'][color] = month_map[month_key]['colors'].get(color, 0) + secs
 
     running_rows = db.execute(
-        'SELECT started_at, task_color FROM tasks WHERE owner_id = ? AND running = 1 AND started_at IS NOT NULL AND is_work = 1',
+        'SELECT started_at, task_color FROM tasks WHERE owner_id = ? AND running = 1 AND started_at IS NOT NULL',
         (user_id,),
     ).fetchall()
 
