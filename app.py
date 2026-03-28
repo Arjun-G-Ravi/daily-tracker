@@ -964,6 +964,7 @@ def hello():
 
 @app.route('/api/tasks', methods=['GET'])
 def get_tasks():
+    include_analytics = str(flask.request.args.get('include_analytics', '1')).strip().lower() not in ('0', 'false', 'no')
     db = get_db()
     user_id = get_current_user_id()
     rows = db.execute(
@@ -975,16 +976,23 @@ def get_tasks():
     response = {
         'weekly': [],
         'monthly': [],
-        'today_total_seconds': get_today_total_seconds(),
-        'today_color_breakdown': get_today_color_breakdown(),
-        'today_task_seconds': get_today_task_seconds(),
-        'weekly_color_breakdown': get_weekly_color_breakdown(),
+        'today_total_seconds': 0,
+        'today_color_breakdown': [],
+        'today_task_seconds': {},
+        'weekly_color_breakdown': [],
         'weekly_chart_max_seconds': 14 * 3600,
-        'monthly_overview': get_monthly_overview(),
+        'monthly_overview': [],
         'day_start_hour': day_start_hour,
         'week_start_day': get_week_start_day(),
         'current_logical_date': get_logical_now(day_start_hour).date().isoformat(),
     }
+
+    if include_analytics:
+        response['today_total_seconds'] = get_today_total_seconds()
+        response['today_color_breakdown'] = get_today_color_breakdown()
+        response['today_task_seconds'] = get_today_task_seconds()
+        response['weekly_color_breakdown'] = get_weekly_color_breakdown()
+        response['monthly_overview'] = get_monthly_overview()
 
     for row in rows:
         task_data = task_to_dict(row)

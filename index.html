@@ -1593,6 +1593,7 @@
         let dtCalendarMonth = null;
         let dailyTasks = { items: [], today: '', week_start: '' };
         const ACTIVE_TAB_STORAGE_KEY = 'dailyTracker.activeTab';
+        let deferredFullRefreshTimer = null;
 
         function normalizeHexColor(value, fallback = '#007bff') {
             const color = String(value || '').trim().toLowerCase();
@@ -1915,6 +1916,37 @@
             updateWeeklyChartTitle();
         }
 
+        async function loadTasksFast() {
+            const data = await apiRequest('/api/tasks?include_analytics=0');
+            tasks.weekly = (data.weekly || []).map(normalizeTaskColor);
+            tasks.monthly = (data.monthly || []).map(normalizeTaskColor);
+            dayStartHour = Number(data.day_start_hour ?? dayStartHour);
+            weekStartDay = data.week_start_day || weekStartDay;
+            currentLogicalDate = data.current_logical_date || currentLogicalDate;
+
+            updateCurrentDayLabel();
+            renderTasks('weekly');
+            renderTasks('monthly');
+            renderSettings();
+            renderDailyTasksPanel();
+            updateWeeklyChartTitle();
+        }
+
+        function scheduleDeferredFullRefresh(delayMs = 1400) {
+            if (deferredFullRefreshTimer) {
+                clearTimeout(deferredFullRefreshTimer);
+            }
+
+            deferredFullRefreshTimer = setTimeout(async () => {
+                deferredFullRefreshTimer = null;
+                try {
+                    await loadTasks();
+                } catch (e) {
+                    // Ignore deferred refresh failures to keep the UI responsive.
+                }
+            }, delayMs);
+        }
+
         function formatWeekStartLabel(dayKey) {
             const labels = {
                 sunday: 'Sun',
@@ -1976,7 +2008,8 @@
                 });
 
                 nameInput.value = '';
-                await loadTasks();
+                await loadTasksFast();
+                scheduleDeferredFullRefresh();
             } catch (e) {
                 alert(e.message || 'Failed to add job.');
             }
@@ -1987,7 +2020,8 @@
                 await apiRequest(`/api/tasks/${taskId}/start`, {
                     method: 'POST'
                 });
-                await loadTasks();
+                await loadTasksFast();
+                scheduleDeferredFullRefresh();
             } catch (e) {
                 alert(e.message || 'Failed to start task.');
             }
@@ -1998,7 +2032,8 @@
                 await apiRequest(`/api/tasks/${taskId}/stop`, {
                     method: 'POST'
                 });
-                await loadTasks();
+                await loadTasksFast();
+                scheduleDeferredFullRefresh();
             } catch (e) {
                 alert(e.message || 'Failed to stop task.');
             }
@@ -2009,7 +2044,8 @@
                 await apiRequest(`/api/tasks/${taskId}`, {
                     method: 'DELETE'
                 });
-                await loadTasks();
+                await loadTasksFast();
+                scheduleDeferredFullRefresh();
             } catch (e) {
                 alert(e.message || 'Failed to delete task.');
             }
@@ -2022,7 +2058,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ is_work: isWork })
                 });
-                await loadTasks();
+                await loadTasksFast();
+                scheduleDeferredFullRefresh();
             } catch (e) {
                 alert(e.message || 'Failed to update task setting.');
             }
@@ -2041,7 +2078,8 @@
                         task_color: normalizedTaskColor
                     })
                 });
-                await loadTasks();
+                await loadTasksFast();
+                scheduleDeferredFullRefresh();
             } catch (e) {
                 alert(e.message || 'Failed to update color.');
             }
@@ -2068,7 +2106,8 @@
                     body: JSON.stringify(payload)
                 });
 
-                await loadTasks();
+                await loadTasksFast();
+                scheduleDeferredFullRefresh();
             } catch (e) {
                 alert(e.message || 'Failed to add time.');
             }
