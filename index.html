@@ -1594,6 +1594,10 @@
         let dailyTasks = { items: [], today: '', week_start: '' };
         const ACTIVE_TAB_STORAGE_KEY = 'dailyTracker.activeTab';
         let deferredFullRefreshTimer = null;
+        let pendingMutations = 0;
+        let dataRefreshSequence = 0;
+        let activeFullRefreshController = null;
+        let activeFastRefreshController = null;
 
         function normalizeHexColor(value, fallback = '#007bff') {
             const color = String(value || '').trim().toLowerCase();
@@ -1631,6 +1635,45 @@
             renderTasks('monthly');
             renderSettings();
             renderDailyTasksPanel();
+        }
+
+        function beginMutation() {
+            pendingMutations += 1;
+        }
+
+        function endMutation() {
+            pendingMutations = Math.max(0, pendingMutations - 1);
+        }
+
+        function beginDataRefresh(mode) {
+            dataRefreshSequence += 1;
+
+            if (activeFullRefreshController) {
+                activeFullRefreshController.abort();
+                activeFullRefreshController = null;
+            }
+            if (activeFastRefreshController) {
+                activeFastRefreshController.abort();
+                activeFastRefreshController = null;
+            }
+
+            const controller = new AbortController();
+            if (mode === 'full') {
+                activeFullRefreshController = controller;
+            } else {
+                activeFastRefreshController = controller;
+            }
+
+            return { sequence: dataRefreshSequence, controller };
+        }
+
+        function endDataRefresh(mode, controller) {
+            if (mode === 'full' && activeFullRefreshController === controller) {
+                activeFullRefreshController = null;
+            }
+            if (mode === 'fast' && activeFastRefreshController === controller) {
+                activeFastRefreshController = null;
+            }
         }
 
         function setAuthStatus(message, isError = true) {
@@ -1877,86 +1920,106 @@
         }
 
         async function loadTasks() {
-            const [data, dtData] = await Promise.all([
-                apiRequest('/api/tasks'),
-                apiRequest('/api/daily_tasks'),
-            ]);
+            const refreshCtx = beginDataRefresh('full');
+            try {
+                const [data, dtData] = await Promise.all([
+                    apiRequest('/api/tasks', { signal: refreshCtx.controller.signal }),
+                    apiRequest('/api/daily_tasks', { signal: refreshCtx.controller.signal }),
+                ]);
 
-            tasks.weekly = (data.weekly || []).map(normalizeTaskColor);
-            tasks.monthly = (data.monthly || []).map(normalizeTaskColor);
-            todayTotalSeconds = data.today_total_seconds || 0;
-            todayColorBreakdown = (data.today_color_breakdown || []).map(entry => ({
-                color: normalizeHexColor(entry.color),
-                seconds: Number(entry.seconds || 0),
-            }));
-            todayTaskSeconds = data.today_task_seconds || {};
-            weeklyColorBreakdown = (data.weekly_color_breakdown || []).map(day => ({
-                ...day,
-                colors: Array.isArray(day.colors)
-                    ? day.colors.map(entry => ({
-                        color: normalizeHexColor(entry.color),
-                        seconds: Number(entry.seconds || 0),
-                    }))
-                    : [],
-            }));
-            monthlyOverview = (data.monthly_overview || []).map(month => ({
-                ...month,
-                colors: Array.isArray(month.colors)
-                    ? month.colors.map(entry => ({
-                        color: normalizeHexColor(entry.color),
-                        seconds: Number(entry.seconds || 0),
-                    }))
-                    : [],
-            }));
-            weeklyChartMaxSeconds = data.weekly_chart_max_seconds || (14 * 3600);
-            dayStartHour = Number(data.day_start_hour ?? 2);
-            weekStartDay = data.week_start_day || 'sunday';
-            currentLogicalDate = data.current_logical_date || '';
-            dailyTasks = {
-                items: dtData.items || [],
-                today: dtData.today || '',
-                week_start: dtData.week_start || '',
-            };
+                if (refreshCtx.sequence !== dataRefreshSequence) return;
 
-            if (calendarYear === null) {
-                const todayParts = (data.current_logical_date || '').split('-');
-                calendarYear = Number(todayParts[0]) || new Date().getFullYear();
-                calendarMonth = Number(todayParts[1]) || (new Date().getMonth() + 1);
+                tasks.weekly = (data.weekly || []).map(normalizeTaskColor);
+                tasks.monthly = (data.monthly || []).map(normalizeTaskColor);
+                todayTotalSeconds = data.today_total_seconds || 0;
+                todayColorBreakdown = (data.today_color_breakdown || []).map(entry => ({
+                    color: normalizeHexColor(entry.color),
+                    seconds: Number(entry.seconds || 0),
+                }));
+                todayTaskSeconds = data.today_task_seconds || {};
+                weeklyColorBreakdown = (data.weekly_color_breakdown || []).map(day => ({
+                    ...day,
+                    colors: Array.isArray(day.colors)
+                        ? day.colors.map(entry => ({
+                            color: normalizeHexColor(entry.color),
+                            seconds: Number(entry.seconds || 0),
+                        }))
+                        : [],
+                }));
+                monthlyOverview = (data.monthly_overview || []).map(month => ({
+                    ...month,
+                    colors: Array.isArray(month.colors)
+                        ? month.colors.map(entry => ({
+                            color: normalizeHexColor(entry.color),
+                            seconds: Number(entry.seconds || 0),
+                        }))
+                        : [],
+                }));
+                weeklyChartMaxSeconds = data.weekly_chart_max_seconds || (14 * 3600);
+                dayStartHour = Number(data.day_start_hour ?? 2);
+                weekStartDay = data.week_start_day || 'sunday';
+                currentLogicalDate = data.current_logical_date || '';
+                dailyTasks = {
+                    items: dtData.items || [],
+                    today: dtData.today || '',
+                    week_start: dtData.week_start || '',
+                };
+
+                if (calendarYear === null) {
+                    const todayParts = (data.current_logical_date || '').split('-');
+                    calendarYear = Number(todayParts[0]) || new Date().getFullYear();
+                    calendarMonth = Number(todayParts[1]) || (new Date().getMonth() + 1);
+                }
+
+                if (dtCalendarYear === null) {
+                    const todayParts = (dailyTasks.today || data.current_logical_date || '').split('-');
+                    dtCalendarYear = Number(todayParts[0]) || new Date().getFullYear();
+                    dtCalendarMonth = Number(todayParts[1]) || (new Date().getMonth() + 1);
+                }
+
+                updateTodayTotal();
+                updateCurrentDayLabel();
+                renderTasks('weekly');
+                renderMonthlyBarChart();
+                renderCalendar();
+                renderSettings();
+                renderWeeklyChart();
+                renderDailyTasksTab();
+                renderDailyTasksPanel();
+                renderDailyTasksCalendar();
+                updateWeeklyChartTitle();
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;
+                throw e;
+            } finally {
+                endDataRefresh('full', refreshCtx.controller);
             }
-
-            if (dtCalendarYear === null) {
-                const todayParts = (dailyTasks.today || data.current_logical_date || '').split('-');
-                dtCalendarYear = Number(todayParts[0]) || new Date().getFullYear();
-                dtCalendarMonth = Number(todayParts[1]) || (new Date().getMonth() + 1);
-            }
-
-            updateTodayTotal();
-            updateCurrentDayLabel();
-            renderTasks('weekly');
-            renderMonthlyBarChart();
-            renderCalendar();
-            renderSettings();
-            renderWeeklyChart();
-            renderDailyTasksTab();
-            renderDailyTasksPanel();
-            renderDailyTasksCalendar();
-            updateWeeklyChartTitle();
         }
 
         async function loadTasksFast() {
-            const data = await apiRequest('/api/tasks?include_analytics=0');
-            tasks.weekly = (data.weekly || []).map(normalizeTaskColor);
-            tasks.monthly = (data.monthly || []).map(normalizeTaskColor);
-            dayStartHour = Number(data.day_start_hour ?? dayStartHour);
-            weekStartDay = data.week_start_day || weekStartDay;
-            currentLogicalDate = data.current_logical_date || currentLogicalDate;
+            const refreshCtx = beginDataRefresh('fast');
+            try {
+                const data = await apiRequest('/api/tasks?include_analytics=0', { signal: refreshCtx.controller.signal });
+                if (refreshCtx.sequence !== dataRefreshSequence) return;
 
-            updateCurrentDayLabel();
-            renderTasks('weekly');
-            renderTasks('monthly');
-            renderSettings();
-            renderDailyTasksPanel();
-            updateWeeklyChartTitle();
+                tasks.weekly = (data.weekly || []).map(normalizeTaskColor);
+                tasks.monthly = (data.monthly || []).map(normalizeTaskColor);
+                dayStartHour = Number(data.day_start_hour ?? dayStartHour);
+                weekStartDay = data.week_start_day || weekStartDay;
+                currentLogicalDate = data.current_logical_date || currentLogicalDate;
+
+                updateCurrentDayLabel();
+                renderTasks('weekly');
+                renderTasks('monthly');
+                renderSettings();
+                renderDailyTasksPanel();
+                updateWeeklyChartTitle();
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;
+                throw e;
+            } finally {
+                endDataRefresh('fast', refreshCtx.controller);
+            }
         }
 
         function scheduleDeferredFullRefresh(delayMs = 1400) {
@@ -1966,6 +2029,10 @@
 
             deferredFullRefreshTimer = setTimeout(async () => {
                 deferredFullRefreshTimer = null;
+                if (pendingMutations > 0) {
+                    scheduleDeferredFullRefresh(500);
+                    return;
+                }
                 try {
                     await loadTasks();
                 } catch (e) {
@@ -2015,6 +2082,7 @@
         }
 
         async function addTaskFromSettings() {
+            beginMutation();
             try {
                 const nameInput = document.getElementById('settingsTaskInput');
                 const colorInput = document.getElementById('settingsTaskColor');
@@ -2053,10 +2121,13 @@
                 tasks.weekly = tasks.weekly.filter(task => !String(task.id).startsWith('tmp-'));
                 rerenderAfterTaskMutation();
                 alert(e.message || 'Failed to add job.');
+            } finally {
+                endMutation();
             }
         }
 
         async function startTask(taskId) {
+            beginMutation();
             try {
                 const task = findTaskById(taskId);
                 if (task) task.running = true;
@@ -2070,10 +2141,13 @@
                 if (task) task.running = false;
                 rerenderAfterTaskMutation();
                 alert(e.message || 'Failed to start task.');
+            } finally {
+                endMutation();
             }
         }
 
         async function stopTask(taskId) {
+            beginMutation();
             try {
                 const task = findTaskById(taskId);
                 if (task) task.running = false;
@@ -2087,12 +2161,15 @@
                 if (task) task.running = true;
                 rerenderAfterTaskMutation();
                 alert(e.message || 'Failed to stop task.');
+            } finally {
+                endMutation();
             }
         }
 
         async function deleteTask(taskId) {
             let beforeWeekly = null;
             let beforeMonthly = null;
+            beginMutation();
             try {
                 beforeWeekly = tasks.weekly.slice();
                 beforeMonthly = tasks.monthly.slice();
@@ -2109,11 +2186,14 @@
                     rerenderAfterTaskMutation();
                 }
                 alert(e.message || 'Failed to delete task.');
+            } finally {
+                endMutation();
             }
         }
 
         async function updateTaskIsWork(taskId, isWork) {
             let previous = null;
+            beginMutation();
             try {
                 const task = findTaskById(taskId);
                 previous = task ? !!task.is_work : null;
@@ -2130,12 +2210,15 @@
                 if (task && previous !== null) task.is_work = previous;
                 rerenderAfterTaskMutation();
                 alert(e.message || 'Failed to update task setting.');
+            } finally {
+                endMutation();
             }
         }
 
         async function updateTaskColor(taskId, taskColor) {
             if (!/^#[0-9a-fA-F]{6}$/.test(taskColor)) return;
             let previous = null;
+            beginMutation();
             try {
                 const normalizedTaskColor = normalizeHexColor(taskColor);
                 const task = findTaskById(taskId);
@@ -2157,10 +2240,13 @@
                 if (task && previous) task.task_color = previous;
                 rerenderAfterTaskMutation();
                 alert(e.message || 'Failed to update color.');
+            } finally {
+                endMutation();
             }
         }
 
         async function addManualSeconds(taskId, seconds, workDate = '') {
+            beginMutation();
             try {
                 const totalSeconds = Math.floor(Number(seconds || 0));
                 if (totalSeconds <= 0) {
@@ -2191,6 +2277,8 @@
                 scheduleDeferredFullRefresh();
             } catch (e) {
                 alert(e.message || 'Failed to add time.');
+            } finally {
+                endMutation();
             }
         }
 
