@@ -58,6 +58,23 @@
             gap: 8px;
             font-size: 13px;
         }
+        .app-sync-btn {
+            width: 26px;
+            height: 26px;
+            min-width: 26px;
+            padding: 0;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            line-height: 1;
+            background: #1f2937;
+            border: 1px solid #374151;
+        }
+        .app-sync-btn:hover {
+            background: #111827;
+        }
         .app-user-email {
             color: #334155;
             background: #eef2ff;
@@ -1351,6 +1368,7 @@
                     </div>
                     <div class="header-right">
                         <div class="app-user-row" id="appUserRow" style="display:none;">
+                            <button type="button" class="app-sync-btn" id="appSyncBtn" title="Syncing with database" onclick="manualSyncNow()">🔴</button>
                             <span class="app-user-email" id="appUserEmail">Signed in</span>
                             <button type="button" class="app-signout-btn" onclick="handleSignOut()">Sign out</button>
                         </div>
@@ -1598,6 +1616,7 @@
         let dataRefreshSequence = 0;
         let activeFullRefreshController = null;
         let activeFastRefreshController = null;
+        let syncError = false;
 
         function normalizeHexColor(value, fallback = '#007bff') {
             const color = String(value || '').trim().toLowerCase();
@@ -1637,12 +1656,72 @@
             renderDailyTasksPanel();
         }
 
+        function setSyncButtonState(isSynced, titleText = '') {
+            const syncBtn = document.getElementById('appSyncBtn');
+            if (!syncBtn) return;
+            syncBtn.textContent = isSynced ? '🟢' : '🔴';
+            syncBtn.title = titleText || (isSynced ? 'Local data is synced with database' : 'Local changes are not fully synced yet');
+        }
+
+        function hasOptimisticTempTasks() {
+            return [...tasks.weekly, ...tasks.monthly].some(task => String(task.id || '').startsWith('tmp-'));
+        }
+
+        function refreshSyncIndicator() {
+            const hasInFlightRefresh = !!activeFullRefreshController || !!activeFastRefreshController;
+            const hasQueuedRefresh = !!deferredFullRefreshTimer;
+            const optimisticCount = [...tasks.weekly, ...tasks.monthly].filter(task => String(task.id || '').startsWith('tmp-')).length;
+
+            let title = '';
+            if (!authSession) {
+                title = 'Sign in to sync data';
+            } else if (syncError) {
+                title = 'Sync failed: tap to retry';
+            } else if (pendingMutations > 0) {
+                title = `Sync pending: ${pendingMutations} update${pendingMutations === 1 ? '' : 's'}`;
+            } else if (optimisticCount > 0) {
+                title = `Sync pending: ${optimisticCount} local task${optimisticCount === 1 ? '' : 's'} waiting for server id`;
+            } else if (hasInFlightRefresh) {
+                title = 'Refreshing from database...';
+            } else if (hasQueuedRefresh) {
+                title = 'Sync queued';
+            } else {
+                title = 'Synced';
+            }
+
+            const isSynced = (
+                !syncError
+                && pendingMutations === 0
+                && !hasInFlightRefresh
+                && !hasQueuedRefresh
+                && !hasOptimisticTempTasks()
+            );
+            setSyncButtonState(isSynced, title);
+        }
+
+        async function manualSyncNow() {
+            if (!authSession) return;
+            if (deferredFullRefreshTimer) {
+                clearTimeout(deferredFullRefreshTimer);
+                deferredFullRefreshTimer = null;
+            }
+            syncError = false;
+            refreshSyncIndicator();
+            try {
+                await loadTasks();
+            } catch (e) {
+                // loadTasks already updates syncError state.
+            }
+        }
+
         function beginMutation() {
             pendingMutations += 1;
+            refreshSyncIndicator();
         }
 
         function endMutation() {
             pendingMutations = Math.max(0, pendingMutations - 1);
+            refreshSyncIndicator();
         }
 
         function beginDataRefresh(mode) {
@@ -1664,6 +1743,8 @@
                 activeFastRefreshController = controller;
             }
 
+            refreshSyncIndicator();
+
             return { sequence: dataRefreshSequence, controller };
         }
 
@@ -1674,6 +1755,7 @@
             if (mode === 'fast' && activeFastRefreshController === controller) {
                 activeFastRefreshController = null;
             }
+            refreshSyncIndicator();
         }
 
         function setAuthStatus(message, isError = true) {
@@ -1732,6 +1814,16 @@
                 userEmail.textContent = email;
                 if (appUserEmail) appUserEmail.textContent = email;
             }
+            if (!hasSession) {
+                syncError = false;
+                if (deferredFullRefreshTimer) {
+                    clearTimeout(deferredFullRefreshTimer);
+                    deferredFullRefreshTimer = null;
+                }
+                setSyncButtonState(false, 'Sign in to sync data');
+                return;
+            }
+            refreshSyncIndicator();
         }
 
         async function apiRequest(url, options = {}) {
@@ -1988,8 +2080,11 @@
                 renderDailyTasksPanel();
                 renderDailyTasksCalendar();
                 updateWeeklyChartTitle();
+                syncError = false;
             } catch (e) {
                 if (e && e.name === 'AbortError') return;
+                syncError = true;
+                refreshSyncIndicator();
                 throw e;
             } finally {
                 endDataRefresh('full', refreshCtx.controller);
@@ -2014,8 +2109,11 @@
                 renderSettings();
                 renderDailyTasksPanel();
                 updateWeeklyChartTitle();
+                syncError = false;
             } catch (e) {
                 if (e && e.name === 'AbortError') return;
+                syncError = true;
+                refreshSyncIndicator();
                 throw e;
             } finally {
                 endDataRefresh('fast', refreshCtx.controller);
@@ -2027,8 +2125,11 @@
                 clearTimeout(deferredFullRefreshTimer);
             }
 
+            refreshSyncIndicator();
+
             deferredFullRefreshTimer = setTimeout(async () => {
                 deferredFullRefreshTimer = null;
+                refreshSyncIndicator();
                 if (pendingMutations > 0) {
                     scheduleDeferredFullRefresh(500);
                     return;
