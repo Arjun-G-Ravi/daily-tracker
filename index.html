@@ -1617,6 +1617,7 @@
         let activeFullRefreshController = null;
         let activeFastRefreshController = null;
         let syncError = false;
+        let mutationQueue = Promise.resolve();
         const DASHBOARD_CACHE_KEY_PREFIX = 'dailyTracker.dashboardCache';
 
         function normalizeHexColor(value, fallback = '#007bff') {
@@ -1775,6 +1776,35 @@
             }
         }
 
+        function buildDashboardSnapshot() {
+            return {
+                data: {
+                    weekly: tasks.weekly,
+                    monthly: tasks.monthly,
+                    today_total_seconds: todayTotalSeconds,
+                    today_color_breakdown: todayColorBreakdown,
+                    today_task_seconds: todayTaskSeconds,
+                    weekly_color_breakdown: weeklyColorBreakdown,
+                    weekly_chart_max_seconds: weeklyChartMaxSeconds,
+                    monthly_overview: monthlyOverview,
+                    day_start_hour: dayStartHour,
+                    week_start_day: weekStartDay,
+                    current_logical_date: currentLogicalDate,
+                },
+                dtData: {
+                    items: dailyTasks.items || [],
+                    today: dailyTasks.today || '',
+                    week_start: dailyTasks.week_start || '',
+                    week_start_day: weekStartDay,
+                },
+            };
+        }
+
+        function saveDashboardCacheFromState() {
+            const snapshot = buildDashboardSnapshot();
+            saveDashboardCache(snapshot.data, snapshot.dtData);
+        }
+
         async function bootDashboardWithCache() {
             const hasCache = hydrateDashboardFromCache();
             if (hasCache) {
@@ -1818,10 +1848,13 @@
                 && !hasOptimisticTempTasks()
             );
             setSyncButtonState(isSynced, title);
+            const syncBtn = document.getElementById('appSyncBtn');
+            if (syncBtn) syncBtn.disabled = pendingMutations > 0;
         }
 
         async function manualSyncNow() {
             if (!authSession) return;
+            if (pendingMutations > 0) return;
             if (deferredFullRefreshTimer) {
                 clearTimeout(deferredFullRefreshTimer);
                 deferredFullRefreshTimer = null;
@@ -1843,6 +1876,29 @@
         function endMutation() {
             pendingMutations = Math.max(0, pendingMutations - 1);
             refreshSyncIndicator();
+        }
+
+        function enqueueServerMutation(requestFn, handlers = {}) {
+            mutationQueue = mutationQueue.then(async () => {
+                try {
+                    const result = await requestFn();
+                    syncError = false;
+                    if (handlers.onSuccess) handlers.onSuccess(result);
+                } catch (e) {
+                    syncError = true;
+                    if (handlers.onError) handlers.onError(e);
+                } finally {
+                    saveDashboardCacheFromState();
+                    endMutation();
+                    if (pendingMutations === 0) {
+                        scheduleDeferredFullRefresh(300);
+                    }
+                }
+            }).catch(() => {
+                // Keep queue chain alive even after failures.
+            });
+
+            return mutationQueue;
         }
 
         function beginDataRefresh(mode) {
@@ -2246,29 +2302,30 @@
             currentDayLabel.textContent = ` ${formatDisplayDate(currentLogicalDate)} `;
         }
 
-        async function addTaskFromSettings() {
+        function addTaskFromSettings() {
+            const nameInput = document.getElementById('settingsTaskInput');
+            const colorInput = document.getElementById('settingsTaskColor');
+
+            const name = nameInput.value.trim();
+            if (!name) return;
+
             beginMutation();
-            try {
-                const nameInput = document.getElementById('settingsTaskInput');
-                const colorInput = document.getElementById('settingsTaskColor');
+            const optimisticTask = normalizeTaskColor({
+                id: `tmp-${Date.now()}`,
+                name,
+                task_type: 'weekly',
+                task_color: normalizeHexColor(colorInput.value),
+                is_work: false,
+                elapsed: 0,
+                running: false,
+            });
+            tasks.weekly.unshift(optimisticTask);
+            nameInput.value = '';
+            rerenderAfterTaskMutation();
+            saveDashboardCacheFromState();
 
-                const name = nameInput.value.trim();
-                if (!name) return;
-
-                const optimisticTask = normalizeTaskColor({
-                    id: `tmp-${Date.now()}`,
-                    name,
-                    task_type: 'weekly',
-                    task_color: normalizeHexColor(colorInput.value),
-                    is_work: false,
-                    elapsed: 0,
-                    running: false,
-                });
-                tasks.weekly.unshift(optimisticTask);
-                nameInput.value = '';
-                rerenderAfterTaskMutation();
-
-                const created = await apiRequest('/api/tasks', {
+            enqueueServerMutation(
+                () => apiRequest('/api/tasks', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -2278,119 +2335,126 @@
                         initial_seconds: 0,
                         task_color: normalizeHexColor(colorInput.value)
                     })
-                });
-
-                optimisticTask.id = Number(created.task_id || optimisticTask.id);
-                scheduleDeferredFullRefresh();
-            } catch (e) {
-                tasks.weekly = tasks.weekly.filter(task => !String(task.id).startsWith('tmp-'));
-                rerenderAfterTaskMutation();
-                alert(e.message || 'Failed to add job.');
-            } finally {
-                endMutation();
-            }
+                }),
+                {
+                    onSuccess: (created) => {
+                        optimisticTask.id = Number(created.task_id || optimisticTask.id);
+                    },
+                    onError: (e) => {
+                        tasks.weekly = tasks.weekly.filter(task => task !== optimisticTask);
+                        rerenderAfterTaskMutation();
+                        alert((e && e.message) || 'Failed to add job.');
+                    },
+                }
+            );
         }
 
-        async function startTask(taskId) {
+        function startTask(taskId) {
             beginMutation();
-            try {
-                const task = findTaskById(taskId);
-                if (task) task.running = true;
-                rerenderAfterTaskMutation();
-                await apiRequest(`/api/tasks/${taskId}/start`, {
-                    method: 'POST'
-                });
-                scheduleDeferredFullRefresh();
-            } catch (e) {
-                const task = findTaskById(taskId);
-                if (task) task.running = false;
-                rerenderAfterTaskMutation();
-                alert(e.message || 'Failed to start task.');
-            } finally {
-                endMutation();
-            }
+            const task = findTaskById(taskId);
+            const prevRunning = task ? !!task.running : false;
+            if (task) task.running = true;
+            rerenderAfterTaskMutation();
+            saveDashboardCacheFromState();
+
+            enqueueServerMutation(
+                () => apiRequest(`/api/tasks/${taskId}/start`, { method: 'POST' }),
+                {
+                    onError: (e) => {
+                        const rollbackTask = findTaskById(taskId);
+                        if (rollbackTask) rollbackTask.running = prevRunning;
+                        rerenderAfterTaskMutation();
+                        alert((e && e.message) || 'Failed to start task.');
+                    },
+                }
+            );
         }
 
-        async function stopTask(taskId) {
+        function stopTask(taskId) {
             beginMutation();
-            try {
-                const task = findTaskById(taskId);
-                if (task) task.running = false;
-                rerenderAfterTaskMutation();
-                await apiRequest(`/api/tasks/${taskId}/stop`, {
-                    method: 'POST'
-                });
-                scheduleDeferredFullRefresh();
-            } catch (e) {
-                const task = findTaskById(taskId);
-                if (task) task.running = true;
-                rerenderAfterTaskMutation();
-                alert(e.message || 'Failed to stop task.');
-            } finally {
-                endMutation();
-            }
+            const task = findTaskById(taskId);
+            const prevRunning = task ? !!task.running : false;
+            if (task) task.running = false;
+            rerenderAfterTaskMutation();
+            saveDashboardCacheFromState();
+
+            enqueueServerMutation(
+                () => apiRequest(`/api/tasks/${taskId}/stop`, { method: 'POST' }),
+                {
+                    onError: (e) => {
+                        const rollbackTask = findTaskById(taskId);
+                        if (rollbackTask) rollbackTask.running = prevRunning;
+                        rerenderAfterTaskMutation();
+                        alert((e && e.message) || 'Failed to stop task.');
+                    },
+                }
+            );
         }
 
-        async function deleteTask(taskId) {
+        function deleteTask(taskId) {
             let beforeWeekly = null;
             let beforeMonthly = null;
             beginMutation();
-            try {
-                beforeWeekly = tasks.weekly.slice();
-                beforeMonthly = tasks.monthly.slice();
-                removeTaskById(taskId);
-                rerenderAfterTaskMutation();
-                await apiRequest(`/api/tasks/${taskId}`, {
-                    method: 'DELETE'
-                });
-                scheduleDeferredFullRefresh();
-            } catch (e) {
-                if (beforeWeekly && beforeMonthly) {
-                    tasks.weekly = beforeWeekly;
-                    tasks.monthly = beforeMonthly;
-                    rerenderAfterTaskMutation();
+            beforeWeekly = tasks.weekly.slice();
+            beforeMonthly = tasks.monthly.slice();
+            removeTaskById(taskId);
+            rerenderAfterTaskMutation();
+            saveDashboardCacheFromState();
+
+            enqueueServerMutation(
+                () => apiRequest(`/api/tasks/${taskId}`, { method: 'DELETE' }),
+                {
+                    onError: (e) => {
+                        if (beforeWeekly && beforeMonthly) {
+                            tasks.weekly = beforeWeekly;
+                            tasks.monthly = beforeMonthly;
+                            rerenderAfterTaskMutation();
+                        }
+                        alert((e && e.message) || 'Failed to delete task.');
+                    },
                 }
-                alert(e.message || 'Failed to delete task.');
-            } finally {
-                endMutation();
-            }
+            );
         }
 
-        async function updateTaskIsWork(taskId, isWork) {
+        function updateTaskIsWork(taskId, isWork) {
             let previous = null;
             beginMutation();
-            try {
-                const task = findTaskById(taskId);
-                previous = task ? !!task.is_work : null;
-                if (task) task.is_work = !!isWork;
-                rerenderAfterTaskMutation();
-                await apiRequest(`/api/tasks/${taskId}/is_work`, {
+            const task = findTaskById(taskId);
+            previous = task ? !!task.is_work : null;
+            if (task) task.is_work = !!isWork;
+            rerenderAfterTaskMutation();
+            saveDashboardCacheFromState();
+
+            enqueueServerMutation(
+                () => apiRequest(`/api/tasks/${taskId}/is_work`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ is_work: isWork })
-                });
-                scheduleDeferredFullRefresh();
-            } catch (e) {
-                const task = findTaskById(taskId);
-                if (task && previous !== null) task.is_work = previous;
-                rerenderAfterTaskMutation();
-                alert(e.message || 'Failed to update task setting.');
-            } finally {
-                endMutation();
-            }
+                }),
+                {
+                    onError: (e) => {
+                        const rollbackTask = findTaskById(taskId);
+                        if (rollbackTask && previous !== null) rollbackTask.is_work = previous;
+                        rerenderAfterTaskMutation();
+                        alert((e && e.message) || 'Failed to update task setting.');
+                    },
+                }
+            );
         }
 
-        async function updateTaskColor(taskId, taskColor) {
+        function updateTaskColor(taskId, taskColor) {
             if (!/^#[0-9a-fA-F]{6}$/.test(taskColor)) return;
             let previous = null;
             beginMutation();
-            try {
-                const normalizedTaskColor = normalizeHexColor(taskColor);
-                const task = findTaskById(taskId);
-                previous = task ? task.task_color : null;
-                if (task) task.task_color = normalizedTaskColor;
-                rerenderAfterTaskMutation();
-                await apiRequest(`/api/tasks/${taskId}/color`, {
+            const normalizedTaskColor = normalizeHexColor(taskColor);
+            const task = findTaskById(taskId);
+            previous = task ? task.task_color : null;
+            if (task) task.task_color = normalizedTaskColor;
+            rerenderAfterTaskMutation();
+            saveDashboardCacheFromState();
+
+            enqueueServerMutation(
+                () => apiRequest(`/api/tasks/${taskId}/color`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -2398,66 +2462,82 @@
                     body: JSON.stringify({
                         task_color: normalizedTaskColor
                     })
-                });
-                scheduleDeferredFullRefresh();
-            } catch (e) {
-                const task = findTaskById(taskId);
-                if (task && previous) task.task_color = previous;
-                rerenderAfterTaskMutation();
-                alert(e.message || 'Failed to update color.');
-            } finally {
-                endMutation();
-            }
+                }),
+                {
+                    onError: (e) => {
+                        const rollbackTask = findTaskById(taskId);
+                        if (rollbackTask && previous) rollbackTask.task_color = previous;
+                        rerenderAfterTaskMutation();
+                        alert((e && e.message) || 'Failed to update color.');
+                    },
+                }
+            );
         }
 
-        async function addManualSeconds(taskId, seconds, workDate = '') {
+        function addManualSeconds(taskId, seconds, workDate = '') {
             beginMutation();
-            try {
-                const totalSeconds = Math.floor(Number(seconds || 0));
-                if (totalSeconds <= 0) {
-                    alert('Please enter a valid duration.');
-                    return;
+            const totalSeconds = Math.floor(Number(seconds || 0));
+            if (totalSeconds <= 0) {
+                endMutation();
+                alert('Please enter a valid duration.');
+                return;
+            }
+
+            const payload = {
+                seconds: totalSeconds
+            };
+            if (workDate) payload.work_date = workDate;
+
+            const snapshotBefore = {
+                todayTaskSeconds: Object.assign({}, todayTaskSeconds),
+                todayTotalSeconds,
+                todayColorBreakdown: JSON.parse(JSON.stringify(todayColorBreakdown || [])),
+                weeklyColorBreakdown: JSON.parse(JSON.stringify(weeklyColorBreakdown || [])),
+            };
+
+            if (!workDate || workDate === currentLogicalDate) {
+                const increment = Math.max(0, totalSeconds);
+                const task = findTaskById(taskId);
+                const taskColor = task ? task.task_color : '#007bff';
+                const todayIso = getCurrentLogicalDateClient();
+                const todayEntry = weeklyColorBreakdown.find(entry => entry.date === todayIso);
+
+                todayTaskSeconds[taskId] = Number(todayTaskSeconds[taskId] || 0) + increment;
+                todayTotalSeconds += increment;
+                addSecondsToColorBreakdown(todayColorBreakdown, taskColor, increment);
+                if (todayEntry) {
+                    if (!Array.isArray(todayEntry.colors)) todayEntry.colors = [];
+                    todayEntry.total_seconds = Number(todayEntry.total_seconds || 0) + increment;
+                    addSecondsToColorBreakdown(todayEntry.colors, taskColor, increment);
                 }
 
-                const payload = {
-                    seconds: totalSeconds
-                };
-                if (workDate) payload.work_date = workDate;
+                updateTodayTotal();
+                rerenderAfterTaskMutation();
+                renderWeeklyChart();
+            }
 
-                await apiRequest(`/api/tasks/${taskId}/manual_time`, {
+            saveDashboardCacheFromState();
+            enqueueServerMutation(
+                () => apiRequest(`/api/tasks/${taskId}/manual_time`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(payload)
-                });
-
-                if (!workDate || workDate === currentLogicalDate) {
-                    const increment = Math.max(0, totalSeconds);
-                    const task = findTaskById(taskId);
-                    const taskColor = task ? task.task_color : '#007bff';
-                    const todayIso = getCurrentLogicalDateClient();
-                    const todayEntry = weeklyColorBreakdown.find(entry => entry.date === todayIso);
-
-                    todayTaskSeconds[taskId] = Number(todayTaskSeconds[taskId] || 0) + increment;
-                    todayTotalSeconds += increment;
-                    addSecondsToColorBreakdown(todayColorBreakdown, taskColor, increment);
-                    if (todayEntry) {
-                        if (!Array.isArray(todayEntry.colors)) todayEntry.colors = [];
-                        todayEntry.total_seconds = Number(todayEntry.total_seconds || 0) + increment;
-                        addSecondsToColorBreakdown(todayEntry.colors, taskColor, increment);
-                    }
-
-                    updateTodayTotal();
-                    rerenderAfterTaskMutation();
-                    renderWeeklyChart();
+                }),
+                {
+                    onError: (e) => {
+                        todayTaskSeconds = snapshotBefore.todayTaskSeconds;
+                        todayTotalSeconds = snapshotBefore.todayTotalSeconds;
+                        todayColorBreakdown = snapshotBefore.todayColorBreakdown;
+                        weeklyColorBreakdown = snapshotBefore.weeklyColorBreakdown;
+                        updateTodayTotal();
+                        rerenderAfterTaskMutation();
+                        renderWeeklyChart();
+                        alert((e && e.message) || 'Failed to add time.');
+                    },
                 }
-                scheduleDeferredFullRefresh();
-            } catch (e) {
-                alert(e.message || 'Failed to add time.');
-            } finally {
-                endMutation();
-            }
+            );
         }
 
         async function saveDayStartHour() {
