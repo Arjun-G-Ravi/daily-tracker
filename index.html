@@ -1184,6 +1184,28 @@
             border-radius: 50%;
             flex-shrink: 0;
         }
+        .dt-complete-check {
+            width: 18px;
+            min-width: 18px;
+            height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        .dtp-complete-check {
+            width: 14px;
+            min-width: 14px;
+            height: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
         .dtp-name {
             flex: 1;
             font-size: 13px;
@@ -1194,8 +1216,7 @@
             min-width: 0;
         }
         .dtp-name.done {
-            text-decoration: line-through;
-            color: #aaa;
+            color: #8b95a3;
         }
         .dtp-repeat-prefix {
             font-size: 8px;
@@ -3592,26 +3613,61 @@
             }
         }
 
-        async function updateUnifiedTaskProgress(task, updates) {
-            try {
-                await apiRequest(`/api/daily_tasks/${task.id}/progress`, {
+        function updateUnifiedTaskProgress(task, updates) {
+            const taskId = Number(task && task.id);
+            if (!taskId) return;
+
+            const previousItems = JSON.parse(JSON.stringify(dailyTasks.items || []));
+            const current = (dailyTasks.items || []).find(item => Number(item.id) === taskId);
+            if (!current) return;
+
+            const target = Math.max(0, Number(current.target_minutes || 0));
+            const isInteger = current.task_kind === 'integer';
+
+            if (isInteger && Object.prototype.hasOwnProperty.call(updates, 'done_minutes')) {
+                const nextDoneMinutes = Math.max(0, Number(updates.done_minutes || 0));
+                current.done_minutes = nextDoneMinutes;
+                current.done = target > 0 ? (nextDoneMinutes >= target) : !!updates.done;
+            } else {
+                current.done = !!updates.done;
+            }
+
+            beginMutation();
+            renderDailyTasksTab();
+            renderDailyTasksPanel();
+            saveDashboardCacheFromState();
+
+            enqueueServerMutation(
+                () => apiRequest(`/api/daily_tasks/${taskId}/progress`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(updates),
-                });
-                await loadTasks();
-            } catch (e) {
-                alert(e.message || 'Failed to update task progress.');
-            }
+                }),
+                {
+                    onError: (e) => {
+                        dailyTasks.items = previousItems;
+                        renderDailyTasksTab();
+                        renderDailyTasksPanel();
+                        alert((e && e.message) || 'Failed to update task progress.');
+                    },
+                }
+            );
         }
 
         function buildUnifiedTaskItem(task, compact = false) {
             const li = document.createElement('li');
             li.className = compact ? 'dtp-item' : 'dt-item';
 
-            const dot = document.createElement('div');
-            dot.className = compact ? 'dtp-color-dot' : 'dt-color-bar';
-            dot.style.background = normalizeHexColor(task.color);
+            let dot;
+            if (task.done) {
+                dot = document.createElement('span');
+                dot.className = compact ? 'dtp-complete-check' : 'dt-complete-check';
+                dot.textContent = '✅';
+            } else {
+                dot = document.createElement('div');
+                dot.className = compact ? 'dtp-color-dot' : 'dt-color-bar';
+                dot.style.background = normalizeHexColor(task.color);
+            }
 
             const info = document.createElement(compact ? 'div' : 'div');
             info.className = compact ? 'dtp-name' + (task.done ? ' done' : '') : 'dt-info';
@@ -3642,10 +3698,12 @@
 
             if (!compact) {
                 meta.textContent = `${formatRecurrenceLabel(task.recurrence)} · ${kindLabel}`;
-                const endsSpan = document.createElement('span');
-                endsSpan.className = `dt-end-text ${getEndsToneClass(task)}${endsText === 'Ends today' ? ' today' : ''}`;
-                endsSpan.textContent = endsText;
-                meta.appendChild(endsSpan);
+                if (!task.done) {
+                    const endsSpan = document.createElement('span');
+                    endsSpan.className = `dt-end-text ${getEndsToneClass(task)}${endsText === 'Ends today' ? ' today' : ''}`;
+                    endsSpan.textContent = endsText;
+                    meta.appendChild(endsSpan);
+                }
                 info.appendChild(name);
                 info.appendChild(meta);
             } else {
@@ -3653,11 +3711,13 @@
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'dtp-main-text';
                 nameSpan.textContent = `${task.name} · `;
-                const endsSpan = document.createElement('span');
-                endsSpan.className = `dtp-end-text ${getEndsToneClass(task)}${endsText === 'Ends today' ? ' today' : ''}`;
-                endsSpan.textContent = endsText;
                 info.appendChild(nameSpan);
-                info.appendChild(endsSpan);
+                if (!task.done) {
+                    const endsSpan = document.createElement('span');
+                    endsSpan.className = `dtp-end-text ${getEndsToneClass(task)}${endsText === 'Ends today' ? ' today' : ''}`;
+                    endsSpan.textContent = endsText;
+                    info.appendChild(endsSpan);
+                }
                 if (isRepeating) {
                     const repeatSuffix = document.createElement('span');
                     repeatSuffix.className = 'dtp-repeat-prefix';
@@ -3677,8 +3737,8 @@
                 chk.type = 'checkbox';
                 chk.className = 'dtp-check';
                 chk.checked = !!task.done;
-                chk.onchange = async () => {
-                    await updateUnifiedTaskProgress(task, { done: chk.checked });
+                chk.onchange = () => {
+                    updateUnifiedTaskProgress(task, { done: chk.checked });
                 };
                 actions.appendChild(chk);
             } else {
@@ -3696,10 +3756,10 @@
                 intInput.value = task.done_minutes != null ? task.done_minutes : '';
                 intInput.title = 'Count';
 
-                intInput.addEventListener('change', async () => {
+                intInput.addEventListener('change', () => {
                     const val = Number(intInput.value || 0);
                     const isDone = target > 0 ? val >= target : false;
-                    await updateUnifiedTaskProgress(task, { done: isDone, done_minutes: val });
+                    updateUnifiedTaskProgress(task, { done: isDone, done_minutes: val });
                 });
                 actions.appendChild(intInput);
             }
