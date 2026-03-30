@@ -1617,6 +1617,7 @@
         let activeFullRefreshController = null;
         let activeFastRefreshController = null;
         let syncError = false;
+        const DASHBOARD_CACHE_KEY_PREFIX = 'dailyTracker.dashboardCache';
 
         function normalizeHexColor(value, fallback = '#007bff') {
             const color = String(value || '').trim().toLowerCase();
@@ -1661,6 +1662,126 @@
             if (!syncBtn) return;
             syncBtn.textContent = isSynced ? '🟢' : '🔴';
             syncBtn.title = titleText || (isSynced ? 'Local data is synced with database' : 'Local changes are not fully synced yet');
+        }
+
+        function getDashboardCacheKey() {
+            const userId = authSession && authSession.user && authSession.user.id ? String(authSession.user.id) : '';
+            if (!userId) return '';
+            return `${DASHBOARD_CACHE_KEY_PREFIX}:${userId}`;
+        }
+
+        function saveDashboardCache(data, dtData) {
+            const cacheKey = getDashboardCacheKey();
+            if (!cacheKey) return;
+            const payload = {
+                saved_at: Date.now(),
+                data,
+                dtData,
+            };
+            try {
+                localStorage.setItem(cacheKey, JSON.stringify(payload));
+            } catch (e) {
+                // Ignore storage failures and continue without cache.
+            }
+        }
+
+        function clearDashboardCache() {
+            const cacheKey = getDashboardCacheKey();
+            if (!cacheKey) return;
+            try {
+                localStorage.removeItem(cacheKey);
+            } catch (e) {
+                // Ignore storage failures.
+            }
+        }
+
+        function applyDashboardData(data, dtData) {
+            tasks.weekly = (data.weekly || []).map(normalizeTaskColor);
+            tasks.monthly = (data.monthly || []).map(normalizeTaskColor);
+            todayTotalSeconds = data.today_total_seconds || 0;
+            todayColorBreakdown = (data.today_color_breakdown || []).map(entry => ({
+                color: normalizeHexColor(entry.color),
+                seconds: Number(entry.seconds || 0),
+            }));
+            todayTaskSeconds = data.today_task_seconds || {};
+            weeklyColorBreakdown = (data.weekly_color_breakdown || []).map(day => ({
+                ...day,
+                colors: Array.isArray(day.colors)
+                    ? day.colors.map(entry => ({
+                        color: normalizeHexColor(entry.color),
+                        seconds: Number(entry.seconds || 0),
+                    }))
+                    : [],
+            }));
+            monthlyOverview = (data.monthly_overview || []).map(month => ({
+                ...month,
+                colors: Array.isArray(month.colors)
+                    ? month.colors.map(entry => ({
+                        color: normalizeHexColor(entry.color),
+                        seconds: Number(entry.seconds || 0),
+                    }))
+                    : [],
+            }));
+            weeklyChartMaxSeconds = data.weekly_chart_max_seconds || (14 * 3600);
+            dayStartHour = Number(data.day_start_hour ?? dayStartHour);
+            weekStartDay = data.week_start_day || weekStartDay;
+            currentLogicalDate = data.current_logical_date || currentLogicalDate;
+
+            if (dtData) {
+                dailyTasks = {
+                    items: dtData.items || [],
+                    today: dtData.today || '',
+                    week_start: dtData.week_start || '',
+                };
+            }
+
+            if (calendarYear === null) {
+                const todayParts = (data.current_logical_date || '').split('-');
+                calendarYear = Number(todayParts[0]) || new Date().getFullYear();
+                calendarMonth = Number(todayParts[1]) || (new Date().getMonth() + 1);
+            }
+
+            if (dtCalendarYear === null) {
+                const todayParts = ((dailyTasks && dailyTasks.today) || data.current_logical_date || '').split('-');
+                dtCalendarYear = Number(todayParts[0]) || new Date().getFullYear();
+                dtCalendarMonth = Number(todayParts[1]) || (new Date().getMonth() + 1);
+            }
+
+            updateTodayTotal();
+            updateCurrentDayLabel();
+            renderTasks('weekly');
+            renderMonthlyBarChart();
+            renderCalendar();
+            renderSettings();
+            renderWeeklyChart();
+            renderDailyTasksTab();
+            renderDailyTasksPanel();
+            renderDailyTasksCalendar();
+            updateWeeklyChartTitle();
+        }
+
+        function hydrateDashboardFromCache() {
+            const cacheKey = getDashboardCacheKey();
+            if (!cacheKey) return false;
+            try {
+                const raw = localStorage.getItem(cacheKey);
+                if (!raw) return false;
+                const parsed = JSON.parse(raw);
+                if (!parsed || !parsed.data || !parsed.dtData) return false;
+                applyDashboardData(parsed.data, parsed.dtData);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        async function bootDashboardWithCache() {
+            const hasCache = hydrateDashboardFromCache();
+            if (hasCache) {
+                scheduleDeferredFullRefresh(10000);
+                return;
+            }
+            await loadTasks();
         }
 
         function hasOptimisticTempTasks() {
@@ -1910,7 +2031,7 @@
 
             const ok = await ensureAuthenticatedUser();
             if (ok) {
-                await loadTasks();
+                await bootDashboardWithCache();
             }
         }
 
@@ -1933,12 +2054,13 @@
             setAuthStatus('Sign-up complete. Check your email if verification is enabled.', false);
             const ok = await ensureAuthenticatedUser();
             if (ok) {
-                await loadTasks();
+                await bootDashboardWithCache();
             }
         }
 
         async function handleSignOut() {
             if (!SUPABASE_READY) return;
+            clearDashboardCache();
             await supabaseClient.auth.signOut();
             authSession = null;
             refreshAuthUi();
@@ -1951,7 +2073,7 @@
                 refreshAuthUi();
                 if (session) {
                     setAppVisible(true);
-                    await loadTasks();
+                    await bootDashboardWithCache();
                 } else {
                     setAppVisible(false);
                 }
@@ -2020,66 +2142,8 @@
                 ]);
 
                 if (refreshCtx.sequence !== dataRefreshSequence) return;
-
-                tasks.weekly = (data.weekly || []).map(normalizeTaskColor);
-                tasks.monthly = (data.monthly || []).map(normalizeTaskColor);
-                todayTotalSeconds = data.today_total_seconds || 0;
-                todayColorBreakdown = (data.today_color_breakdown || []).map(entry => ({
-                    color: normalizeHexColor(entry.color),
-                    seconds: Number(entry.seconds || 0),
-                }));
-                todayTaskSeconds = data.today_task_seconds || {};
-                weeklyColorBreakdown = (data.weekly_color_breakdown || []).map(day => ({
-                    ...day,
-                    colors: Array.isArray(day.colors)
-                        ? day.colors.map(entry => ({
-                            color: normalizeHexColor(entry.color),
-                            seconds: Number(entry.seconds || 0),
-                        }))
-                        : [],
-                }));
-                monthlyOverview = (data.monthly_overview || []).map(month => ({
-                    ...month,
-                    colors: Array.isArray(month.colors)
-                        ? month.colors.map(entry => ({
-                            color: normalizeHexColor(entry.color),
-                            seconds: Number(entry.seconds || 0),
-                        }))
-                        : [],
-                }));
-                weeklyChartMaxSeconds = data.weekly_chart_max_seconds || (14 * 3600);
-                dayStartHour = Number(data.day_start_hour ?? 2);
-                weekStartDay = data.week_start_day || 'sunday';
-                currentLogicalDate = data.current_logical_date || '';
-                dailyTasks = {
-                    items: dtData.items || [],
-                    today: dtData.today || '',
-                    week_start: dtData.week_start || '',
-                };
-
-                if (calendarYear === null) {
-                    const todayParts = (data.current_logical_date || '').split('-');
-                    calendarYear = Number(todayParts[0]) || new Date().getFullYear();
-                    calendarMonth = Number(todayParts[1]) || (new Date().getMonth() + 1);
-                }
-
-                if (dtCalendarYear === null) {
-                    const todayParts = (dailyTasks.today || data.current_logical_date || '').split('-');
-                    dtCalendarYear = Number(todayParts[0]) || new Date().getFullYear();
-                    dtCalendarMonth = Number(todayParts[1]) || (new Date().getMonth() + 1);
-                }
-
-                updateTodayTotal();
-                updateCurrentDayLabel();
-                renderTasks('weekly');
-                renderMonthlyBarChart();
-                renderCalendar();
-                renderSettings();
-                renderWeeklyChart();
-                renderDailyTasksTab();
-                renderDailyTasksPanel();
-                renderDailyTasksCalendar();
-                updateWeeklyChartTitle();
+                applyDashboardData(data, dtData);
+                saveDashboardCache(data, dtData);
                 syncError = false;
             } catch (e) {
                 if (e && e.name === 'AbortError') return;
@@ -3694,7 +3758,7 @@
         ensureAuthenticatedUser().then((ok) => {
             updateMissingEnvHelp();
             if (!ok) return;
-            loadTasks().catch((e) => {
+            bootDashboardWithCache().catch((e) => {
                 alert(e.message || 'Failed to load data from server.');
             });
         });
