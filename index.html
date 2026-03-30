@@ -200,9 +200,7 @@
             background: #f9f9f9;
             margin-bottom: 10px;
             border-radius: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: block;
         }
         .task-info {
             flex: 1;
@@ -312,11 +310,70 @@
             background: #f8f9fb;
             margin-bottom: 10px;
             border-radius: 8px;
+            display: block;
+            gap: 12px;
+        }
+        .task-main-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
+        }
+        .task-subtasks-panel {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e8e8e8;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .task-subtasks-panel.open {
+            display: flex;
+        }
+        .task-subtask-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            background: #fff;
+            border: 1px solid #ececec;
+            border-radius: 6px;
+            padding: 8px;
+        }
+        .task-subtask-label {
+            flex: 1;
+            min-width: 140px;
+            font-size: 12px;
+            color: #555;
+        }
+        .task-subtask-mins {
+            width: 82px;
+            flex: 0 0 82px;
+            padding: 6px;
+        }
+        .task-subtask-save-btn {
+            background: #17a2b8;
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+        .task-subtask-save-btn:hover {
+            background: #138496;
+        }
+        .task-subtask-delete-btn {
+            background: #6c757d;
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+        .task-subtask-delete-btn:hover {
+            background: #5a6268;
+        }
+        .task-subtask-empty {
+            font-size: 12px;
+            color: #8c8c8c;
             border: 1px solid #eceff3;
+            border-radius: 6px;
+            background: #fff;
+            padding: 8px;
         }
         .settings-task-name {
             color: #333;
@@ -1660,6 +1717,9 @@
         let syncError = false;
         let mutationQueue = Promise.resolve();
         const DASHBOARD_CACHE_KEY_PREFIX = 'dailyTracker.dashboardCache';
+        let taskSubtasksCacheDate = '';
+        let taskSubtasksByTask = {};
+        const expandedTaskDetails = new Set();
 
         function normalizeHexColor(value, fallback = '#007bff') {
             const color = String(value || '').trim().toLowerCase();
@@ -1800,6 +1860,11 @@
             renderDailyTasksPanel();
             renderDailyTasksCalendar();
             updateWeeklyChartTitle();
+        }
+
+        function invalidateTaskSubtasksCache() {
+            taskSubtasksCacheDate = '';
+            taskSubtasksByTask = {};
         }
 
         function hydrateDashboardFromCache() {
@@ -2240,6 +2305,7 @@
 
                 if (refreshCtx.sequence !== dataRefreshSequence) return;
                 applyDashboardData(data, dtData);
+                invalidateTaskSubtasksCache();
                 saveDashboardCache(data, dtData);
                 syncError = false;
             } catch (e) {
@@ -2517,6 +2583,7 @@
 
         function addManualSeconds(taskId, seconds, workDate = '') {
             beginMutation();
+            invalidateTaskSubtasksCache();
             const totalSeconds = Math.floor(Number(seconds || 0));
             if (totalSeconds <= 0) {
                 endMutation();
@@ -2798,6 +2865,237 @@
             entries.sort((a, b) => Number(b.seconds || 0) - Number(a.seconds || 0));
         }
 
+        function adjustSecondsInColorBreakdown(entries, color, deltaSeconds) {
+            const delta = Number(deltaSeconds || 0);
+            if (!delta) return;
+            const normalizedColor = normalizeHexColor(color);
+            const idx = entries.findIndex(entry => normalizeHexColor(entry.color) === normalizedColor);
+
+            if (delta > 0) {
+                if (idx === -1) {
+                    entries.push({ color: normalizedColor, seconds: delta });
+                } else {
+                    entries[idx].seconds = Number(entries[idx].seconds || 0) + delta;
+                }
+            } else if (idx !== -1) {
+                entries[idx].seconds = Math.max(0, Number(entries[idx].seconds || 0) + delta);
+                if (entries[idx].seconds <= 0) {
+                    entries.splice(idx, 1);
+                }
+            }
+
+            entries.sort((a, b) => Number(b.seconds || 0) - Number(a.seconds || 0));
+        }
+
+        function applyTodayTaskLogDelta(taskId, taskColor, deltaSeconds) {
+            const delta = Number(deltaSeconds || 0);
+            if (!delta) return;
+
+            const idNum = Number(taskId);
+            todayTaskSeconds[idNum] = Math.max(0, Number(todayTaskSeconds[idNum] || 0) + delta);
+            todayTotalSeconds = Math.max(0, Number(todayTotalSeconds || 0) + delta);
+            adjustSecondsInColorBreakdown(todayColorBreakdown, taskColor, delta);
+
+            const todayIso = getCurrentLogicalDateClient();
+            const todayEntry = (weeklyColorBreakdown || []).find(entry => entry.date === todayIso);
+            if (todayEntry) {
+                todayEntry.total_seconds = Math.max(0, Number(todayEntry.total_seconds || 0) + delta);
+                if (!Array.isArray(todayEntry.colors)) todayEntry.colors = [];
+                adjustSecondsInColorBreakdown(todayEntry.colors, taskColor, delta);
+            }
+
+            const task = findTaskById(idNum);
+            if (task) {
+                task.elapsed = Math.max(0, Number(task.elapsed || 0) + delta);
+            }
+        }
+
+        function formatSubtaskCreatedTime(createdAt) {
+            if (!createdAt) return '';
+            const candidate = String(createdAt).replace(' ', 'T');
+            const parsed = new Date(candidate);
+            if (Number.isNaN(parsed.getTime())) return '';
+            return parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function formatSubtaskType(entryType) {
+            const key = String(entryType || '').toLowerCase();
+            if (key === 'timer') return 'Timer';
+            if (key === 'manual_add') return 'Manual add';
+            if (key === 'manual_create') return 'Initial add';
+            return key || 'Entry';
+        }
+
+        async function ensureTodayTaskSubtasks(force = false) {
+            const todayIso = currentLogicalDate || getCurrentLogicalDateClient();
+            if (!force && taskSubtasksCacheDate === todayIso) return;
+
+            const data = await apiRequest(`/api/day_logs?date=${todayIso}`);
+            const grouped = {};
+            (data.logs || []).forEach(log => {
+                const taskId = Number(log.task_id);
+                if (!grouped[taskId]) grouped[taskId] = [];
+                grouped[taskId].push({
+                    id: Number(log.id),
+                    task_id: taskId,
+                    seconds: Number(log.seconds || 0),
+                    entry_type: String(log.entry_type || ''),
+                    created_at: log.created_at,
+                });
+            });
+
+            Object.values(grouped).forEach(logs => {
+                logs.sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+            });
+
+            taskSubtasksCacheDate = todayIso;
+            taskSubtasksByTask = grouped;
+        }
+
+        function renderTaskSubtasksPanel(task, panel) {
+            panel.innerHTML = '';
+            const taskId = Number(task.id);
+            const logs = (taskSubtasksByTask[taskId] || []).slice();
+
+            if (logs.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'task-subtask-empty';
+                empty.textContent = 'No subtasks logged for today yet.';
+                panel.appendChild(empty);
+                return;
+            }
+
+            logs.forEach(log => {
+                const row = document.createElement('div');
+                row.className = 'task-subtask-row';
+
+                const label = document.createElement('div');
+                label.className = 'task-subtask-label';
+                const atText = formatSubtaskCreatedTime(log.created_at);
+                label.textContent = atText
+                    ? `${formatSubtaskType(log.entry_type)} at ${atText}`
+                    : formatSubtaskType(log.entry_type);
+
+                const minsInput = document.createElement('input');
+                minsInput.type = 'number';
+                minsInput.min = '1';
+                minsInput.step = '1';
+                minsInput.className = 'task-subtask-mins';
+                minsInput.value = String(Math.max(1, Math.round(Number(log.seconds || 0) / 60)));
+
+                const saveBtn = document.createElement('button');
+                saveBtn.className = 'task-subtask-save-btn';
+                saveBtn.textContent = 'Save';
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'task-subtask-delete-btn';
+                deleteBtn.textContent = 'Remove';
+
+                saveBtn.onclick = () => {
+                    const nextMinutes = Number(minsInput.value || 0);
+                    if (nextMinutes <= 0) {
+                        alert('Minutes must be greater than 0.');
+                        return;
+                    }
+
+                    const nextSeconds = Math.round(nextMinutes * 60);
+                    const prevSeconds = Number(log.seconds || 0);
+                    if (nextSeconds === prevSeconds) return;
+
+                    const snapshot = buildDashboardSnapshot();
+                    const prevSubtasksByTask = JSON.parse(JSON.stringify(taskSubtasksByTask || {}));
+                    const delta = nextSeconds - prevSeconds;
+
+                    beginMutation();
+                    log.seconds = nextSeconds;
+                    applyTodayTaskLogDelta(task.id, task.task_color, delta);
+                    renderTaskSubtasksPanel(task, panel);
+                    updateTodayTotal();
+                    renderWeeklyChart();
+                    renderMonthlyBarChart();
+                    renderSettings();
+                    renderTasks(activeTab);
+                    saveDashboardCacheFromState();
+
+                    enqueueServerMutation(
+                        () => apiRequest(`/api/work_logs/${log.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ seconds: nextSeconds }),
+                        }),
+                        {
+                            onError: (e) => {
+                                taskSubtasksByTask = prevSubtasksByTask;
+                                applyDashboardData(snapshot.data, snapshot.dtData);
+                                alert((e && e.message) || 'Failed to update subtask time.');
+                            },
+                        }
+                    );
+                };
+
+                deleteBtn.onclick = () => {
+                    if (!confirm('Remove this subtask?')) return;
+
+                    const snapshot = buildDashboardSnapshot();
+                    const prevSubtasksByTask = JSON.parse(JSON.stringify(taskSubtasksByTask || {}));
+                    const delta = -Number(log.seconds || 0);
+
+                    beginMutation();
+                    taskSubtasksByTask[taskId] = (taskSubtasksByTask[taskId] || []).filter(item => Number(item.id) !== Number(log.id));
+                    applyTodayTaskLogDelta(task.id, task.task_color, delta);
+                    renderTaskSubtasksPanel(task, panel);
+                    updateTodayTotal();
+                    renderWeeklyChart();
+                    renderMonthlyBarChart();
+                    renderSettings();
+                    renderTasks(activeTab);
+                    saveDashboardCacheFromState();
+
+                    enqueueServerMutation(
+                        () => apiRequest(`/api/work_logs/${log.id}`, { method: 'DELETE' }),
+                        {
+                            onError: (e) => {
+                                taskSubtasksByTask = prevSubtasksByTask;
+                                applyDashboardData(snapshot.data, snapshot.dtData);
+                                alert((e && e.message) || 'Failed to remove subtask.');
+                            },
+                        }
+                    );
+                };
+
+                row.appendChild(label);
+                row.appendChild(minsInput);
+                row.appendChild(saveBtn);
+                row.appendChild(deleteBtn);
+                panel.appendChild(row);
+            });
+        }
+
+        async function openTaskSubtasks(task, panel) {
+            const taskId = Number(task.id);
+            if (!Number.isFinite(taskId)) return;
+
+            panel.classList.add('open');
+            panel.innerHTML = '<div class="task-subtask-empty">Loading subtasks...</div>';
+            expandedTaskDetails.add(taskId);
+
+            try {
+                await ensureTodayTaskSubtasks(false);
+                renderTaskSubtasksPanel(task, panel);
+            } catch (e) {
+                panel.innerHTML = '<div class="task-subtask-empty">Failed to load subtasks.</div>';
+            }
+        }
+
+        function closeTaskSubtasks(task, panel) {
+            panel.classList.remove('open');
+            panel.innerHTML = '';
+            const taskId = Number(task.id);
+            if (Number.isFinite(taskId)) {
+                expandedTaskDetails.delete(taskId);
+            }
+        }
+
         function renderWeeklyChart() {
             const CHART_AREA_PX = 240;
             const MAX_HOURS = 14;
@@ -2938,9 +3236,13 @@
 
             sourceTasks.forEach(task => {
                 const li = document.createElement('li');
+                const taskRow = document.createElement('div');
+                taskRow.className = 'task-main-row';
 
                 const taskInfo = document.createElement('div');
                 taskInfo.className = 'task-info';
+                taskInfo.style.cursor = 'pointer';
+                taskInfo.title = 'Show subtasks for this task';
 
                 const taskName = document.createElement('div');
                 taskName.className = 'task-name';
@@ -3046,8 +3348,27 @@
                 taskActions.appendChild(addToggleButton);
                 taskActions.appendChild(timeLogControls);
 
-                li.appendChild(taskInfo);
-                li.appendChild(taskActions);
+                const subtasksPanel = document.createElement('div');
+                subtasksPanel.className = 'task-subtasks-panel';
+
+                taskInfo.onclick = () => {
+                    const taskId = Number(task.id);
+                    if (!Number.isFinite(taskId)) return;
+                    if (subtasksPanel.classList.contains('open')) {
+                        closeTaskSubtasks(task, subtasksPanel);
+                        return;
+                    }
+                    openTaskSubtasks(task, subtasksPanel);
+                };
+
+                taskRow.appendChild(taskInfo);
+                taskRow.appendChild(taskActions);
+                li.appendChild(taskRow);
+                li.appendChild(subtasksPanel);
+
+                if (Number.isFinite(Number(task.id)) && expandedTaskDetails.has(Number(task.id))) {
+                    openTaskSubtasks(task, subtasksPanel);
+                }
                 taskList.appendChild(li);
             });
         }
