@@ -3553,64 +3553,113 @@
             return 'dt-end-orange';
         }
 
-        async function addUnifiedTask() {
-            try {
-                const nameEl = document.getElementById('dtTaskName');
-                const recurrenceEl = document.getElementById('dtTaskRecurrence');
-                const kindEl = document.getElementById('dtTaskKind');
-                const targetEl = document.getElementById('dtTaskTarget');
-                const unitEl = document.getElementById('dtTaskUnit');
-                const headingEl = document.getElementById('dtTaskHeading');
-                const dueDateEl = document.getElementById('dtTaskDueDate');
-                const colorEl = document.getElementById('dtTaskColor');
+        function addUnifiedTask() {
+            const nameEl = document.getElementById('dtTaskName');
+            const recurrenceEl = document.getElementById('dtTaskRecurrence');
+            const kindEl = document.getElementById('dtTaskKind');
+            const targetEl = document.getElementById('dtTaskTarget');
+            const unitEl = document.getElementById('dtTaskUnit');
+            const headingEl = document.getElementById('dtTaskHeading');
+            const dueDateEl = document.getElementById('dtTaskDueDate');
+            const colorEl = document.getElementById('dtTaskColor');
 
-                const name = nameEl.value.trim();
-                if (!name) {
-                    nameEl.focus();
-                    return;
-                }
+            const name = nameEl.value.trim();
+            if (!name) {
+                nameEl.focus();
+                return;
+            }
 
-                const taskUnit = String(unitEl.value || '').trim();
-                const heading = String(headingEl.value || '').trim();
-                const taskColor = normalizeHexColor(colorEl.value);
+            const taskUnit = String(unitEl.value || '').trim();
+            const heading = String(headingEl.value || '').trim();
+            const taskColor = normalizeHexColor(colorEl.value);
+            const targetMinutes = kindEl.value === 'integer' && targetEl.value ? Number(targetEl.value) : null;
 
-                const payload = {
-                    name,
-                    recurrence: recurrenceEl.value,
-                    task_kind: kindEl.value,
-                    target_minutes: kindEl.value === 'integer' && targetEl.value ? Number(targetEl.value) : null,
-                    task_unit: kindEl.value === 'integer' ? taskUnit : '',
-                    heading,
-                    due_date: dueDateEl.value || null,
-                    color: taskColor,
-                };
+            const payload = {
+                name,
+                recurrence: recurrenceEl.value,
+                task_kind: kindEl.value,
+                target_minutes: targetMinutes,
+                task_unit: kindEl.value === 'integer' ? taskUnit : '',
+                heading,
+                due_date: dueDateEl.value || null,
+                color: taskColor,
+            };
 
-                await apiRequest('/api/daily_tasks', {
+            const previousItems = JSON.parse(JSON.stringify(dailyTasks.items || []));
+            const optimisticTask = {
+                id: `tmp-dt-${Date.now()}`,
+                name,
+                heading,
+                recurrence: payload.recurrence,
+                task_kind: payload.task_kind,
+                target_minutes: payload.target_minutes,
+                task_unit: payload.task_unit,
+                color: payload.color,
+                due_date: payload.due_date,
+                sort_order: Number.MAX_SAFE_INTEGER,
+                period_key: '',
+                period_end_date: payload.due_date || null,
+                ends_in_days: null,
+                done: false,
+                done_minutes: 0,
+            };
+
+            beginMutation();
+            dailyTasks.items = [optimisticTask, ...(dailyTasks.items || [])];
+            renderDailyTasksTab();
+            renderDailyTasksPanel();
+            saveDashboardCacheFromState();
+
+            nameEl.value = '';
+            targetEl.value = '';
+            unitEl.value = '';
+            headingEl.value = '';
+            dueDateEl.value = '';
+            colorEl.value = '#007bff';
+
+            enqueueServerMutation(
+                () => apiRequest('/api/daily_tasks', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
-                });
-
-                nameEl.value = '';
-                targetEl.value = '';
-                unitEl.value = '';
-                headingEl.value = '';
-                dueDateEl.value = '';
-                colorEl.value = '#007bff';
-                await loadTasks();
-            } catch (e) {
-                alert(e.message || 'Failed to create task.');
-            }
+                }),
+                {
+                    onSuccess: (created) => {
+                        optimisticTask.id = Number((created && created.id) || optimisticTask.id);
+                    },
+                    onError: (e) => {
+                        dailyTasks.items = previousItems;
+                        renderDailyTasksTab();
+                        renderDailyTasksPanel();
+                        alert((e && e.message) || 'Failed to create task.');
+                    },
+                }
+            );
         }
 
-        async function deleteDailyTask(id) {
-            try {
-                if (!confirm('Delete this task?')) return;
-                await apiRequest(`/api/daily_tasks/${id}`, { method: 'DELETE' });
-                await loadTasks();
-            } catch (e) {
-                alert(e.message || 'Failed to delete task.');
-            }
+        function deleteDailyTask(id) {
+            if (!confirm('Delete this task?')) return;
+
+            const taskId = Number(id);
+            const previousItems = JSON.parse(JSON.stringify(dailyTasks.items || []));
+
+            beginMutation();
+            dailyTasks.items = (dailyTasks.items || []).filter(item => Number(item.id) !== taskId);
+            renderDailyTasksTab();
+            renderDailyTasksPanel();
+            saveDashboardCacheFromState();
+
+            enqueueServerMutation(
+                () => apiRequest(`/api/daily_tasks/${taskId}`, { method: 'DELETE' }),
+                {
+                    onError: (e) => {
+                        dailyTasks.items = previousItems;
+                        renderDailyTasksTab();
+                        renderDailyTasksPanel();
+                        alert((e && e.message) || 'Failed to delete task.');
+                    },
+                }
+            );
         }
 
         function updateUnifiedTaskProgress(task, updates) {
