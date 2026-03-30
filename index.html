@@ -1127,6 +1127,22 @@
             letter-spacing: 0.5px;
             padding: 10px 4px 4px;
         }
+        .dt-group-heading {
+            font-size: 11px;
+            font-weight: 700;
+            color: #7b8794;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            padding: 10px 4px 2px;
+        }
+        .dtp-group-heading {
+            font-size: 10px;
+            font-weight: 700;
+            color: #8b95a3;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 8px 2px 2px;
+        }
 
         /* ── Daily Tasks panel under weekly graph ─ */
         .daily-tasks-panel {
@@ -1442,6 +1458,10 @@
                         </div>
                         <button class="dt-show-more-btn" id="dtTaskAdvancedToggle" type="button">Show</button>
                         <div class="dt-add-advanced" id="dtTaskAdvancedFields">
+                            <div class="dt-field-group">
+                                <label>Heading (optional)</label>
+                                <input type="text" id="dtTaskHeading" maxlength="60" placeholder="e.g. Workout" style="width:150px">
+                            </div>
                             <div class="dt-field-group" id="dtTaskUnitGroup" style="display:none">
                                 <label>Unit (optional)</label>
                                 <input type="text" id="dtTaskUnit" maxlength="20" placeholder="e.g. km" style="width:110px">
@@ -3477,6 +3497,33 @@
             return 'Daily';
         }
 
+        function normalizeTaskHeading(value) {
+            return String(value || '').trim();
+        }
+
+        function groupDailyTasksByHeading(list) {
+            const groups = new Map();
+            list.forEach(task => {
+                const heading = normalizeTaskHeading(task.heading) || 'No heading';
+                if (!groups.has(heading)) {
+                    groups.set(heading, []);
+                }
+                groups.get(heading).push(task);
+            });
+
+            const ordered = [];
+            if (groups.has('No heading')) {
+                ordered.push({ heading: 'No heading', tasks: groups.get('No heading') });
+                groups.delete('No heading');
+            }
+
+            Array.from(groups.keys()).sort((a, b) => a.localeCompare(b)).forEach(heading => {
+                ordered.push({ heading, tasks: groups.get(heading) });
+            });
+
+            return ordered;
+        }
+
         function getEndsToneClass(task) {
             const days = task.ends_in_days;
             if (days === null || days === undefined) return '';
@@ -3492,6 +3539,7 @@
                 const kindEl = document.getElementById('dtTaskKind');
                 const targetEl = document.getElementById('dtTaskTarget');
                 const unitEl = document.getElementById('dtTaskUnit');
+                const headingEl = document.getElementById('dtTaskHeading');
                 const dueDateEl = document.getElementById('dtTaskDueDate');
                 const colorEl = document.getElementById('dtTaskColor');
 
@@ -3502,6 +3550,7 @@
                 }
 
                 const taskUnit = String(unitEl.value || '').trim();
+                const heading = String(headingEl.value || '').trim();
                 const taskColor = normalizeHexColor(colorEl.value);
 
                 const payload = {
@@ -3510,6 +3559,7 @@
                     task_kind: kindEl.value,
                     target_minutes: kindEl.value === 'integer' && targetEl.value ? Number(targetEl.value) : null,
                     task_unit: kindEl.value === 'integer' ? taskUnit : '',
+                    heading,
                     due_date: dueDateEl.value || null,
                     color: taskColor,
                 };
@@ -3523,6 +3573,7 @@
                 nameEl.value = '';
                 targetEl.value = '';
                 unitEl.value = '';
+                headingEl.value = '';
                 dueDateEl.value = '';
                 colorEl.value = '#007bff';
                 await loadTasks();
@@ -3681,8 +3732,16 @@
                 return;
             }
 
-            list.forEach(task => {
-                ul.appendChild(buildUnifiedTaskItem(task, false));
+            const grouped = groupDailyTasksByHeading(list);
+            grouped.forEach(group => {
+                const headingEl = document.createElement('li');
+                headingEl.className = 'dt-group-heading';
+                headingEl.textContent = group.heading;
+                ul.appendChild(headingEl);
+
+                group.tasks.forEach(task => {
+                    ul.appendChild(buildUnifiedTaskItem(task, false));
+                });
             });
         }
 
@@ -3699,8 +3758,16 @@
                 return;
             }
 
-            list.forEach(task => {
-                panel.appendChild(buildUnifiedTaskItem(task, true));
+            const grouped = groupDailyTasksByHeading(list);
+            grouped.forEach(group => {
+                const headingEl = document.createElement('li');
+                headingEl.className = 'dtp-group-heading';
+                headingEl.textContent = group.heading;
+                panel.appendChild(headingEl);
+
+                group.tasks.forEach(task => {
+                    panel.appendChild(buildUnifiedTaskItem(task, true));
+                });
             });
         }
 
