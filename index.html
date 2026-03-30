@@ -1717,8 +1717,10 @@
         let syncError = false;
         let mutationQueue = Promise.resolve();
         const DASHBOARD_CACHE_KEY_PREFIX = 'dailyTracker.dashboardCache';
+        const SUBTASKS_CACHE_KEY_PREFIX = 'dailyTracker.taskSubtasks';
         let taskSubtasksCacheDate = '';
         let taskSubtasksByTask = {};
+        let taskSubtasksFetchSequence = 0;
         const expandedTaskDetails = new Set();
 
         function normalizeHexColor(value, fallback = '#007bff') {
@@ -1770,6 +1772,40 @@
             const userId = authSession && authSession.user && authSession.user.id ? String(authSession.user.id) : '';
             if (!userId) return '';
             return `${DASHBOARD_CACHE_KEY_PREFIX}:${userId}`;
+        }
+
+        function getSubtasksCacheKey(dateIso) {
+            const userId = authSession && authSession.user && authSession.user.id ? String(authSession.user.id) : '';
+            const dateKey = String(dateIso || '').trim();
+            if (!userId || !dateKey) return '';
+            return `${SUBTASKS_CACHE_KEY_PREFIX}:${userId}:${dateKey}`;
+        }
+
+        function saveSubtasksCache(dateIso, grouped) {
+            const cacheKey = getSubtasksCacheKey(dateIso);
+            if (!cacheKey) return;
+            try {
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    saved_at: Date.now(),
+                    grouped,
+                }));
+            } catch (e) {
+                // Ignore cache write failures.
+            }
+        }
+
+        function loadSubtasksCache(dateIso) {
+            const cacheKey = getSubtasksCacheKey(dateIso);
+            if (!cacheKey) return null;
+            try {
+                const raw = localStorage.getItem(cacheKey);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (!parsed || typeof parsed !== 'object' || !parsed.grouped) return null;
+                return parsed.grouped;
+            } catch (e) {
+                return null;
+            }
         }
 
         function saveDashboardCache(data, dtData) {
@@ -1863,6 +1899,7 @@
         }
 
         function invalidateTaskSubtasksCache() {
+            taskSubtasksFetchSequence += 1;
             taskSubtasksCacheDate = '';
             taskSubtasksByTask = {};
         }
@@ -2920,15 +2957,53 @@
 
         function formatSubtaskType(entryType) {
             const key = String(entryType || '').toLowerCase();
-            if (key === 'timer') return 'Timer';
-            if (key === 'manual_add') return 'Manual add';
-            if (key === 'manual_create') return 'Initial add';
-            return key || 'Entry';
+            if (key === 'timer') return 'timer';
+            if (key === 'manual_add' || key === 'manual_create') return 'manual';
+            return 'manual';
         }
 
         async function ensureTodayTaskSubtasks(force = false) {
             const todayIso = currentLogicalDate || getCurrentLogicalDateClient();
             if (!force && taskSubtasksCacheDate === todayIso) return;
+
+            if (!force) {
+                const cached = loadSubtasksCache(todayIso);
+                if (cached) {
+                    taskSubtasksCacheDate = todayIso;
+                    taskSubtasksByTask = cached;
+
+                    // Refresh in background so cache-first remains fast but accurate.
+                    const bgFetchSeq = ++taskSubtasksFetchSequence;
+                    apiRequest(`/api/day_logs?date=${todayIso}`).then(data => {
+                        const grouped = {};
+                        (data.logs || []).forEach(log => {
+                            const taskId = Number(log.task_id);
+                            if (!grouped[taskId]) grouped[taskId] = [];
+                            grouped[taskId].push({
+                                id: Number(log.id),
+                                task_id: taskId,
+                                seconds: Number(log.seconds || 0),
+                                entry_type: String(log.entry_type || ''),
+                                created_at: log.created_at,
+                            });
+                        });
+                        Object.values(grouped).forEach(logs => {
+                            logs.sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+                        });
+                        if (bgFetchSeq !== taskSubtasksFetchSequence) return;
+                        taskSubtasksCacheDate = todayIso;
+                        taskSubtasksByTask = grouped;
+                        saveSubtasksCache(todayIso, grouped);
+                        renderTasks(activeTab);
+                    }).catch(() => {
+                        // Keep using cached view if background refresh fails.
+                    });
+
+                    return;
+                }
+            }
+
+            const fetchSeq = ++taskSubtasksFetchSequence;
 
             const data = await apiRequest(`/api/day_logs?date=${todayIso}`);
             const grouped = {};
@@ -2945,11 +3020,14 @@
             });
 
             Object.values(grouped).forEach(logs => {
-                logs.sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+                logs.sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
             });
+
+            if (fetchSeq !== taskSubtasksFetchSequence) return;
 
             taskSubtasksCacheDate = todayIso;
             taskSubtasksByTask = grouped;
+            saveSubtasksCache(todayIso, grouped);
         }
 
         function renderTaskSubtasksPanel(task, panel) {
@@ -2965,16 +3043,13 @@
                 return;
             }
 
-            logs.forEach(log => {
+            logs.forEach((log, index) => {
                 const row = document.createElement('div');
                 row.className = 'task-subtask-row';
 
                 const label = document.createElement('div');
                 label.className = 'task-subtask-label';
-                const atText = formatSubtaskCreatedTime(log.created_at);
-                label.textContent = atText
-                    ? `${formatSubtaskType(log.entry_type)} at ${atText}`
-                    : formatSubtaskType(log.entry_type);
+                label.textContent = `Entry ${index + 1} - ${formatSubtaskType(log.entry_type)}`;
 
                 const minsInput = document.createElement('input');
                 minsInput.type = 'number';
@@ -3002,8 +3077,6 @@
                     const prevSeconds = Number(log.seconds || 0);
                     if (nextSeconds === prevSeconds) return;
 
-                    const snapshot = buildDashboardSnapshot();
-                    const prevSubtasksByTask = JSON.parse(JSON.stringify(taskSubtasksByTask || {}));
                     const delta = nextSeconds - prevSeconds;
 
                     beginMutation();
@@ -3015,6 +3088,7 @@
                     renderMonthlyBarChart();
                     renderSettings();
                     renderTasks(activeTab);
+                    saveSubtasksCache(taskSubtasksCacheDate || (currentLogicalDate || getCurrentLogicalDateClient()), taskSubtasksByTask);
                     saveDashboardCacheFromState();
 
                     enqueueServerMutation(
@@ -3025,8 +3099,10 @@
                         }),
                         {
                             onError: (e) => {
-                                taskSubtasksByTask = prevSubtasksByTask;
-                                applyDashboardData(snapshot.data, snapshot.dtData);
+                                log.seconds = prevSeconds;
+                                applyTodayTaskLogDelta(task.id, task.task_color, -delta);
+                                renderTaskSubtasksPanel(task, panel);
+                                renderTasks(activeTab);
                                 alert((e && e.message) || 'Failed to update subtask time.');
                             },
                         }
@@ -3036,9 +3112,8 @@
                 deleteBtn.onclick = () => {
                     if (!confirm('Remove this subtask?')) return;
 
-                    const snapshot = buildDashboardSnapshot();
-                    const prevSubtasksByTask = JSON.parse(JSON.stringify(taskSubtasksByTask || {}));
                     const delta = -Number(log.seconds || 0);
+                    const beforeList = (taskSubtasksByTask[taskId] || []).slice();
 
                     beginMutation();
                     taskSubtasksByTask[taskId] = (taskSubtasksByTask[taskId] || []).filter(item => Number(item.id) !== Number(log.id));
@@ -3049,14 +3124,17 @@
                     renderMonthlyBarChart();
                     renderSettings();
                     renderTasks(activeTab);
+                    saveSubtasksCache(taskSubtasksCacheDate || (currentLogicalDate || getCurrentLogicalDateClient()), taskSubtasksByTask);
                     saveDashboardCacheFromState();
 
                     enqueueServerMutation(
                         () => apiRequest(`/api/work_logs/${log.id}`, { method: 'DELETE' }),
                         {
                             onError: (e) => {
-                                taskSubtasksByTask = prevSubtasksByTask;
-                                applyDashboardData(snapshot.data, snapshot.dtData);
+                                taskSubtasksByTask[taskId] = beforeList;
+                                applyTodayTaskLogDelta(task.id, task.task_color, -delta);
+                                renderTaskSubtasksPanel(task, panel);
+                                renderTasks(activeTab);
                                 alert((e && e.message) || 'Failed to remove subtask.');
                             },
                         }
