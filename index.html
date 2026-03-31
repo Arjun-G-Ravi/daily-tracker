@@ -2412,6 +2412,7 @@
 
         async function loadTasks() {
             const refreshCtx = beginDataRefresh('full');
+            const previousLogicalDate = currentLogicalDate;
             try {
                 const [data, dtData] = await Promise.all([
                     apiRequest('/api/tasks', { signal: refreshCtx.controller.signal }),
@@ -2420,7 +2421,11 @@
 
                 if (refreshCtx.sequence !== dataRefreshSequence) return;
                 applyDashboardData(data, dtData);
-                invalidateTaskSubtasksCache();
+                if (previousLogicalDate && currentLogicalDate && previousLogicalDate !== currentLogicalDate) {
+                    invalidateTaskSubtasksCache();
+                } else {
+                    markTaskSubtasksDirty();
+                }
                 saveDashboardCache(data, dtData);
                 syncError = false;
             } catch (e) {
@@ -3104,6 +3109,7 @@
         function buildGroupedSubtasksFromLogs(logs) {
             const grouped = {};
             const existingById = {};
+            const seenServerIds = new Set();
             Object.values(taskSubtasksByTask || {}).forEach(taskLogs => {
                 (taskLogs || []).forEach(item => {
                     existingById[String(item.id)] = item;
@@ -3135,6 +3141,7 @@
                     updated_at: log.updated_at || null,
                     updated_at_ms: serverUpdatedAtMs,
                 };
+                seenServerIds.add(logIdKey);
 
                 const existingEntry = existingById[logIdKey];
                 const localUpdatedAtMs = Number(existingEntry && existingEntry.updated_at_ms ? existingEntry.updated_at_ms : 0);
@@ -3142,6 +3149,20 @@
 
                 if (!grouped[taskId]) grouped[taskId] = [];
                 grouped[taskId].push(preferredEntry);
+            });
+
+            // Preserve local rows omitted by server payload to prevent sync flicker/hide.
+            Object.keys(existingById).forEach(existingIdKey => {
+                if (seenServerIds.has(existingIdKey)) return;
+                if (existingIdKey.startsWith('tmp-')) return;
+                const deletedAtMs = Number(taskSubtasksDeletedAtById[existingIdKey] || 0);
+                if (deletedAtMs > 0) return;
+
+                const existingEntry = existingById[existingIdKey];
+                const taskId = Number(existingEntry.task_id);
+                if (!Number.isFinite(taskId)) return;
+                if (!grouped[taskId]) grouped[taskId] = [];
+                grouped[taskId].push(existingEntry);
             });
 
             Object.values(grouped).forEach(taskLogs => {
