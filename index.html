@@ -3304,7 +3304,10 @@
         }
 
         function renderTasks(tabType) {
-            const taskList = document.getElementById(`${tabType}TaskList`);
+            if (tabType !== 'weekly' && tabType !== 'monthly') return;
+
+            const taskListId = tabType === 'weekly' ? 'weeklyTaskList' : 'monthlyTaskList';
+            const taskList = document.getElementById(taskListId);
             if (!taskList) return;
             taskList.innerHTML = '';
             
