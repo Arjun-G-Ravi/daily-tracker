@@ -1768,6 +1768,10 @@
         let taskSubtasksCacheDate = '';
         let taskSubtasksByTask = {};
         let taskSubtasksFetchSequence = 0;
+        let taskSubtasksNeedsRefresh = false;
+        let taskSubtasksLastServerSyncDate = '';
+        let taskSubtasksFetchInFlight = false;
+        let taskSubtasksDeletedAtById = {};
         const expandedTaskDetails = new Set();
 
         function normalizeHexColor(value, fallback = '#007bff') {
@@ -1950,6 +1954,14 @@
             taskSubtasksFetchSequence += 1;
             taskSubtasksCacheDate = '';
             taskSubtasksByTask = {};
+            taskSubtasksNeedsRefresh = false;
+            taskSubtasksLastServerSyncDate = '';
+            taskSubtasksFetchInFlight = false;
+            taskSubtasksDeletedAtById = {};
+        }
+
+        function markTaskSubtasksDirty() {
+            taskSubtasksNeedsRefresh = true;
         }
 
         function getCurrentSubtasksDate() {
@@ -2586,6 +2598,7 @@
             const task = findTaskById(taskId);
             const prevRunning = task ? !!task.running : false;
             if (task) task.running = false;
+            markTaskSubtasksDirty();
             rerenderAfterTaskMutation();
             saveDashboardCacheFromState();
 
@@ -2707,6 +2720,7 @@
             };
 
             if (!workDate || workDate === currentLogicalDate) {
+                markTaskSubtasksDirty();
                 const increment = Math.max(0, totalSeconds);
                 const task = findTaskById(taskId);
                 const taskColor = task ? task.task_color : '#007bff';
@@ -2718,12 +2732,13 @@
                     const taskIdNum = Number(taskId);
                     if (!subtasksForToday[taskIdNum]) subtasksForToday[taskIdNum] = [];
                     subtasksForToday[taskIdNum].push({
-                        id: Date.now(),
+                        id: `tmp-${Date.now()}`,
                         task_id: taskIdNum,
                         seconds: increment,
                         entry_type: 'manual_add',
                         timer_started_at: null,
                         timer_ended_at: null,
+                        updated_at_ms: Date.now(),
                         created_at: new Date().toISOString(),
                     });
                     saveSubtasksCache(todayIso, subtasksForToday);
@@ -3079,6 +3094,63 @@
             return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
         }
 
+        function parseIsoToMs(value) {
+            if (!value) return 0;
+            const parsed = new Date(String(value).replace(' ', 'T'));
+            const ms = parsed.getTime();
+            return Number.isNaN(ms) ? 0 : ms;
+        }
+
+        function buildGroupedSubtasksFromLogs(logs) {
+            const grouped = {};
+            const existingById = {};
+            Object.values(taskSubtasksByTask || {}).forEach(taskLogs => {
+                (taskLogs || []).forEach(item => {
+                    existingById[String(item.id)] = item;
+                });
+            });
+
+            (logs || []).forEach(log => {
+                const taskId = Number(log.task_id);
+                const logIdKey = String(log.id);
+                const serverUpdatedAtMs = Math.max(
+                    parseIsoToMs(log.updated_at),
+                    parseIsoToMs(log.created_at),
+                    Number(log.timer_ended_at || 0) * 1000,
+                );
+
+                const deletedAtMs = Number(taskSubtasksDeletedAtById[logIdKey] || 0);
+                if (deletedAtMs > 0 && deletedAtMs >= serverUpdatedAtMs) {
+                    return;
+                }
+
+                const serverEntry = {
+                    id: Number(log.id),
+                    task_id: taskId,
+                    seconds: Number(log.seconds || 0),
+                    entry_type: String(log.entry_type || ''),
+                    timer_started_at: log.timer_started_at != null ? Number(log.timer_started_at) : null,
+                    timer_ended_at: log.timer_ended_at != null ? Number(log.timer_ended_at) : null,
+                    created_at: log.created_at,
+                    updated_at: log.updated_at || null,
+                    updated_at_ms: serverUpdatedAtMs,
+                };
+
+                const existingEntry = existingById[logIdKey];
+                const localUpdatedAtMs = Number(existingEntry && existingEntry.updated_at_ms ? existingEntry.updated_at_ms : 0);
+                const preferredEntry = localUpdatedAtMs > serverUpdatedAtMs ? existingEntry : serverEntry;
+
+                if (!grouped[taskId]) grouped[taskId] = [];
+                grouped[taskId].push(preferredEntry);
+            });
+
+            Object.values(grouped).forEach(taskLogs => {
+                taskLogs.sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+            });
+
+            return grouped;
+        }
+
         function getTimerRangeText(log) {
             const startedAt = Number(log.timer_started_at || 0);
             const endedAt = Number(log.timer_ended_at || 0);
@@ -3108,7 +3180,16 @@
 
         async function ensureTodayTaskSubtasks(force = false) {
             const todayIso = currentLogicalDate || getCurrentLogicalDateClient();
-            if (!force && taskSubtasksCacheDate === todayIso) return;
+            if (
+                !force
+                && taskSubtasksCacheDate === todayIso
+                && !taskSubtasksNeedsRefresh
+                && taskSubtasksLastServerSyncDate === todayIso
+            ) {
+                return;
+            }
+
+            if (!force && taskSubtasksFetchInFlight) return;
 
             if (!force) {
                 const cached = loadSubtasksCache(todayIso);
@@ -3118,31 +3199,20 @@
 
                     // Refresh in background so cache-first remains fast but accurate.
                     const bgFetchSeq = ++taskSubtasksFetchSequence;
+                    taskSubtasksFetchInFlight = true;
                     apiRequest(`/api/day_logs?date=${todayIso}`).then(data => {
-                        const grouped = {};
-                        (data.logs || []).forEach(log => {
-                            const taskId = Number(log.task_id);
-                            if (!grouped[taskId]) grouped[taskId] = [];
-                            grouped[taskId].push({
-                                id: Number(log.id),
-                                task_id: taskId,
-                                seconds: Number(log.seconds || 0),
-                                entry_type: String(log.entry_type || ''),
-                                timer_started_at: log.timer_started_at != null ? Number(log.timer_started_at) : null,
-                                timer_ended_at: log.timer_ended_at != null ? Number(log.timer_ended_at) : null,
-                                created_at: log.created_at,
-                            });
-                        });
-                        Object.values(grouped).forEach(logs => {
-                            logs.sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
-                        });
+                        const grouped = buildGroupedSubtasksFromLogs(data.logs || []);
                         if (bgFetchSeq !== taskSubtasksFetchSequence) return;
                         taskSubtasksCacheDate = todayIso;
                         taskSubtasksByTask = grouped;
+                        taskSubtasksNeedsRefresh = false;
+                        taskSubtasksLastServerSyncDate = todayIso;
                         saveSubtasksCache(todayIso, grouped);
                         renderTasks(activeTab);
                     }).catch(() => {
                         // Keep using cached view if background refresh fails.
+                    }).finally(() => {
+                        taskSubtasksFetchInFlight = false;
                     });
 
                     return;
@@ -3150,32 +3220,22 @@
             }
 
             const fetchSeq = ++taskSubtasksFetchSequence;
+            taskSubtasksFetchInFlight = true;
 
-            const data = await apiRequest(`/api/day_logs?date=${todayIso}`);
-            const grouped = {};
-            (data.logs || []).forEach(log => {
-                const taskId = Number(log.task_id);
-                if (!grouped[taskId]) grouped[taskId] = [];
-                grouped[taskId].push({
-                    id: Number(log.id),
-                    task_id: taskId,
-                    seconds: Number(log.seconds || 0),
-                    entry_type: String(log.entry_type || ''),
-                    timer_started_at: log.timer_started_at != null ? Number(log.timer_started_at) : null,
-                    timer_ended_at: log.timer_ended_at != null ? Number(log.timer_ended_at) : null,
-                    created_at: log.created_at,
-                });
-            });
+            try {
+                const data = await apiRequest(`/api/day_logs?date=${todayIso}`);
+                const grouped = buildGroupedSubtasksFromLogs(data.logs || []);
 
-            Object.values(grouped).forEach(logs => {
-                logs.sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
-            });
+                if (fetchSeq !== taskSubtasksFetchSequence) return;
 
-            if (fetchSeq !== taskSubtasksFetchSequence) return;
-
-            taskSubtasksCacheDate = todayIso;
-            taskSubtasksByTask = grouped;
-            saveSubtasksCache(todayIso, grouped);
+                taskSubtasksCacheDate = todayIso;
+                taskSubtasksByTask = grouped;
+                taskSubtasksNeedsRefresh = false;
+                taskSubtasksLastServerSyncDate = todayIso;
+                saveSubtasksCache(todayIso, grouped);
+            } finally {
+                taskSubtasksFetchInFlight = false;
+            }
         }
 
         function renderTaskSubtasksPanel(task, panel) {
@@ -3237,6 +3297,7 @@
 
                     beginMutation();
                     log.seconds = nextSeconds;
+                    log.updated_at_ms = Date.now();
                     applyTodayTaskLogDelta(task.id, task.task_color, delta);
                     renderTaskSubtasksPanel(task, panel);
                     updateTodayTotal();
@@ -3270,8 +3331,10 @@
 
                     const delta = -Number(log.seconds || 0);
                     const beforeList = (taskSubtasksByTask[taskId] || []).slice();
+                    const logIdKey = String(log.id);
 
                     beginMutation();
+                    taskSubtasksDeletedAtById[logIdKey] = Date.now();
                     taskSubtasksByTask[taskId] = (taskSubtasksByTask[taskId] || []).filter(item => Number(item.id) !== Number(log.id));
                     applyTodayTaskLogDelta(task.id, task.task_color, delta);
                     renderTaskSubtasksPanel(task, panel);
@@ -3287,6 +3350,7 @@
                         () => apiRequest(`/api/work_logs/${log.id}`, { method: 'DELETE' }),
                         {
                             onError: (e) => {
+                                delete taskSubtasksDeletedAtById[logIdKey];
                                 taskSubtasksByTask[taskId] = beforeList;
                                 applyTodayTaskLogDelta(task.id, task.task_color, -delta);
                                 renderTaskSubtasksPanel(task, panel);

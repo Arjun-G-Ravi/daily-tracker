@@ -308,6 +308,7 @@ def init_postgres_db(db):
             entry_type TEXT NOT NULL,
             timer_started_at BIGINT,
             timer_ended_at BIGINT,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE
         )
@@ -394,6 +395,8 @@ def init_postgres_db(db):
     db.execute("ALTER TABLE daily_tasks ADD COLUMN IF NOT EXISTS heading TEXT NOT NULL DEFAULT ''")
     db.execute("ALTER TABLE work_logs ADD COLUMN IF NOT EXISTS timer_started_at BIGINT")
     db.execute("ALTER TABLE work_logs ADD COLUMN IF NOT EXISTS timer_ended_at BIGINT")
+    db.execute("ALTER TABLE work_logs ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()")
+    db.execute("UPDATE work_logs SET updated_at = created_at WHERE updated_at IS NULL")
 
     db.execute("UPDATE daily_tasks SET recurrence = 'one_time' WHERE recurrence = 'none'")
     db.execute("UPDATE daily_tasks SET task_kind = 'integer' WHERE task_kind = 'timed'")
@@ -437,6 +440,7 @@ def init_db():
             entry_type TEXT NOT NULL,
             timer_started_at INTEGER,
             timer_ended_at INTEGER,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE
         )
@@ -526,6 +530,9 @@ def init_db():
         db.execute("ALTER TABLE work_logs ADD COLUMN timer_started_at INTEGER")
     if 'timer_ended_at' not in work_log_column_names:
         db.execute("ALTER TABLE work_logs ADD COLUMN timer_ended_at INTEGER")
+    if 'updated_at' not in work_log_column_names:
+        db.execute("ALTER TABLE work_logs ADD COLUMN updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP")
+        db.execute("UPDATE work_logs SET updated_at = created_at WHERE updated_at IS NULL")
     # Migrate daily_tasks table for recurrence-based design
     dt_columns = db.execute("PRAGMA table_info(daily_tasks)").fetchall()
     dt_column_names = {col['name'] for col in dt_columns}
@@ -1304,7 +1311,7 @@ def get_day_logs():
     rows = db.execute(
         '''
         SELECT w.id, w.task_id, w.work_date, w.seconds, w.entry_type, w.created_at,
-             w.timer_started_at, w.timer_ended_at,
+             w.timer_started_at, w.timer_ended_at, w.updated_at,
                t.name AS task_name, t.task_color
         FROM work_logs w
         JOIN tasks t ON t.id = w.task_id
@@ -1326,6 +1333,7 @@ def get_day_logs():
             'entry_type': row['entry_type'],
             'timer_started_at': int(row['timer_started_at']) if row['timer_started_at'] is not None else None,
             'timer_ended_at': int(row['timer_ended_at']) if row['timer_ended_at'] is not None else None,
+            'updated_at': row['updated_at'],
             'created_at': row['created_at'],
         })
 
@@ -1357,7 +1365,7 @@ def update_work_log(log_id):
     old_seconds = int(log['seconds'])
     diff = seconds - old_seconds
     new_elapsed = max(0, int(log['elapsed_seconds']) + diff)
-    db.execute('UPDATE work_logs SET seconds = ? WHERE id = ?', (seconds, log_id))
+    db.execute('UPDATE work_logs SET seconds = ?, updated_at = ? WHERE id = ?', (seconds, datetime.utcnow().isoformat() + 'Z', log_id))
     db.execute(
         'UPDATE tasks SET elapsed_seconds = ? WHERE id = ? AND owner_id = ?',
         (new_elapsed, int(log['task_id']), user_id),
