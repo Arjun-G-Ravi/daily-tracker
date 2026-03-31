@@ -42,6 +42,7 @@ POSTGRES_DSN = str(os.getenv('SUPABASE_DB_URL', '')).strip() or str(os.getenv('D
 DEFAULT_TASK_COLOR = '#007bff'
 DEFAULT_DAY_START_HOUR = 2
 DEFAULT_WEEK_START_DAY = 'sunday'
+DEFAULT_CHART_INCLUDE_NON_WORK = True
 HEX_COLOR_RE = re.compile(r'^#[0-9a-fA-F]{6}$')
 VALID_WEEK_START_DAYS = {
     'sunday': 6,
@@ -582,6 +583,20 @@ def get_week_start_day():
     return value
 
 
+def get_chart_include_non_work():
+    db = get_db()
+    user_id = get_current_user_id()
+    row = db.execute(
+        "SELECT value FROM user_settings WHERE owner_id = ? AND key = 'chart_include_non_work'",
+        (user_id,),
+    ).fetchone()
+    if not row:
+        return DEFAULT_CHART_INCLUDE_NON_WORK
+
+    value = str(row['value']).strip().lower()
+    return value not in ('0', 'false', 'no', 'off')
+
+
 def get_week_start_date(date_obj, week_start_day):
     start_weekday = VALID_WEEK_START_DAYS.get(week_start_day, VALID_WEEK_START_DAYS[DEFAULT_WEEK_START_DAY])
     days_since_start = (date_obj.weekday() - start_weekday) % 7
@@ -806,7 +821,7 @@ def get_today_task_seconds():
     return result
 
 
-def get_weekly_color_breakdown():
+def get_weekly_color_breakdown(include_non_work=True):
     db = get_db()
     user_id = get_current_user_id()
     day_start_hour = get_day_start_hour()
@@ -826,14 +841,17 @@ def get_weekly_color_breakdown():
             'colors': {},
         }
 
-    logged_rows = db.execute(
-        '''
+    logged_query = '''
         SELECT w.work_date, t.task_color, COALESCE(SUM(w.seconds), 0) AS total_seconds
         FROM work_logs w
         JOIN tasks t ON t.id = w.task_id
         WHERE w.work_date BETWEEN ? AND ? AND t.owner_id = ?
-        GROUP BY w.work_date, t.task_color
-        ''',
+    '''
+    if not include_non_work:
+        logged_query += ' AND t.is_work = 1'
+    logged_query += ' GROUP BY w.work_date, t.task_color'
+    logged_rows = db.execute(
+        logged_query,
         (week_start.isoformat(), week_end.isoformat(), user_id),
     ).fetchall()
 
@@ -846,8 +864,11 @@ def get_weekly_color_breakdown():
         day_data[work_date]['colors'][color] = day_data[work_date]['colors'].get(color, 0) + seconds
         day_data[work_date]['total_seconds'] += seconds
 
+    running_query = 'SELECT started_at, task_color FROM tasks WHERE owner_id = ? AND running = 1 AND started_at IS NOT NULL'
+    if not include_non_work:
+        running_query += ' AND is_work = 1'
     running_rows = db.execute(
-        'SELECT started_at, task_color FROM tasks WHERE owner_id = ? AND running = 1 AND started_at IS NOT NULL',
+        running_query,
         (user_id,),
     ).fetchall()
 
@@ -978,6 +999,8 @@ def get_tasks():
     ).fetchall()
 
     day_start_hour = get_day_start_hour()
+    chart_include_non_work = get_chart_include_non_work()
+
     response = {
         'weekly': [],
         'monthly': [],
@@ -989,6 +1012,7 @@ def get_tasks():
         'monthly_overview': [],
         'day_start_hour': day_start_hour,
         'week_start_day': get_week_start_day(),
+        'chart_include_non_work': chart_include_non_work,
         'current_logical_date': get_logical_now(day_start_hour).date().isoformat(),
     }
 
@@ -996,7 +1020,7 @@ def get_tasks():
         response['today_total_seconds'] = get_today_total_seconds()
         response['today_color_breakdown'] = get_today_color_breakdown()
         response['today_task_seconds'] = get_today_task_seconds()
-        response['weekly_color_breakdown'] = get_weekly_color_breakdown()
+        response['weekly_color_breakdown'] = get_weekly_color_breakdown(chart_include_non_work)
         response['monthly_overview'] = get_monthly_overview()
 
     for row in rows:
@@ -1189,6 +1213,24 @@ def update_week_start_day():
     )
     db.commit()
     return flask.jsonify({'ok': True, 'week_start_day': week_start_day})
+
+
+@app.route('/api/settings/chart_visibility', methods=['PUT'])
+def update_chart_visibility_settings():
+    data = flask.request.get_json(silent=True) or {}
+    include_non_work = bool(data.get('include_non_work', DEFAULT_CHART_INCLUDE_NON_WORK))
+
+    db = get_db()
+    user_id = get_current_user_id()
+    db.execute(
+        '''
+        INSERT INTO user_settings (owner_id, key, value) VALUES (?, ?, ?)
+        ON CONFLICT(owner_id, key) DO UPDATE SET value = excluded.value
+        ''',
+        (user_id, 'chart_include_non_work', '1' if include_non_work else '0'),
+    )
+    db.commit()
+    return flask.jsonify({'ok': True, 'include_non_work': include_non_work})
 
 
 @app.route('/api/tasks/<int:task_id>/is_work', methods=['PUT'])

@@ -494,6 +494,43 @@
             padding: 0 10px;
             background: #fff;
         }
+        .settings-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+            flex: 0 0 auto;
+        }
+        .settings-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .settings-switch-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: #b0b9c7;
+            transition: .2s;
+            border-radius: 999px;
+        }
+        .settings-switch-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            top: 3px;
+            background-color: white;
+            transition: .2s;
+            border-radius: 50%;
+        }
+        .settings-switch input:checked + .settings-switch-slider {
+            background-color: #17a2b8;
+        }
+        .settings-switch input:checked + .settings-switch-slider:before {
+            transform: translateX(18px);
+        }
         .settings-divider {
             height: 1px;
             background: #edf1f5;
@@ -1600,6 +1637,15 @@
                                 <button onclick="saveWeekStartDay()">Save</button>
                             </div>
 
+                            <div class="settings-section-title">Weekly Chart Filter</div>
+                            <div class="settings-field-row">
+                                <span>Show non-work tasks in right chart</span>
+                                <label class="settings-switch" title="Include non-work tasks">
+                                    <input type="checkbox" id="settingsChartIncludeNonWork" onchange="saveChartVisibilitySetting()">
+                                    <span class="settings-switch-slider"></span>
+                                </label>
+                            </div>
+
                             <div class="settings-divider"></div>
 
                             <div class="settings-section-title">Add Time for Any Day</div>
@@ -1702,6 +1748,7 @@
         let dayStartHour = 2;
         let weekStartDay = 'sunday';
         let currentLogicalDate = '';
+        let chartIncludeNonWork = true;
         let activeTab = 'weekly';
         let calendarYear = null;
         let calendarMonth = null;
@@ -1863,6 +1910,7 @@
             weeklyChartMaxSeconds = data.weekly_chart_max_seconds || (14 * 3600);
             dayStartHour = Number(data.day_start_hour ?? dayStartHour);
             weekStartDay = data.week_start_day || weekStartDay;
+            chartIncludeNonWork = data.chart_include_non_work !== false;
             currentLogicalDate = data.current_logical_date || currentLogicalDate;
 
             if (dtData) {
@@ -1932,6 +1980,7 @@
                     monthly_overview: monthlyOverview,
                     day_start_hour: dayStartHour,
                     week_start_day: weekStartDay,
+                    chart_include_non_work: chartIncludeNonWork,
                     current_logical_date: currentLogicalDate,
                 },
                 dtData: {
@@ -2365,6 +2414,7 @@
                 tasks.monthly = (data.monthly || []).map(normalizeTaskColor);
                 dayStartHour = Number(data.day_start_hour ?? dayStartHour);
                 weekStartDay = data.week_start_day || weekStartDay;
+                chartIncludeNonWork = data.chart_include_non_work !== false;
                 currentLogicalDate = data.current_logical_date || currentLogicalDate;
 
                 updateCurrentDayLabel();
@@ -2728,6 +2778,32 @@
                 await loadTasks();
             } catch (e) {
                 alert(e.message || 'Failed to save week start day.');
+            }
+        }
+
+        async function saveChartVisibilitySetting() {
+            const chartToggle = document.getElementById('settingsChartIncludeNonWork');
+            if (!chartToggle) return;
+
+            const previousValue = chartIncludeNonWork;
+            chartIncludeNonWork = !!chartToggle.checked;
+
+            try {
+                await apiRequest('/api/settings/chart_visibility', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        include_non_work: chartIncludeNonWork,
+                    })
+                });
+
+                await loadTasks();
+            } catch (e) {
+                chartIncludeNonWork = previousValue;
+                chartToggle.checked = previousValue;
+                alert(e.message || 'Failed to save chart filter setting.');
             }
         }
 
@@ -3797,6 +3873,11 @@
             const settingsWeekStartDay = document.getElementById('settingsWeekStartDay');
             if (settingsWeekStartDay) {
                 settingsWeekStartDay.value = weekStartDay || 'sunday';
+            }
+
+            const settingsChartIncludeNonWork = document.getElementById('settingsChartIncludeNonWork');
+            if (settingsChartIncludeNonWork) {
+                settingsChartIncludeNonWork.checked = !!chartIncludeNonWork;
             }
 
             const allTasks = [
