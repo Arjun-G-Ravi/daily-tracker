@@ -1952,6 +1952,23 @@
             taskSubtasksByTask = {};
         }
 
+        function getCurrentSubtasksDate() {
+            return currentLogicalDate || getCurrentLogicalDateClient();
+        }
+
+        function getTaskSubtasksForDate(dateIso) {
+            const dateKey = String(dateIso || '').trim();
+            if (!dateKey) return null;
+            if (taskSubtasksCacheDate === dateKey) return taskSubtasksByTask;
+            const cached = loadSubtasksCache(dateKey);
+            if (cached) {
+                taskSubtasksCacheDate = dateKey;
+                taskSubtasksByTask = cached;
+                return taskSubtasksByTask;
+            }
+            return null;
+        }
+
         function hydrateDashboardFromCache() {
             const cacheKey = getDashboardCacheKey();
             if (!cacheKey) return false;
@@ -2670,7 +2687,6 @@
 
         function addManualSeconds(taskId, seconds, workDate = '') {
             beginMutation();
-            invalidateTaskSubtasksCache();
             const totalSeconds = Math.floor(Number(seconds || 0));
             if (totalSeconds <= 0) {
                 endMutation();
@@ -2697,6 +2713,22 @@
                 const todayIso = getCurrentLogicalDateClient();
                 const todayEntry = weeklyColorBreakdown.find(entry => entry.date === todayIso);
 
+                const subtasksForToday = getTaskSubtasksForDate(todayIso);
+                if (subtasksForToday) {
+                    const taskIdNum = Number(taskId);
+                    if (!subtasksForToday[taskIdNum]) subtasksForToday[taskIdNum] = [];
+                    subtasksForToday[taskIdNum].push({
+                        id: Date.now(),
+                        task_id: taskIdNum,
+                        seconds: increment,
+                        entry_type: 'manual_add',
+                        timer_started_at: null,
+                        timer_ended_at: null,
+                        created_at: new Date().toISOString(),
+                    });
+                    saveSubtasksCache(todayIso, subtasksForToday);
+                }
+
                 todayTaskSeconds[taskId] = Number(todayTaskSeconds[taskId] || 0) + increment;
                 todayTotalSeconds += increment;
                 addSecondsToColorBreakdown(todayColorBreakdown, taskColor, increment);
@@ -2722,6 +2754,7 @@
                 }),
                 {
                     onError: (e) => {
+                        invalidateTaskSubtasksCache();
                         todayTaskSeconds = snapshotBefore.todayTaskSeconds;
                         todayTotalSeconds = snapshotBefore.todayTotalSeconds;
                         todayColorBreakdown = snapshotBefore.todayColorBreakdown;
@@ -3038,6 +3071,41 @@
             return 'manual';
         }
 
+        function formatClockFromUnixSeconds(value) {
+            const ts = Number(value || 0);
+            if (!Number.isFinite(ts) || ts <= 0) return '';
+            const date = new Date(ts * 1000);
+            if (Number.isNaN(date.getTime())) return '';
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+
+        function getTimerRangeText(log) {
+            const startedAt = Number(log.timer_started_at || 0);
+            const endedAt = Number(log.timer_ended_at || 0);
+            let startTs = startedAt;
+            let endTs = endedAt;
+
+            if (!startTs && endTs && Number(log.seconds || 0) > 0) {
+                startTs = endTs - Number(log.seconds || 0);
+            }
+
+            if (!endTs) {
+                const createdAt = String(log.created_at || '').replace(' ', 'T');
+                const createdDate = new Date(createdAt);
+                if (!Number.isNaN(createdDate.getTime())) {
+                    endTs = Math.floor(createdDate.getTime() / 1000);
+                    if (!startTs && Number(log.seconds || 0) > 0) {
+                        startTs = endTs - Number(log.seconds || 0);
+                    }
+                }
+            }
+
+            const startText = formatClockFromUnixSeconds(startTs);
+            const endText = formatClockFromUnixSeconds(endTs);
+            if (!startText || !endText) return '';
+            return `${startText} - ${endText}`;
+        }
+
         async function ensureTodayTaskSubtasks(force = false) {
             const todayIso = currentLogicalDate || getCurrentLogicalDateClient();
             if (!force && taskSubtasksCacheDate === todayIso) return;
@@ -3060,6 +3128,8 @@
                                 task_id: taskId,
                                 seconds: Number(log.seconds || 0),
                                 entry_type: String(log.entry_type || ''),
+                                timer_started_at: log.timer_started_at != null ? Number(log.timer_started_at) : null,
+                                timer_ended_at: log.timer_ended_at != null ? Number(log.timer_ended_at) : null,
                                 created_at: log.created_at,
                             });
                         });
@@ -3091,6 +3161,8 @@
                     task_id: taskId,
                     seconds: Number(log.seconds || 0),
                     entry_type: String(log.entry_type || ''),
+                    timer_started_at: log.timer_started_at != null ? Number(log.timer_started_at) : null,
+                    timer_ended_at: log.timer_ended_at != null ? Number(log.timer_ended_at) : null,
                     created_at: log.created_at,
                 });
             });
@@ -3125,7 +3197,15 @@
 
                 const label = document.createElement('div');
                 label.className = 'task-subtask-label';
-                label.textContent = `Entry ${index + 1} - ${formatSubtaskType(log.entry_type)}`;
+                const entryTypeLabel = formatSubtaskType(log.entry_type);
+                if (entryTypeLabel === 'timer') {
+                    const timerRangeText = getTimerRangeText(log);
+                    label.textContent = timerRangeText
+                        ? `Entry ${index + 1} - ${entryTypeLabel} (${timerRangeText})`
+                        : `Entry ${index + 1} - ${entryTypeLabel}`;
+                } else {
+                    label.textContent = `Entry ${index + 1} - ${entryTypeLabel}`;
+                }
 
                 const minsInput = document.createElement('input');
                 minsInput.type = 'number';
@@ -3230,15 +3310,25 @@
             if (!Number.isFinite(taskId)) return;
 
             panel.classList.add('open');
-            panel.innerHTML = '<div class="task-subtask-empty">Loading subtasks...</div>';
             expandedTaskDetails.add(taskId);
 
-            try {
-                await ensureTodayTaskSubtasks(false);
+            const todayIso = getCurrentSubtasksDate();
+            const hasCached = !!getTaskSubtasksForDate(todayIso);
+            if (hasCached) {
                 renderTaskSubtasksPanel(task, panel);
-            } catch (e) {
-                panel.innerHTML = '<div class="task-subtask-empty">Failed to load subtasks.</div>';
+            } else {
+                panel.innerHTML = '<div class="task-subtask-empty">Loading subtasks...</div>';
             }
+
+            ensureTodayTaskSubtasks(false).then(() => {
+                if (!expandedTaskDetails.has(taskId)) return;
+                if (!panel.isConnected) return;
+                renderTaskSubtasksPanel(task, panel);
+            }).catch(() => {
+                if (!hasCached) {
+                    panel.innerHTML = '<div class="task-subtask-empty">Failed to load subtasks.</div>';
+                }
+            });
         }
 
         function closeTaskSubtasks(task, panel) {

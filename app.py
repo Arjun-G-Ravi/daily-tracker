@@ -306,6 +306,8 @@ def init_postgres_db(db):
             work_date TEXT NOT NULL,
             seconds INTEGER NOT NULL,
             entry_type TEXT NOT NULL,
+            timer_started_at BIGINT,
+            timer_ended_at BIGINT,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE
         )
@@ -390,6 +392,8 @@ def init_postgres_db(db):
     db.execute("ALTER TABLE daily_tasks ADD COLUMN IF NOT EXISTS due_date TEXT")
     db.execute("ALTER TABLE daily_tasks ADD COLUMN IF NOT EXISTS task_unit TEXT NOT NULL DEFAULT ''")
     db.execute("ALTER TABLE daily_tasks ADD COLUMN IF NOT EXISTS heading TEXT NOT NULL DEFAULT ''")
+    db.execute("ALTER TABLE work_logs ADD COLUMN IF NOT EXISTS timer_started_at BIGINT")
+    db.execute("ALTER TABLE work_logs ADD COLUMN IF NOT EXISTS timer_ended_at BIGINT")
 
     db.execute("UPDATE daily_tasks SET recurrence = 'one_time' WHERE recurrence = 'none'")
     db.execute("UPDATE daily_tasks SET task_kind = 'integer' WHERE task_kind = 'timed'")
@@ -431,6 +435,8 @@ def init_db():
             work_date TEXT NOT NULL,
             seconds INTEGER NOT NULL,
             entry_type TEXT NOT NULL,
+            timer_started_at INTEGER,
+            timer_ended_at INTEGER,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE
         )
@@ -514,6 +520,12 @@ def init_db():
         db.execute(
             "ALTER TABLE tasks ADD COLUMN is_work INTEGER NOT NULL DEFAULT 0"
         )
+    work_log_columns = db.execute("PRAGMA table_info(work_logs)").fetchall()
+    work_log_column_names = {column['name'] for column in work_log_columns}
+    if 'timer_started_at' not in work_log_column_names:
+        db.execute("ALTER TABLE work_logs ADD COLUMN timer_started_at INTEGER")
+    if 'timer_ended_at' not in work_log_column_names:
+        db.execute("ALTER TABLE work_logs ADD COLUMN timer_ended_at INTEGER")
     # Migrate daily_tasks table for recurrence-based design
     dt_columns = db.execute("PRAGMA table_info(daily_tasks)").fetchall()
     dt_column_names = {col['name'] for col in dt_columns}
@@ -1122,8 +1134,8 @@ def stop_task(task_id):
         day_start_hour = get_day_start_hour()
         today = get_logical_date_for_timestamp(now_ts, day_start_hour).isoformat()
         db.execute(
-            'INSERT INTO work_logs (task_id, work_date, seconds, entry_type) VALUES (?, ?, ?, ?)',
-            (task_id, today, duration, 'timer'),
+            'INSERT INTO work_logs (task_id, work_date, seconds, entry_type, timer_started_at, timer_ended_at) VALUES (?, ?, ?, ?, ?, ?)',
+            (task_id, today, duration, 'timer', started_at, now_ts),
         )
 
     db.commit()
@@ -1292,6 +1304,7 @@ def get_day_logs():
     rows = db.execute(
         '''
         SELECT w.id, w.task_id, w.work_date, w.seconds, w.entry_type, w.created_at,
+             w.timer_started_at, w.timer_ended_at,
                t.name AS task_name, t.task_color
         FROM work_logs w
         JOIN tasks t ON t.id = w.task_id
@@ -1311,6 +1324,8 @@ def get_day_logs():
             'work_date': row['work_date'],
             'seconds': int(row['seconds']),
             'entry_type': row['entry_type'],
+            'timer_started_at': int(row['timer_started_at']) if row['timer_started_at'] is not None else None,
+            'timer_ended_at': int(row['timer_ended_at']) if row['timer_ended_at'] is not None else None,
             'created_at': row['created_at'],
         })
 
