@@ -5,1733 +5,778 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🖼️ The Canvas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1160px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .dashboard-layout {
-            display: flex;
-            gap: 28px;
-            align-items: flex-start;
-        }
-
-        .left-panel {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .right-panel {
-            width: 340px;
-            flex: 0 0 340px;
-            border: 1px solid #eee;
-            border-radius: 8px;
-            padding: 14px;
-            background: #fafafa;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .header-right {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 8px;
-        }
-
-        .app-user-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-        }
-
-        .app-sync-btn {
-            width: 10px;
-            height: 10px;
-            gap: 4px;
-            padding: 0;
-            border-radius: 999px;
-            display: inline-flex;
-            width: 10px;
-            height: 10px;
-            min-width: 10px;
-            line-height: 1;
-        }
-
-        .app-sync-btn:hover {
-            background: #111827;
-        }
-
-        .app-user-email {
-            background: transparent;
-            border: none;
-            appearance: none;
-            margin-right: 2px;
-            border: 1px solid #dbe3ff;
-            border-radius: 999px;
-            background: transparent;
-            max-width: 260px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .app-signout-btn {
-            padding: 7px 12px;
-            font-size: 12px;
-            line-height: 1;
-            background: #475569;
-        }
-
-        .app-signout-btn:hover {
-            background: #334155;
-        }
-
-        h1 {
-            color: #333;
-            margin-bottom: 0;
-        }
-
-        .current-day-label {
-            margin-top: 6px;
-            font-size: 13px;
-            color: #666;
-        }
-
-        .today-circle {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: #e9ecef;
-            padding: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .today-circle-inner {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
-
-        .today-label {
-            font-size: 11px;
-            color: #666;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }
-
-        .today-value {
-            font-size: 14px;
-            font-weight: bold;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #ddd;
-        }
-
-        .tab-button {
-            padding: 10px 20px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            color: #666;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-        }
-
-        .tab-button.active {
-            color: #007bff;
-            border-bottom-color: #007bff;
-        }
-
-        .tab-button:hover {
-            color: #007bff;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .time-input {
-            max-width: 170px;
-            flex: 0 0 170px;
-        }
-
-        button {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        .tasks {
-            list-style: none;
-        }
-
-        .tasks li {
-            padding: 15px;
-            background: #f9f9f9;
-            margin-bottom: 10px;
-            border-radius: 4px;
-            display: block;
-        }
-
-        .task-info {
-            flex: 1;
-        }
-
-        .task-name {
-            font-weight: bold;
-            color: #333;
-            display: flex;
-            align-items: center;
-            gap: 7px;
-        }
-
-        .task-color-dot {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .task-time {
-            font-size: 14px;
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .task-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .task-time-log-panel {
-            display: none;
-            align-items: center;
-            gap: 6px;
-            flex-wrap: wrap;
-            padding: 8px;
-            border: 1px solid #e2e6ea;
-            border-radius: 6px;
-            background: #fff;
-        }
-
-        .task-time-log-panel.open {
-            display: flex;
-        }
-
-        .task-time-log-panel input[type="number"] {
-            width: 84px;
-            flex: 0 0 84px;
-            padding: 7px;
-        }
-
-        .task-time-log-panel input[type="time"] {
-            width: 108px;
-            flex: 0 0 108px;
-            padding: 7px;
-        }
-
-        .task-add-btn {
-            background-color: #17a2b8;
-            padding: 8px 12px;
-        }
-
-        .task-add-btn:hover {
-            background-color: #138496;
-        }
-
-        .task-log-save-btn {
-            background-color: #17a2b8;
-            padding: 8px 12px;
-        }
-
-        .task-log-save-btn:hover {
-            background-color: #138496;
-        }
-
-        .task-log-cancel-btn {
-            background-color: #6c757d;
-            padding: 8px 12px;
-        }
-
-        .task-log-cancel-btn:hover {
-            background-color: #5a6268;
-        }
-
-        .start-btn {
-            background-color: #28a745;
-            padding: 8px 15px;
-        }
-
-        .start-btn:hover {
-            background-color: #218838;
-        }
-
-        .stop-btn {
-            background-color: #dc3545;
-            padding: 8px 15px;
-        }
-
-        .stop-btn:hover {
-            background-color: #c82333;
-        }
-
-        .delete-btn {
-            background-color: #6c757d;
-            padding: 8px 15px;
-        }
-
-        .delete-btn:hover {
-            background-color: #5a6268;
-        }
-
-        .timer {
-            font-weight: bold;
-            color: #007bff;
-        }
-
-        .active-timer {
-            color: #dc3545;
-        }
-
-        .settings-list {
-            list-style: none;
-        }
-
-        .settings-list li {
-            padding: 12px;
-            background: #f8f9fb;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            display: block;
-            gap: 12px;
-        }
-
-        .task-main-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .task-subtasks-panel {
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #e8e8e8;
-            display: none;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .task-subtasks-panel.open {
-            display: flex;
-        }
-
-        .task-subtask-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-            background: #fff;
-            border: 1px solid #ececec;
-            border-radius: 6px;
-            padding: 8px;
-        }
-
-        .task-subtask-label {
-            flex: 1;
-            min-width: 140px;
-            font-size: 12px;
-            color: #555;
-        }
-
-        .task-subtask-mins {
-            width: 82px;
-            flex: 0 0 82px;
-            padding: 6px;
-        }
-
-        .task-subtask-save-btn {
-            background: #17a2b8;
-            padding: 6px 10px;
-            font-size: 12px;
-        }
-
-        .task-subtask-save-btn:hover {
-            background: #138496;
-        }
-
-        .task-subtask-delete-btn {
-            background: #6c757d;
-            padding: 6px 10px;
-            font-size: 12px;
-        }
-
-        .task-subtask-delete-btn:hover {
-            background: #5a6268;
-        }
-
-        .task-subtask-empty {
-            font-size: 12px;
-            color: #8c8c8c;
-            border: 1px solid #eceff3;
-            border-radius: 6px;
-            background: #fff;
-            padding: 8px;
-        }
-
-        .settings-task-name {
-            color: #333;
-            font-weight: 600;
-        }
-
-        .settings-task-type {
-            color: #666;
-            font-size: 13px;
-            margin-top: 4px;
-        }
-
-        .settings-color-control {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .settings-color-control input[type="color"] {
-            width: 46px;
-            height: 32px;
-            padding: 0;
-            border: none;
-            background: transparent;
-            cursor: pointer;
-            flex: 0 0 auto;
-        }
-
-        .settings-create-form {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 0;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .settings-create-form input[type="text"] {
-            flex: 1;
-            min-width: 180px;
-        }
-
-        .settings-create-form input[type="number"] {
-            width: 100px;
-            flex: 0 0 100px;
-        }
-
-        .settings-create-form select {
-            height: 38px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 0 8px;
-            background: white;
-        }
-
-        .settings-section-title {
-            font-size: 12px;
-            font-weight: 800;
-            color: #6b7280;
-            letter-spacing: 0.6px;
-            text-transform: uppercase;
-            margin: 0 0 10px;
-        }
-
-        .settings-day-start-form,
-        .settings-past-log-form {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            margin-bottom: 0;
-            flex-wrap: wrap;
-        }
-
-        .settings-day-start-form input[type="number"] {
-            width: 84px;
-            flex: 0 0 84px;
-        }
-
-        .settings-past-log-form select,
-        .settings-past-log-form input[type="date"],
-        .settings-past-log-form input[type="number"] {
-            height: 38px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 0 8px;
-            background: white;
-        }
-
-        .settings-past-log-form select {
-            min-width: 180px;
-        }
-
-        .settings-past-log-form input[type="number"] {
-            width: 100px;
-        }
-
-        .settings-layout {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .settings-card {
-            border: 1px solid #e9edf2;
-            border-radius: 10px;
-            padding: 14px;
-            background: #fcfdff;
-        }
-
-        .settings-card-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: #2d3748;
-            margin-bottom: 10px;
-        }
-
-        .settings-field-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .settings-field-row:last-child {
-            margin-bottom: 0;
-        }
-
-        .settings-field-row span {
-            color: #5f6977;
-            font-size: 13px;
-        }
-
-        .settings-field-row select,
-        .settings-field-row input[type="number"] {
-            height: 38px;
-            border: 1px solid #dde3ea;
-            border-radius: 6px;
-            padding: 0 10px;
-            background: #fff;
-        }
-
-        .settings-switch {
-            position: relative;
-            display: inline-block;
-            width: 40px;
-            height: 22px;
-            flex: 0 0 auto;
-        }
-
-        .settings-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .settings-switch-slider {
-            position: absolute;
-            cursor: pointer;
-            inset: 0;
-            background-color: #b0b9c7;
-            transition: .2s;
-            border-radius: 999px;
-        }
-
-        .settings-switch-slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 3px;
-            top: 3px;
-            background-color: white;
-            transition: .2s;
-            border-radius: 50%;
-        }
-
-        .settings-switch input:checked+.settings-switch-slider {
-            background-color: #17a2b8;
-        }
-
-        .settings-switch input:checked+.settings-switch-slider:before {
-            transform: translateX(18px);
-        }
-
-        .settings-divider {
-            height: 1px;
-            background: #edf1f5;
-            margin: 12px 0;
-        }
-
-        .chart-title {
-            font-size: 15px;
-            color: #333;
-            margin-bottom: 12px;
-            font-weight: 700;
-        }
-
-        .chart-outer {
-            display: flex;
-            gap: 0;
-            align-items: flex-start;
-            margin-bottom: 10px;
-        }
-
-        .chart-y-axis {
-            flex: 0 0 26px;
-            width: 26px;
-            position: relative;
-            height: 240px;
-        }
-
-        .chart-y-tick {
-            position: absolute;
-            right: 4px;
-            font-size: 10px;
-            color: #aaa;
-            line-height: 1;
-            transform: translateY(50%);
-            white-space: nowrap;
-        }
-
-        .chart-body {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chart-bars-area {
-            height: 240px;
-            position: relative;
-            display: flex;
-            align-items: stretch;
-            gap: 6px;
-            border-left: 1px solid #ddd;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .chart-labels-row {
-            display: flex;
-            gap: 6px;
-            padding-top: 6px;
-            border-left: 1px solid transparent;
-        }
-
-        .chart-bar {
-            flex: 1;
-            min-width: 0;
-            border-radius: 3px 3px 0 0;
-            background: #e9ecef;
-            display: flex;
-            flex-direction: column-reverse;
-            overflow: hidden;
-        }
-
-        .chart-segment {
-            width: 100%;
-        }
-
-        .chart-label-cell {
-            flex: 1;
-            min-width: 0;
-            font-size: 11px;
-            color: #666;
-            text-align: center;
-            line-height: 1.3;
-        }
-
-        .chart-day-date {
-            font-size: 10px;
-            color: #aaa;
-        }
-
-        .chart-grid-line {
-            position: absolute;
-            left: 0;
-            right: 0;
-            border-top: 1px dashed #e8e8e8;
-            pointer-events: none;
-        }
-
-        .chart-bar-col {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            align-items: stretch;
-        }
-
-        .chart-bar-col:hover .chart-bar {
-            filter: brightness(1.1);
-        }
-
-        .chart-bar-total {
-            font-size: 9px;
-            color: #888;
-            text-align: center;
-            line-height: 1.2;
-            margin-bottom: 3px;
-            white-space: nowrap;
-            overflow: hidden;
-            pointer-events: none;
-        }
-
-        #chartTooltip {
-            position: fixed;
-            background: rgba(24, 24, 32, 0.96);
-            color: #fff;
-            border-radius: 8px;
-            padding: 10px 14px;
-            font-size: 12px;
-            pointer-events: none;
-            z-index: 3000;
-            display: none;
-            min-width: 150px;
-            max-width: 250px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-            line-height: 1.6;
-        }
-
-        #chartTooltip.visible {
-            display: block;
-        }
-
-        .ct-title {
-            font-weight: 700;
-            font-size: 13px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-            padding-bottom: 5px;
-            margin-bottom: 6px;
-        }
-
-        .ct-row {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            margin-bottom: 2px;
-        }
-
-        .ct-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .ct-name {
-            flex: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .ct-time {
-            color: #bbb;
-            white-space: nowrap;
-            padding-left: 8px;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .ct-total {
-            border-top: 1px solid rgba(255, 255, 255, 0.15);
-            padding-top: 5px;
-            margin-top: 4px;
-            color: #ccc;
-            font-size: 11px;
-        }
-
-        .monthly-overview {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .monthly-overview li {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .monthly-overview-month {
-            width: 90px;
-            font-weight: 600;
-            color: #333;
-            flex: 0 0 90px;
-        }
-
-        .monthly-overview-bar-wrap {
-            flex: 1;
-            height: 16px;
-            background: #e9ecef;
-            border-radius: 999px;
-            overflow: hidden;
-        }
-
-        .monthly-overview-bar {
-            height: 100%;
-            background: #007bff;
-            border-radius: 999px;
-            min-width: 2px;
-        }
-
-        .monthly-overview-time {
-            width: 78px;
-            text-align: right;
-            color: #666;
-            font-size: 12px;
-            flex: 0 0 78px;
-        }
-
-        /* Monthly bar chart */
-        .monthly-chart-section {
-            margin-bottom: 28px;
-        }
-
-        .monthly-chart-section .chart-bars-area {
-            height: 220px;
-        }
-
-        .monthly-chart-section .chart-y-axis {
-            height: 220px;
-        }
-
-        /* Calendar */
-        .calendar-section {
-            margin-top: 8px;
-        }
-
-        .calendar-nav {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        .calendar-nav-title {
-            font-size: 15px;
-            font-weight: 700;
-            color: #333;
-            flex: 1;
-            text-align: center;
-        }
-
-        .calendar-nav button {
-            padding: 5px 12px;
-            background: #e9ecef;
-            color: #333;
-            font-size: 14px;
-        }
-
-        .calendar-nav button:hover {
-            background: #dee2e6;
-        }
-
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
-        }
-
-        .calendar-dow-header {
-            font-size: 11px;
-            color: #999;
-            text-align: center;
-            padding: 2px 0 6px;
-            font-weight: 600;
-        }
-
-        .calendar-day {
-            min-height: 56px;
-            border: 1px solid #eee;
-            border-radius: 5px;
-            padding: 4px 5px;
-            cursor: pointer;
-            background: #fff;
-            transition: background 0.15s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .calendar-day:hover {
-            background: #f0f4ff;
-            border-color: #b3c6ff;
-        }
-
-        .calendar-day.today {
-            border-color: #007bff;
-            background: #eef4ff;
-        }
-
-        .calendar-day.empty {
-            background: transparent;
-            border: none;
-            cursor: default;
-        }
-
-        .calendar-day-num {
-            font-size: 12px;
-            font-weight: 600;
-            color: #555;
-            line-height: 1;
-        }
-
-        .calendar-day.today .calendar-day-num {
-            color: #007bff;
-        }
-
-        .calendar-day-time {
-            font-size: 10px;
-            color: #888;
-            margin-top: 3px;
-        }
-
-        .calendar-day-colors {
-            display: flex;
-            gap: 2px;
-            margin-top: 4px;
-            flex-wrap: wrap;
-        }
-
-        .calendar-day-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        /* Day logs modal */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.35);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-overlay.open {
-            display: flex;
-        }
-
-        .modal-box {
-            background: white;
-            border-radius: 10px;
-            padding: 24px;
-            width: 480px;
-            max-width: 96vw;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .modal-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: #333;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 20px;
-            color: #999;
-            cursor: pointer;
-            padding: 0 4px;
-            line-height: 1;
-        }
-
-        .modal-close:hover {
-            color: #333;
-            background: none;
-        }
-
-        .modal-total {
-            font-size: 13px;
-            color: #666;
-            margin-bottom: 14px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .log-entry {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 0;
-            border-bottom: 1px solid #f5f5f5;
-        }
-
-        .log-entry:last-child {
-            border-bottom: none;
-        }
-
-        .log-entry-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .log-entry-name {
-            flex: 1;
-            font-size: 13px;
-            color: #333;
-            font-weight: 500;
-        }
-
-        .log-entry-total {
-            font-size: 13px;
-            color: #444;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .log-entry-mins-input {
-            width: 80px;
-            flex: 0 0 80px;
-            padding: 5px 7px;
-            font-size: 13px;
-        }
-
-        .log-entry-save-btn {
-            padding: 5px 10px;
-            font-size: 12px;
-            background: #17a2b8;
-        }
-
-        .log-entry-save-btn:hover {
-            background: #138496;
-        }
-
-        .log-entry-del-btn {
-            padding: 5px 10px;
-            font-size: 12px;
-            background: #dc3545;
-        }
-
-        .log-entry-del-btn:hover {
-            background: #c82333;
-        }
-
-        .modal-empty {
-            color: #aaa;
-            font-size: 13px;
-            text-align: center;
-            padding: 20px 0;
-        }
-
-        .modal-add-wrap {
-            margin-top: 12px;
-            padding-top: 10px;
-            border-top: 1px solid #eee;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .modal-add-toggle {
-            align-self: center;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            padding: 0;
-            font-size: 20px;
-            line-height: 1;
-            font-weight: 600;
-            background: #e9ecef;
-            color: #444;
-        }
-
-        .modal-add-toggle:hover {
-            background: #dde2e6;
-        }
-
-        .modal-add-form {
-            display: none;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .modal-add-form.open {
-            display: flex;
-        }
-
-        .modal-add-form select,
-        .modal-add-form input[type="number"] {
-            height: 34px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 0 8px;
-            background: #fff;
-        }
-
-        .modal-add-form select {
-            flex: 1;
-            min-width: 160px;
-        }
-
-        .modal-add-form input[type="number"] {
-            width: 92px;
-            flex: 0 0 92px;
-        }
-
-        .modal-add-save-btn {
-            background: #17a2b8;
-            padding: 7px 11px;
-            font-size: 12px;
-        }
-
-        .modal-add-save-btn:hover {
-            background: #138496;
-        }
-
-        .modal-add-cancel-btn {
-            background: #6c757d;
-            padding: 7px 11px;
-            font-size: 12px;
-        }
-
-        .modal-add-cancel-btn:hover {
-            background: #5a6268;
-        }
-
-        /* ── Daily Tasks Tab ───────────────────── */
-        .dt-section-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #555;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin: 20px 0 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .dt-section-title:first-child {
-            margin-top: 0;
-        }
-
-        .dt-section-badge {
-            background: #e9ecef;
-            color: #666;
-            border-radius: 20px;
-            padding: 1px 8px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-
-        .dt-add-form {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
-            border: 1px solid rgba(148, 163, 184, 0.25);
-            border-radius: 10px;
-            padding: 12px 14px;
-            margin-bottom: 14px;
-        }
-
-        .dt-add-form input[type="text"] {
-            flex: 1;
-            min-width: 120px;
-            padding: 8px 10px;
-            border-radius: 8px;
-        }
-
-        .dt-add-form input[type="number"] {
-            width: 70px;
-            flex: 0 0 70px;
-            padding: 8px;
-            border-radius: 8px;
-        }
-
-        .dt-add-form select {
-            height: 38px;
-            border: 1px solid rgba(148, 163, 184, 0.35);
-            border-radius: 8px;
-            padding: 0 10px;
-            background: white;
-            font-size: 14px;
-        }
-
-        .dt-add-form input[type="color"] {
-            width: 38px;
-            height: 38px;
-            padding: 0;
-            border: none;
-            background: transparent;
-            cursor: pointer;
-            flex: 0 0 38px;
-        }
-
-        .dt-add-form label {
-            font-size: 12px;
-            color: #666;
-            white-space: nowrap;
-        }
-
-        .dt-add-form .dt-field-group {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        #dtTaskTarget {
-            width: 62px;
-            min-width: 62px;
-            text-align: center;
-            height: 28px;
-            min-height: 28px;
-            max-height: 28px;
-            padding: 2px 4px;
-            line-height: 1.1;
-            font-size: 13px;
-        }
-
-        .dt-add-advanced {
-            display: none;
-            width: 100%;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .dt-add-advanced.open {
-            display: flex;
-        }
-
-        .dt-show-more-btn {
-            background: transparent;
-            color: #9aa4b2;
-            border: none;
-            padding: 4px 6px;
-            font-size: 11px;
-            font-weight: 600;
-            border-radius: 0;
-            box-shadow: none;
-        }
-
-        .dt-show-more-btn:hover {
-            background: transparent;
-            color: #c1c8d2;
-        }
-
-        .dt-list {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            margin-bottom: 6px;
-        }
-
-        .dt-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            background: #fff;
-            border: 1px solid #eee;
-            border-radius: 8px;
-            transition: box-shadow 0.15s;
-        }
-
-        .dt-item:hover {
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
-        }
-
-        .dt-color-bar {
-            width: 4px;
-            min-width: 4px;
-            height: 36px;
-            border-radius: 4px;
-            flex-shrink: 0;
-        }
-
-        .dt-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .dt-name {
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .dt-meta {
-            font-size: 11px;
-            color: #999;
-            margin-top: 2px;
-        }
-
-        .dt-end-text {
-            font-size: 8px;
-            font-weight: 700;
-            margin-left: 6px;
-        }
-
-        .dt-end-text.today {
-            font-size: 8px;
-            font-weight: 600;
-        }
-
-        .dt-end-green {
-            color: #28a745;
-        }
-
-        .dt-end-orange {
-            color: #fd7e14;
-        }
-
-        .dt-end-red {
-            color: #dc3545;
-        }
-
-        .dt-weekly-bar-wrap {
-            width: 70px;
-            flex: 0 0 70px;
-            height: 6px;
-            background: #e9ecef;
-            border-radius: 999px;
-            overflow: hidden;
-            margin-top: 5px;
-        }
-
-        .dt-weekly-bar {
-            height: 100%;
-            border-radius: 999px;
-            background: #28a745;
-            min-width: 2px;
-            transition: width 0.3s;
-        }
-
-        .dt-actions {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-            flex-shrink: 0;
-        }
-
-        .dt-edit-btn {
-            background: #e9ecef;
-            color: #555;
-            padding: 5px 10px;
-            font-size: 12px;
-        }
-
-        .dt-edit-btn:hover {
-            background: #dee2e6;
-        }
-
-        .dt-del-btn {
-            background: none;
-            border: 1px solid #ddd;
-            color: #aaa;
-            padding: 5px 10px;
-            font-size: 12px;
-        }
-
-        .dt-del-btn:hover {
-            background: #fff0f0;
-            color: #dc3545;
-            border-color: #dc3545;
-        }
-
-        .dt-empty {
-            color: #bbb;
-            font-size: 13px;
-            padding: 16px 0;
-            text-align: center;
-        }
-
-        .dt-sub-label {
-            font-size: 11px;
-            font-weight: 600;
-            color: #aaa;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 10px 4px 4px;
-        }
-
-        .dt-group-heading {
-            font-size: 11px;
-            font-weight: 700;
-            color: #7b8794;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            padding: 10px 4px 2px;
-        }
-
-        .dtp-group-heading {
-            font-size: 10px;
-            font-weight: 700;
-            color: #8b95a3;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 8px 2px 2px;
-        }
-
-        /* ── Daily Tasks panel under weekly graph ─ */
-        .daily-tasks-panel {
-            margin-top: 18px;
-            border-top: 1px solid #eee;
-            padding-top: 14px;
-        }
-
-        .daily-tasks-panel-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #555;
-            margin-bottom: 10px;
-        }
-
-        .dtp-list {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .dtp-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 7px 10px;
-            border-radius: 7px;
-            background: #fff;
-            border: 1px solid #eee;
-        }
-
-        .dtp-check {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            flex-shrink: 0;
-            accent-color: #28a745;
-        }
-
-        .dtp-color-dot {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .dt-complete-check {
-            width: 18px;
-            min-width: 18px;
-            height: 18px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            line-height: 1;
-            flex-shrink: 0;
-        }
-
-        .dtp-complete-check {
-            width: 14px;
-            min-width: 14px;
-            height: 14px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            line-height: 1;
-            flex-shrink: 0;
-        }
-
-        .dtp-name {
-            flex: 1;
-            font-size: 13px;
-            color: #333;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            min-width: 0;
-        }
-
-        .dtp-name.done {
-            color: #8b95a3;
-        }
-
-        .dtp-repeat-prefix {
-            font-size: 8px;
-            line-height: 1;
-            flex-shrink: 0;
-        }
-
-        .dtp-main-text {
-            min-width: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .dtp-mins-input {
-            width: 50px;
-            padding: 4px 6px;
-            font-size: 12px;
-            flex: 0 0 54px;
-        }
-
-        .dtp-progress {
-            font-size: 11px;
-            color: #888;
-            white-space: nowrap;
-        }
-
-        .dtp-end-text {
-            font-size: 7px;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-
-        .dtp-end-text.today {
-            font-size: 7px;
-            font-weight: 600;
-        }
-
-        .dtp-end-text.dt-end-green {
-            color: #28a745;
-        }
-
-        .dtp-end-text.dt-end-orange {
-            color: #fd7e14;
-        }
-
-        .dtp-end-text.dt-end-red {
-            color: #dc3545;
-        }
-
-        .dtp-count-label {
-            font-size: 11px;
-            color: #8b95a3;
-            font-weight: 600;
-        }
-
-        .dtp-count-value {
-            font-size: 10px;
-            color: #6f7b89;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-
-        .dtp-progress.complete {
-            color: #28a745;
-            font-weight: 600;
-        }
-
-        .auth-shell {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            background:
-                radial-gradient(1200px 500px at 10% -20%, rgba(23, 162, 184, 0.2), transparent 55%),
-                radial-gradient(900px 500px at 90% 120%, rgba(0, 123, 255, 0.2), transparent 55%),
-                linear-gradient(180deg, #f3f7fb 0%, #edf3fa 100%);
-        }
-
-        .auth-gate {
-            width: min(100%, 700px);
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(6px);
-            border-radius: 14px;
-            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.15);
-            border: 1px solid rgba(11, 106, 133, 0.18);
-            padding: 28px;
-        }
-
-        .auth-title {
-            font-size: 30px;
-            font-weight: 700;
-            color: #12263a;
-            margin-bottom: 6px;
-            letter-spacing: -0.02em;
-        }
-
-        .auth-subtitle {
-            color: #38526a;
-            margin-bottom: 16px;
-            font-size: 15px;
-        }
-
-        .auth-row {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .auth-row input {
-            flex: 1;
-            height: 42px;
-            border-radius: 8px;
-            border: 1px solid #d3dee9;
-            background: white;
-        }
-
-        .auth-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .auth-divider {
-            margin: 12px 0;
-            height: 1px;
-            background: #e5e7eb;
-        }
-
-        .auth-note {
-            margin-top: 10px;
-            color: #4f657c;
-            font-size: 12px;
-        }
-
-        .auth-status {
-            min-height: 18px;
-            color: #b42318;
-            margin-bottom: 8px;
-            font-size: 13px;
-        }
-
-        .auth-user-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 10px;
-            font-size: 13px;
-            color: #374151;
-        }
-
-        .auth-help {
-            margin-top: 8px;
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: 1px solid #f5b8b2;
-            background: #fff5f4;
-            color: #8a2419;
-            font-size: 12px;
-            line-height: 1.45;
-            display: none;
-        }
-
-        @media (max-width: 700px) {
-            .auth-title {
-                font-size: 25px;
-            }
-
-            .auth-gate {
-                padding: 20px;
-            }
-
-            .auth-row {
-                flex-direction: column;
-            }
-
-            .header-right {
-                align-items: stretch;
-            }
-
-            .app-user-row {
-                justify-content: flex-end;
-            }
-
-            .app-user-email {
-                max-width: 180px;
-            }
-        }
+/* The Midnight Architect - Design System */
+:root {
+    /* Color Palette */
+    --surface: #0b1326;
+    --surface-container-lowest: #060e20;
+    --surface-container-low: #131b2e;
+    --surface-container: #171f33;
+    --surface-container-high: #222a3d;
+    --surface-container-highest: #2d3449;
+    --surface-bright: #31394d;
+    --primary: #adc6ff;
+    --primary-container: #4d8eff;
+    --secondary: #4edea3;
+    --secondary-container: #00311f;
+    --tertiary: #c0c1ff;
+    --on-surface: #dae2fd;
+    --on-surface-variant: #c2c6d6;
+    --outline-variant: #424754;
+    --error: #ffb4ab;
+    --error-muted: rgba(220, 53, 69, 0.8);
+    --success: #28a745;
+    --warning: #fd7e14;
+    
+    /* Typography */
+    --font-display: 'Manrope', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    
+    /* Geometry */
+    --radius-sm: 6px;
+    --radius-md: 12px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-body);
+    background-color: var(--surface);
+    color: var(--on-surface);
+    line-height: 1.5;
+}
+
+/* Auth Shell */
+.auth-shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: var(--surface);
+}
+
+.auth-gate {
+    width: min(100%, 700px);
+    background: rgba(23, 31, 51, 0.7); /* translucent surface-container */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: var(--radius-md);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border: none;
+    padding: 32px;
+}
+
+.auth-title {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--on-surface);
+    margin-bottom: 8px;
+    letter-spacing: -0.04em;
+}
+
+.auth-subtitle {
+    color: var(--on-surface-variant);
+    margin-bottom: 24px;
+    font-size: 15px;
+}
+
+.auth-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.auth-row input {
+    flex: 1;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(66, 71, 84, 0.15); /* outline-variant */
+    background: var(--surface-container-lowest);
+    color: var(--on-surface);
+    padding: 0 16px;
+    font-family: var(--font-body);
+}
+
+.auth-row input:focus {
+    outline: none;
+    border-color: rgba(173, 198, 255, 0.4);
+    background: var(--surface-container);
+}
+
+.auth-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.auth-actions button, button {
+    font-family: var(--font-display);
+    font-weight: 600;
+    height: 44px;
+    padding: 0 20px;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.auth-actions button[onclick="signInWithGoogle()"], 
+.auth-actions button[onclick="signInWithPassword()"] {
+    background: linear-gradient(135deg, var(--primary), var(--primary-container));
+    color: #0b1326; /* extremely dark to contrast with bright blue */
+}
+
+.auth-actions button[onclick="signInWithGoogle()"]:hover, 
+.auth-actions button[onclick="signInWithPassword()"]:hover {
+    box-shadow: inset 0 0 0 2px rgba(173, 198, 255, 0.5);
+    filter: brightness(1.1);
+}
+
+.auth-actions button[onclick="signUpWithPassword()"] {
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid rgba(66, 71, 84, 0.2);
+}
+
+.auth-actions button[onclick="signUpWithPassword()"]:hover {
+    background: var(--surface-container-high);
+}
+
+.auth-divider {
+    margin: 24px 0;
+    height: 1px;
+    background: var(--surface-container-lowest);
+}
+
+.auth-note {
+    margin-top: 16px;
+    color: var(--outline-variant);
+    font-size: 13px;
+}
+
+.auth-status {
+    min-height: 18px;
+    color: var(--error);
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.auth-user-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: var(--on-surface);
+}
+
+.auth-help {
+    margin-top: 12px;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-container-lowest);
+    color: var(--error);
+    font-size: 13px;
+    line-height: 1.5;
+    display: none;
+}
+
+/* App Shell - Layout */
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+    background: var(--surface);
+    color: var(--on-surface);
+}
+
+.sidebar {
+    width: 260px;
+    flex: 0 0 260px;
+    background: var(--surface-container-low);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 16px;
+}
+
+.main-content {
+    flex: 1;
+    min-width: 0;
+    padding: 32px 40px;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+/* Sidebar Elements */
+.sidebar-header {
+    margin-bottom: 40px;
+    padding: 0 8px;
+}
+
+.sidebar-header h1 {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: var(--on-surface);
+    margin-bottom: 4px;
+}
+
+.current-day-label {
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--on-surface-variant);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.sidebar-nav-item {
+    padding: 12px 16px;
+    background: transparent;
+    color: var(--on-surface-variant);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 15px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    border: none;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-nav-item:hover {
+    background: var(--surface-container);
+    color: var(--on-surface);
+}
+
+.sidebar-nav-item.active {
+    background: var(--surface-container-highest);
+    color: var(--on-surface);
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.today-circle {
+    background: var(--surface-container);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.today-label {
+    font-size: 11px;
+    color: var(--on-surface-variant);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+    font-family: var(--font-body);
+}
+
+.today-value {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: var(--primary);
+    line-height: 1;
+}
+
+.app-user-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    padding: 0 8px;
+}
+
+.app-sync-btn {
+    width: 10px;
+    height: 10px;
+    padding: 0;
+    border-radius: 50%;
+    min-width: 10px;
+    line-height: 1;
+    background: transparent;
+    cursor: pointer;
+}
+
+.app-user-email {
+    flex: 1;
+    color: var(--on-surface-variant);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.app-signout-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    background: var(--surface-container-highest);
+    color: var(--on-surface);
+    height: auto;
+}
+
+.app-signout-btn:hover {
+    background: var(--surface-bright);
+}
+
+/* Tabs -> Hidden */
+.tabs {
+    display: none;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Inputs and Forms */
+input[type="text"], input[type="number"], input[type="date"], input[type="time"], select {
+    background: var(--surface-container-lowest);
+    border: 1px solid rgba(66, 71, 84, 0.15); /* Ghost border */
+    color: var(--on-surface);
+    font-family: var(--font-body);
+    font-size: 14px;
+    border-radius: var(--radius-sm);
+    padding: 0 12px;
+    height: 40px;
+    transition: all 0.2s ease;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: rgba(173, 198, 255, 0.4);
+    background: var(--surface-container);
+}
+
+/* Weekly View Layout */
+.weekly-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 32px;
+    align-items: start;
+}
+
+@media (max-width: 1100px) {
+    .weekly-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.right-panel {
+    background: transparent; /* Remove old border card */
+    border: none;
+    padding: 0;
+}
+
+/* Tasks Lists */
+.tasks {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tasks li {
+    padding: 16px 20px;
+    background: var(--surface-container);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: background 0.2s ease;
+}
+
+.tasks li:hover {
+    background: var(--surface-bright);
+}
+
+.task-main-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.task-info {
+    flex: 1;
+}
+
+.task-name {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--on-surface);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.task-color-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.task-time {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--on-surface-variant);
+    margin-top: 6px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.timer {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--on-surface);
+}
+
+.active-timer {
+    background: linear-gradient(135deg, var(--primary), var(--primary-container));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.task-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.task-actions button {
+    height: 36px;
+    padding: 0 16px;
+}
+
+.start-btn {
+    background: transparent;
+    border: 1px solid var(--secondary);
+    color: var(--secondary);
+}
+
+.start-btn:hover {
+    background: var(--secondary-container);
+}
+
+.stop-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 180, 171, 0.4);
+    color: var(--error);
+}
+
+.stop-btn:hover {
+    background: rgba(147, 0, 10, 0.4); /* error_container */
+}
+
+.task-add-btn {
+    background: transparent;
+    border: 1px solid rgba(66, 71, 84, 0.4);
+    color: var(--on-surface);
+}
+
+.task-add-btn:hover {
+    background: var(--surface-container-high);
+}
+
+.delete-btn {
+    background: transparent;
+    color: var(--outline-variant);
+    padding: 0 12px;
+}
+
+.delete-btn:hover {
+    color: var(--error);
+}
+
+/* Modals & Popovers */
+.task-time-log-panel, .task-subtasks-panel {
+    background: var(--surface-container-lowest);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    margin-top: 8px;
+    gap: 12px;
+}
+
+.task-time-log-panel input[type="number"] { width: 90px; flex: 0 0 90px; }
+.task-time-log-panel input[type="time"] { width: 110px; flex: 0 0 110px; }
+
+.task-subtask-row {
+    background: var(--surface-container);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+}
+
+.task-subtask-label { color: var(--on-surface); }
+.task-subtask-empty { 
+    background: var(--surface-container);
+    border: none;
+    color: var(--outline-variant);
+}
+
+/* Charts */
+.chart-title {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--on-surface);
+    margin-bottom: 16px;
+}
+
+.chart-y-tick { color: var(--outline-variant); }
+
+.chart-bars-area {
+    border-color: rgba(66, 71, 84, 0.2);
+}
+
+.chart-bar {
+    background: var(--surface-container);
+}
+
+.chart-grid-line {
+    border-color: rgba(66, 71, 84, 0.1);
+}
+
+.chart-label-cell { color: var(--on-surface-variant); }
+.chart-day-date { color: var(--outline-variant); }
+
+/* Calendar */
+.calendar-nav-title { color: var(--on-surface); }
+.calendar-nav button {
+    background: var(--surface-container);
+    color: var(--on-surface);
+    border: none;
+}
+.calendar-nav button:hover { background: var(--surface-container-high); }
+
+.calendar-dow-header { color: var(--on-surface-variant); }
+
+.calendar-day {
+    background: var(--surface-container);
+    border: none;
+}
+
+.calendar-day:hover {
+    background: var(--surface-container-highest);
+}
+
+.calendar-day.today {
+    background: rgba(77, 142, 255, 0.1); /* transparent primary-container */
+    border: 1px solid rgba(173, 198, 255, 0.3);
+}
+
+.calendar-day.empty { background: transparent; }
+.calendar-day-num { color: var(--on-surface); }
+.calendar-day.today .calendar-day-num { color: var(--primary); }
+.calendar-day-time { color: var(--on-surface-variant); }
+
+/* Settings */
+.settings-layout { gap: 24px; }
+
+.settings-card {
+    background: var(--surface-container);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 24px;
+}
+
+.settings-card-title {
+    font-family: var(--font-display);
+    color: var(--on-surface);
+    margin-bottom: 20px;
+}
+
+.settings-section-title {
+    font-family: var(--font-body);
+    color: var(--on-surface-variant);
+    margin-bottom: 12px;
+}
+
+.settings-field-row span { color: var(--on-surface); }
+.settings-divider { background: var(--surface-container-low); margin: 24px 0; }
+
+.settings-list li {
+    background: var(--surface-container-low);
+    border-radius: var(--radius-sm);
+    color: var(--on-surface);
+}
+
+.settings-task-name { color: var(--on-surface); }
+.settings-task-type { color: var(--on-surface-variant); }
+
+.settings-switch-slider {
+    background-color: var(--surface-container-highest);
+}
+.settings-switch input:checked + .settings-switch-slider {
+    background-color: var(--secondary);
+}
+
+/* Modals */
+.modal-overlay {
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+}
+
+.modal-box {
+    background: rgba(23, 31, 51, 0.9); /* surface-container */
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(218, 226, 253, 0.1);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+    color: var(--on-surface);
+}
+
+.modal-title {
+    font-family: var(--font-display);
+    color: var(--on-surface);
+}
+
+.modal-total {
+    color: var(--on-surface-variant);
+    border-bottom-color: rgba(218, 226, 253, 0.05);
+}
+
+.log-entry { border-bottom-color: rgba(218, 226, 253, 0.05); }
+.log-entry-name { color: var(--on-surface); }
+.log-entry-total { color: var(--primary); }
+
+.modal-add-wrap { border-top-color: rgba(218, 226, 253, 0.05); }
+.modal-add-toggle {
+    background: var(--surface-container-highest);
+    color: var(--on-surface);
+}
+.modal-add-toggle:hover { background: var(--surface-bright); }
+
+/* Daily Tasks / Tasks Tab */
+.dt-section-title { color: var(--on-surface-variant); }
+.dt-section-badge {
+    background: var(--surface-container-high);
+    color: var(--on-surface);
+}
+
+.dt-add-form {
+    background: var(--surface-container);
+    border: none;
+}
+.dt-add-form label { color: var(--on-surface-variant); }
+
+.dt-item {
+    background: var(--surface-container);
+    border: none;
+    box-shadow: none;
+}
+.dt-item:hover {
+    background: var(--surface-bright);
+}
+.dt-name { color: var(--on-surface); font-family: var(--font-display); }
+.dt-meta { color: var(--on-surface-variant); }
+.dt-empty { color: var(--outline-variant); }
+
+.dt-edit-btn { background: var(--surface-container-highest); color: var(--on-surface); }
+.dt-edit-btn:hover { background: var(--surface-bright); }
+.dt-del-btn { border-color: rgba(66, 71, 84, 0.3); color: var(--outline-variant); }
+.dt-del-btn:hover { border-color: var(--error); color: var(--error); background: transparent; }
+
+.dtp-item {
+    background: var(--surface-container);
+    border: none;
+}
+.dtp-name { color: var(--on-surface); }
+.dtp-name.done { color: var(--outline-variant); }
+.dtp-count-label, .dtp-progress { color: var(--on-surface-variant); }
+.dtp-count-value { color: var(--on-surface); }
+
+.daily-tasks-panel {
+    border-top: none;
+}
+.daily-tasks-panel-title { color: var(--on-surface); }
+
+/* Responsiveness */
+@media (max-width: 900px) {
+    .app-shell { flex-direction: column; }
+    .sidebar { width: 100%; flex: 0 0 auto; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 16px; }
+    .sidebar-header { margin-bottom: 0; }
+    .sidebar-nav { flex-direction: row; overflow-x: auto; flex: 0 0 100%; margin-top: 16px; margin-bottom: 16px; }
+    .sidebar-footer { padding-top: 0; flex-direction: row; align-items: center; gap: 24px; flex: 1; justify-content: flex-end; }
+    .today-circle { padding: 8px 16px; flex-direction: row; align-items: center; gap: 12px; }
+    .today-label { margin-bottom: 0; }
+    .today-value { font-size: 20px; }
+    .main-content { padding: 24px 16px; height: auto; }
+}
+
+/* Base button overrides */
+.task-log-save-btn, .modal-add-save-btn, .task-subtask-save-btn, .log-entry-save-btn {
+    background: transparent;
+    color: var(--secondary);
+    border: 1px solid var(--secondary);
+}
+.task-log-save-btn:hover, .modal-add-save-btn:hover, .task-subtask-save-btn:hover, .log-entry-save-btn:hover {
+    background: var(--secondary-container);
+}
+
+.task-log-cancel-btn, .modal-add-cancel-btn, .dt-del-btn {
+    background: transparent;
+    border: 1px solid rgba(66, 71, 84, 0.4);
+    color: var(--on-surface);
+}
+.task-log-cancel-btn:hover, .modal-add-cancel-btn:hover {
+    background: var(--surface-container-high);
+}
+
+.log-entry-del-btn, .task-subtask-delete-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 180, 171, 0.4);
+    color: var(--error);
+}
+.log-entry-del-btn:hover, .task-subtask-delete-btn:hover {
+    background: rgba(147, 0, 10, 0.4);
+}
+
     </style>
 </head>
 
@@ -1762,40 +807,55 @@
         </div>
     </div>
 
-    <div class="container" id="appRoot" style="display:none;">
-        <div class="dashboard-layout">
-            <div class="left-panel">
-                <div class="header">
-                    <div>
-                        <h1>The Canvas</h1>
-                        <div class="current-day-label" id="currentDayLabel">Current Day: --</div>
-                    </div>
-                    <div class="header-right">
-                        <div class="app-user-row" id="appUserRow" style="display:none;">
-                            <button type="button" class="app-sync-btn" id="appSyncBtn" title="Syncing with database"
-                                onclick="manualSyncNow()">🔴</button>
-                            <span class="app-user-email" id="appUserEmail">Signed in</span>
-                            <button type="button" class="app-signout-btn" onclick="handleSignOut()">Sign out</button>
-                        </div>
-                        <div class="today-circle" id="todayCircle">
-                            <div class="today-circle-inner">
-                                <div class="today-label">Today Total</div>
-                                <div class="today-value" id="todayTotal">00:00:00</div>
+    <div class="app-shell" id="appRoot" style="display:none;">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>The Canvas</h1>
+                <div class="current-day-label" id="currentDayLabel">Current Day: --</div>
+            </div>
+            
+            <div class="sidebar-nav">
+                <button id="tabBtnWeekly" class="sidebar-nav-item active" onclick="switchTab('weekly', this)">Dashboard</button>
+                <button id="tabBtnMonthly" class="sidebar-nav-item" onclick="switchTab('monthly', this)">Monthly</button>
+                <button id="tabBtnTasks" class="sidebar-nav-item" onclick="switchTab('tasks', this)">Tasks</button>
+                <button id="tabBtnSettings" class="sidebar-nav-item" onclick="switchTab('settings', this)">Settings</button>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="today-circle" id="todayCircle">
+                    <div class="today-label">Today Total</div>
+                    <div class="today-value" id="todayTotal">00:00:00</div>
+                </div>
+                
+                <div class="app-user-row" id="appUserRow" style="display:none;">
+                    <button type="button" class="app-sync-btn" id="appSyncBtn" title="Syncing with database" onclick="manualSyncNow()">🔴</button>
+                    <span class="app-user-email" id="appUserEmail">Signed in</span>
+                    <button type="button" class="app-signout-btn" onclick="handleSignOut()">Sign out</button>
+                </div>
+            </div>
+        </div>
+        <div class="main-content">
+
+                <div id="weekly" class="tab-content active">
+                    <div class="weekly-layout">
+                        <ul class="tasks" id="weeklyTaskList"></ul>
+                        
+                        <!-- Right Panel moved here -->
+                        <div class="right-panel" id="weeklyRightPanel">
+                            <div class="chart-title" id="weeklyChartTitle">This Week</div>
+                            <div class="chart-outer">
+                                <div class="chart-y-axis" id="chartYAxis"></div>
+                                <div class="chart-body">
+                                    <div class="chart-bars-area" id="weeklyChart"></div>
+                                    <div class="chart-labels-row" id="chartLabelsRow"></div>
+                                </div>
+                            </div>
+                            <div class="daily-tasks-panel" id="weeklyTasksPanel">
+                                <div class="daily-tasks-panel-title">Tasks (due soon first)</div>
+                                <ul class="dtp-list" id="dtpUnifiedList"></ul>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="tabs">
-                    <button id="tabBtnWeekly" class="tab-button active"
-                        onclick="switchTab('weekly', this)">Weekly</button>
-                    <button id="tabBtnMonthly" class="tab-button" onclick="switchTab('monthly', this)">Monthly</button>
-                    <button id="tabBtnTasks" class="tab-button" onclick="switchTab('tasks', this)">Tasks</button>
-                    <button id="tabBtnSettings" class="tab-button"
-                        onclick="switchTab('settings', this)">Settings</button>
-                </div>
-
-                <div id="weekly" class="tab-content active">
-                    <ul class="tasks" id="weeklyTaskList"></ul>
                 </div>
 
                 <div id="monthly" class="tab-content">
@@ -1955,22 +1015,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="right-panel" id="weeklyRightPanel">
-                <div class="chart-title" id="weeklyChartTitle">This Week</div>
-                <div class="chart-outer">
-                    <div class="chart-y-axis" id="chartYAxis"></div>
-                    <div class="chart-body">
-                        <div class="chart-bars-area" id="weeklyChart"></div>
-                        <div class="chart-labels-row" id="chartLabelsRow"></div>
-                    </div>
-                </div>
-                <div class="daily-tasks-panel" id="weeklyTasksPanel">
-                    <div class="daily-tasks-panel-title">Tasks (due soon first)</div>
-                    <ul class="dtp-list" id="dtpUnifiedList"></ul>
-                </div>
-            </div>
-        </div>
+    </div>
     </div>
 
     <div id="chartTooltip"></div>

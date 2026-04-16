@@ -531,7 +531,7 @@ def init_db():
     if 'timer_ended_at' not in work_log_column_names:
         db.execute("ALTER TABLE work_logs ADD COLUMN timer_ended_at INTEGER")
     if 'updated_at' not in work_log_column_names:
-        db.execute("ALTER TABLE work_logs ADD COLUMN updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP")
+        db.execute("ALTER TABLE work_logs ADD COLUMN updated_at TEXT")
         db.execute("UPDATE work_logs SET updated_at = created_at WHERE updated_at IS NULL")
     # Migrate daily_tasks table for recurrence-based design
     dt_columns = db.execute("PRAGMA table_info(daily_tasks)").fetchall()
@@ -1909,4 +1909,4 @@ if not is_vercel_without_persistent_db():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5005, debug=True)
