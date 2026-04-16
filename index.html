@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,28 +11,33 @@
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
             padding: 20px;
         }
+
         .container {
             max-width: 1160px;
             margin: 0 auto;
             background: white;
             padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+
         .dashboard-layout {
             display: flex;
             gap: 28px;
             align-items: flex-start;
         }
+
         .left-panel {
             flex: 1;
             min-width: 0;
         }
+
         .right-panel {
             width: 340px;
             flex: 0 0 340px;
@@ -40,24 +46,28 @@
             padding: 14px;
             background: #fafafa;
         }
+
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
         }
+
         .header-right {
             display: flex;
             flex-direction: column;
             align-items: flex-end;
             gap: 8px;
         }
+
         .app-user-row {
             display: flex;
             align-items: center;
             gap: 8px;
             font-size: 13px;
         }
+
         .app-sync-btn {
             width: 10px;
             height: 10px;
@@ -70,9 +80,11 @@
             min-width: 10px;
             line-height: 1;
         }
+
         .app-sync-btn:hover {
             background: #111827;
         }
+
         .app-user-email {
             background: transparent;
             border: none;
@@ -86,24 +98,29 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
         .app-signout-btn {
             padding: 7px 12px;
             font-size: 12px;
             line-height: 1;
             background: #475569;
         }
+
         .app-signout-btn:hover {
             background: #334155;
         }
+
         h1 {
             color: #333;
             margin-bottom: 0;
         }
+
         .current-day-label {
             margin-top: 6px;
             font-size: 13px;
             color: #666;
         }
+
         .today-circle {
             width: 120px;
             height: 120px;
@@ -115,6 +132,7 @@
             justify-content: center;
             flex-shrink: 0;
         }
+
         .today-circle-inner {
             width: 100%;
             height: 100%;
@@ -126,6 +144,7 @@
             justify-content: center;
             text-align: center;
         }
+
         .today-label {
             font-size: 11px;
             color: #666;
@@ -133,16 +152,19 @@
             text-transform: uppercase;
             letter-spacing: 0.4px;
         }
+
         .today-value {
             font-size: 14px;
             font-weight: bold;
         }
+
         .tabs {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
             border-bottom: 2px solid #ddd;
         }
+
         .tab-button {
             padding: 10px 20px;
             background: none;
@@ -153,34 +175,42 @@
             border-bottom: 3px solid transparent;
             transition: all 0.3s;
         }
+
         .tab-button.active {
             color: #007bff;
             border-bottom-color: #007bff;
         }
+
         .tab-button:hover {
             color: #007bff;
         }
+
         .tab-content {
             display: none;
         }
+
         .tab-content.active {
             display: block;
         }
+
         .input-group {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
         }
+
         input {
             flex: 1;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
         }
+
         .time-input {
             max-width: 170px;
             flex: 0 0 170px;
         }
+
         button {
             padding: 10px 20px;
             background-color: #007bff;
@@ -189,12 +219,15 @@
             border-radius: 4px;
             cursor: pointer;
         }
+
         button:hover {
             background-color: #0056b3;
         }
+
         .tasks {
             list-style: none;
         }
+
         .tasks li {
             padding: 15px;
             background: #f9f9f9;
@@ -202,9 +235,11 @@
             border-radius: 4px;
             display: block;
         }
+
         .task-info {
             flex: 1;
         }
+
         .task-name {
             font-weight: bold;
             color: #333;
@@ -212,6 +247,7 @@
             align-items: center;
             gap: 7px;
         }
+
         .task-color-dot {
             display: inline-block;
             width: 10px;
@@ -219,17 +255,20 @@
             border-radius: 50%;
             flex-shrink: 0;
         }
+
         .task-time {
             font-size: 14px;
             color: #666;
             margin-top: 5px;
         }
+
         .task-actions {
             display: flex;
             gap: 10px;
             align-items: center;
             flex-wrap: wrap;
         }
+
         .task-time-log-panel {
             display: none;
             align-items: center;
@@ -240,71 +279,90 @@
             border-radius: 6px;
             background: #fff;
         }
+
         .task-time-log-panel.open {
             display: flex;
         }
+
         .task-time-log-panel input[type="number"] {
             width: 84px;
             flex: 0 0 84px;
             padding: 7px;
         }
+
         .task-time-log-panel input[type="time"] {
             width: 108px;
             flex: 0 0 108px;
             padding: 7px;
         }
+
         .task-add-btn {
             background-color: #17a2b8;
             padding: 8px 12px;
         }
+
         .task-add-btn:hover {
             background-color: #138496;
         }
+
         .task-log-save-btn {
             background-color: #17a2b8;
             padding: 8px 12px;
         }
+
         .task-log-save-btn:hover {
             background-color: #138496;
         }
+
         .task-log-cancel-btn {
             background-color: #6c757d;
             padding: 8px 12px;
         }
+
         .task-log-cancel-btn:hover {
             background-color: #5a6268;
         }
+
         .start-btn {
             background-color: #28a745;
             padding: 8px 15px;
         }
+
         .start-btn:hover {
             background-color: #218838;
         }
+
         .stop-btn {
             background-color: #dc3545;
             padding: 8px 15px;
         }
+
         .stop-btn:hover {
             background-color: #c82333;
         }
+
         .delete-btn {
             background-color: #6c757d;
             padding: 8px 15px;
         }
+
         .delete-btn:hover {
             background-color: #5a6268;
         }
+
         .timer {
             font-weight: bold;
             color: #007bff;
         }
+
         .active-timer {
             color: #dc3545;
         }
+
         .settings-list {
             list-style: none;
         }
+
         .settings-list li {
             padding: 12px;
             background: #f8f9fb;
@@ -313,12 +371,14 @@
             display: block;
             gap: 12px;
         }
+
         .task-main-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 10px;
         }
+
         .task-subtasks-panel {
             margin-top: 10px;
             padding-top: 10px;
@@ -327,9 +387,11 @@
             flex-direction: column;
             gap: 8px;
         }
+
         .task-subtasks-panel.open {
             display: flex;
         }
+
         .task-subtask-row {
             display: flex;
             align-items: center;
@@ -340,33 +402,40 @@
             border-radius: 6px;
             padding: 8px;
         }
+
         .task-subtask-label {
             flex: 1;
             min-width: 140px;
             font-size: 12px;
             color: #555;
         }
+
         .task-subtask-mins {
             width: 82px;
             flex: 0 0 82px;
             padding: 6px;
         }
+
         .task-subtask-save-btn {
             background: #17a2b8;
             padding: 6px 10px;
             font-size: 12px;
         }
+
         .task-subtask-save-btn:hover {
             background: #138496;
         }
+
         .task-subtask-delete-btn {
             background: #6c757d;
             padding: 6px 10px;
             font-size: 12px;
         }
+
         .task-subtask-delete-btn:hover {
             background: #5a6268;
         }
+
         .task-subtask-empty {
             font-size: 12px;
             color: #8c8c8c;
@@ -375,20 +444,24 @@
             background: #fff;
             padding: 8px;
         }
+
         .settings-task-name {
             color: #333;
             font-weight: 600;
         }
+
         .settings-task-type {
             color: #666;
             font-size: 13px;
             margin-top: 4px;
         }
+
         .settings-color-control {
             display: flex;
             align-items: center;
             gap: 8px;
         }
+
         .settings-color-control input[type="color"] {
             width: 46px;
             height: 32px;
@@ -398,6 +471,7 @@
             cursor: pointer;
             flex: 0 0 auto;
         }
+
         .settings-create-form {
             display: flex;
             gap: 8px;
@@ -405,14 +479,17 @@
             align-items: center;
             flex-wrap: wrap;
         }
+
         .settings-create-form input[type="text"] {
             flex: 1;
             min-width: 180px;
         }
+
         .settings-create-form input[type="number"] {
             width: 100px;
             flex: 0 0 100px;
         }
+
         .settings-create-form select {
             height: 38px;
             border: 1px solid #ddd;
@@ -420,6 +497,7 @@
             padding: 0 8px;
             background: white;
         }
+
         .settings-section-title {
             font-size: 12px;
             font-weight: 800;
@@ -428,6 +506,7 @@
             text-transform: uppercase;
             margin: 0 0 10px;
         }
+
         .settings-day-start-form,
         .settings-past-log-form {
             display: flex;
@@ -436,10 +515,12 @@
             margin-bottom: 0;
             flex-wrap: wrap;
         }
+
         .settings-day-start-form input[type="number"] {
             width: 84px;
             flex: 0 0 84px;
         }
+
         .settings-past-log-form select,
         .settings-past-log-form input[type="date"],
         .settings-past-log-form input[type="number"] {
@@ -449,29 +530,35 @@
             padding: 0 8px;
             background: white;
         }
+
         .settings-past-log-form select {
             min-width: 180px;
         }
+
         .settings-past-log-form input[type="number"] {
             width: 100px;
         }
+
         .settings-layout {
             display: flex;
             flex-direction: column;
             gap: 14px;
         }
+
         .settings-card {
             border: 1px solid #e9edf2;
             border-radius: 10px;
             padding: 14px;
             background: #fcfdff;
         }
+
         .settings-card-title {
             font-size: 16px;
             font-weight: 700;
             color: #2d3748;
             margin-bottom: 10px;
         }
+
         .settings-field-row {
             display: flex;
             flex-wrap: wrap;
@@ -479,13 +566,16 @@
             align-items: center;
             margin-bottom: 10px;
         }
+
         .settings-field-row:last-child {
             margin-bottom: 0;
         }
+
         .settings-field-row span {
             color: #5f6977;
             font-size: 13px;
         }
+
         .settings-field-row select,
         .settings-field-row input[type="number"] {
             height: 38px;
@@ -494,6 +584,7 @@
             padding: 0 10px;
             background: #fff;
         }
+
         .settings-switch {
             position: relative;
             display: inline-block;
@@ -501,11 +592,13 @@
             height: 22px;
             flex: 0 0 auto;
         }
+
         .settings-switch input {
             opacity: 0;
             width: 0;
             height: 0;
         }
+
         .settings-switch-slider {
             position: absolute;
             cursor: pointer;
@@ -514,6 +607,7 @@
             transition: .2s;
             border-radius: 999px;
         }
+
         .settings-switch-slider:before {
             position: absolute;
             content: "";
@@ -525,35 +619,42 @@
             transition: .2s;
             border-radius: 50%;
         }
-        .settings-switch input:checked + .settings-switch-slider {
+
+        .settings-switch input:checked+.settings-switch-slider {
             background-color: #17a2b8;
         }
-        .settings-switch input:checked + .settings-switch-slider:before {
+
+        .settings-switch input:checked+.settings-switch-slider:before {
             transform: translateX(18px);
         }
+
         .settings-divider {
             height: 1px;
             background: #edf1f5;
             margin: 12px 0;
         }
+
         .chart-title {
             font-size: 15px;
             color: #333;
             margin-bottom: 12px;
             font-weight: 700;
         }
+
         .chart-outer {
             display: flex;
             gap: 0;
             align-items: flex-start;
             margin-bottom: 10px;
         }
+
         .chart-y-axis {
             flex: 0 0 26px;
             width: 26px;
             position: relative;
             height: 240px;
         }
+
         .chart-y-tick {
             position: absolute;
             right: 4px;
@@ -563,12 +664,14 @@
             transform: translateY(50%);
             white-space: nowrap;
         }
+
         .chart-body {
             flex: 1;
             min-width: 0;
             display: flex;
             flex-direction: column;
         }
+
         .chart-bars-area {
             height: 240px;
             position: relative;
@@ -578,12 +681,14 @@
             border-left: 1px solid #ddd;
             border-bottom: 1px solid #ddd;
         }
+
         .chart-labels-row {
             display: flex;
             gap: 6px;
             padding-top: 6px;
             border-left: 1px solid transparent;
         }
+
         .chart-bar {
             flex: 1;
             min-width: 0;
@@ -593,9 +698,11 @@
             flex-direction: column-reverse;
             overflow: hidden;
         }
+
         .chart-segment {
             width: 100%;
         }
+
         .chart-label-cell {
             flex: 1;
             min-width: 0;
@@ -604,10 +711,12 @@
             text-align: center;
             line-height: 1.3;
         }
+
         .chart-day-date {
             font-size: 10px;
             color: #aaa;
         }
+
         .chart-grid-line {
             position: absolute;
             left: 0;
@@ -615,6 +724,7 @@
             border-top: 1px dashed #e8e8e8;
             pointer-events: none;
         }
+
         .chart-bar-col {
             flex: 1;
             min-width: 0;
@@ -623,9 +733,11 @@
             justify-content: flex-end;
             align-items: stretch;
         }
+
         .chart-bar-col:hover .chart-bar {
             filter: brightness(1.1);
         }
+
         .chart-bar-total {
             font-size: 9px;
             color: #888;
@@ -636,9 +748,10 @@
             overflow: hidden;
             pointer-events: none;
         }
+
         #chartTooltip {
             position: fixed;
-            background: rgba(24,24,32,0.96);
+            background: rgba(24, 24, 32, 0.96);
             color: #fff;
             border-radius: 8px;
             padding: 10px 14px;
@@ -648,67 +761,78 @@
             display: none;
             min-width: 150px;
             max-width: 250px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
             line-height: 1.6;
         }
+
         #chartTooltip.visible {
             display: block;
         }
+
         .ct-title {
             font-weight: 700;
             font-size: 13px;
-            border-bottom: 1px solid rgba(255,255,255,0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
             padding-bottom: 5px;
             margin-bottom: 6px;
         }
+
         .ct-row {
             display: flex;
             align-items: center;
             gap: 7px;
             margin-bottom: 2px;
         }
+
         .ct-dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
             flex-shrink: 0;
         }
+
         .ct-name {
             flex: 1;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
         .ct-time {
             color: #bbb;
             white-space: nowrap;
             padding-left: 8px;
             font-variant-numeric: tabular-nums;
         }
+
         .ct-total {
-            border-top: 1px solid rgba(255,255,255,0.15);
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
             padding-top: 5px;
             margin-top: 4px;
             color: #ccc;
             font-size: 11px;
         }
+
         .monthly-overview {
             list-style: none;
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
+
         .monthly-overview li {
             display: flex;
             align-items: center;
             gap: 10px;
         }
+
         .monthly-overview-month {
             width: 90px;
             font-weight: 600;
             color: #333;
             flex: 0 0 90px;
         }
+
         .monthly-overview-bar-wrap {
             flex: 1;
             height: 16px;
@@ -716,12 +840,14 @@
             border-radius: 999px;
             overflow: hidden;
         }
+
         .monthly-overview-bar {
             height: 100%;
             background: #007bff;
             border-radius: 999px;
             min-width: 2px;
         }
+
         .monthly-overview-time {
             width: 78px;
             text-align: right;
@@ -729,26 +855,32 @@
             font-size: 12px;
             flex: 0 0 78px;
         }
+
         /* Monthly bar chart */
         .monthly-chart-section {
             margin-bottom: 28px;
         }
+
         .monthly-chart-section .chart-bars-area {
             height: 220px;
         }
+
         .monthly-chart-section .chart-y-axis {
             height: 220px;
         }
+
         /* Calendar */
         .calendar-section {
             margin-top: 8px;
         }
+
         .calendar-nav {
             display: flex;
             align-items: center;
             gap: 10px;
             margin-bottom: 12px;
         }
+
         .calendar-nav-title {
             font-size: 15px;
             font-weight: 700;
@@ -756,20 +888,24 @@
             flex: 1;
             text-align: center;
         }
+
         .calendar-nav button {
             padding: 5px 12px;
             background: #e9ecef;
             color: #333;
             font-size: 14px;
         }
+
         .calendar-nav button:hover {
             background: #dee2e6;
         }
+
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             gap: 4px;
         }
+
         .calendar-dow-header {
             font-size: 11px;
             color: #999;
@@ -777,6 +913,7 @@
             padding: 2px 0 6px;
             font-weight: 600;
         }
+
         .calendar-day {
             min-height: 56px;
             border: 1px solid #eee;
@@ -788,58 +925,69 @@
             position: relative;
             overflow: hidden;
         }
+
         .calendar-day:hover {
             background: #f0f4ff;
             border-color: #b3c6ff;
         }
+
         .calendar-day.today {
             border-color: #007bff;
             background: #eef4ff;
         }
+
         .calendar-day.empty {
             background: transparent;
             border: none;
             cursor: default;
         }
+
         .calendar-day-num {
             font-size: 12px;
             font-weight: 600;
             color: #555;
             line-height: 1;
         }
+
         .calendar-day.today .calendar-day-num {
             color: #007bff;
         }
+
         .calendar-day-time {
             font-size: 10px;
             color: #888;
             margin-top: 3px;
         }
+
         .calendar-day-colors {
             display: flex;
             gap: 2px;
             margin-top: 4px;
             flex-wrap: wrap;
         }
+
         .calendar-day-dot {
             width: 7px;
             height: 7px;
             border-radius: 50%;
             flex-shrink: 0;
         }
+
         /* Day logs modal */
         .modal-overlay {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.35);
+            background: rgba(0, 0, 0, 0.35);
             z-index: 1000;
             align-items: center;
             justify-content: center;
         }
+
         .modal-overlay.open {
             display: flex;
         }
+
         .modal-box {
             background: white;
             border-radius: 10px;
@@ -848,19 +996,22 @@
             max-width: 96vw;
             max-height: 80vh;
             overflow-y: auto;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
         }
+
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 16px;
         }
+
         .modal-title {
             font-size: 16px;
             font-weight: 700;
             color: #333;
         }
+
         .modal-close {
             background: none;
             border: none;
@@ -870,10 +1021,12 @@
             padding: 0 4px;
             line-height: 1;
         }
+
         .modal-close:hover {
             color: #333;
             background: none;
         }
+
         .modal-total {
             font-size: 13px;
             color: #666;
@@ -881,6 +1034,7 @@
             padding-bottom: 10px;
             border-bottom: 1px solid #eee;
         }
+
         .log-entry {
             display: flex;
             align-items: center;
@@ -888,55 +1042,66 @@
             padding: 8px 0;
             border-bottom: 1px solid #f5f5f5;
         }
+
         .log-entry:last-child {
             border-bottom: none;
         }
+
         .log-entry-dot {
             width: 10px;
             height: 10px;
             border-radius: 50%;
             flex-shrink: 0;
         }
+
         .log-entry-name {
             flex: 1;
             font-size: 13px;
             color: #333;
             font-weight: 500;
         }
+
         .log-entry-total {
             font-size: 13px;
             color: #444;
             font-weight: 600;
             white-space: nowrap;
         }
+
         .log-entry-mins-input {
             width: 80px;
             flex: 0 0 80px;
             padding: 5px 7px;
             font-size: 13px;
         }
+
         .log-entry-save-btn {
             padding: 5px 10px;
             font-size: 12px;
             background: #17a2b8;
         }
+
         .log-entry-save-btn:hover {
             background: #138496;
         }
+
         .log-entry-del-btn {
             padding: 5px 10px;
             font-size: 12px;
             background: #dc3545;
         }
+
         .log-entry-del-btn:hover {
             background: #c82333;
         }
+
         .modal-empty {
             color: #aaa;
             font-size: 13px;
             text-align: center;
             padding: 20px 0;
         }
+
         .modal-add-wrap {
             margin-top: 12px;
             padding-top: 10px;
@@ -945,6 +1110,7 @@
             flex-direction: column;
             gap: 8px;
         }
+
         .modal-add-toggle {
             align-self: center;
             width: 30px;
@@ -957,18 +1123,22 @@
             background: #e9ecef;
             color: #444;
         }
+
         .modal-add-toggle:hover {
             background: #dde2e6;
         }
+
         .modal-add-form {
             display: none;
             gap: 8px;
             align-items: center;
             flex-wrap: wrap;
         }
+
         .modal-add-form.open {
             display: flex;
         }
+
         .modal-add-form select,
         .modal-add-form input[type="number"] {
             height: 34px;
@@ -977,27 +1147,33 @@
             padding: 0 8px;
             background: #fff;
         }
+
         .modal-add-form select {
             flex: 1;
             min-width: 160px;
         }
+
         .modal-add-form input[type="number"] {
             width: 92px;
             flex: 0 0 92px;
         }
+
         .modal-add-save-btn {
             background: #17a2b8;
             padding: 7px 11px;
             font-size: 12px;
         }
+
         .modal-add-save-btn:hover {
             background: #138496;
         }
+
         .modal-add-cancel-btn {
             background: #6c757d;
             padding: 7px 11px;
             font-size: 12px;
         }
+
         .modal-add-cancel-btn:hover {
             background: #5a6268;
         }
@@ -1014,7 +1190,11 @@
             align-items: center;
             gap: 8px;
         }
-        .dt-section-title:first-child { margin-top: 0; }
+
+        .dt-section-title:first-child {
+            margin-top: 0;
+        }
+
         .dt-section-badge {
             background: #e9ecef;
             color: #666;
@@ -1023,37 +1203,42 @@
             font-size: 11px;
             font-weight: 600;
         }
+
         .dt-add-form {
             display: flex;
             gap: 10px;
             align-items: center;
             flex-wrap: wrap;
-            background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-            border: 1px solid rgba(148,163,184,0.25);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+            border: 1px solid rgba(148, 163, 184, 0.25);
             border-radius: 10px;
             padding: 12px 14px;
             margin-bottom: 14px;
         }
+
         .dt-add-form input[type="text"] {
             flex: 1;
             min-width: 120px;
             padding: 8px 10px;
             border-radius: 8px;
         }
+
         .dt-add-form input[type="number"] {
             width: 70px;
             flex: 0 0 70px;
             padding: 8px;
             border-radius: 8px;
         }
+
         .dt-add-form select {
             height: 38px;
-            border: 1px solid rgba(148,163,184,0.35);
+            border: 1px solid rgba(148, 163, 184, 0.35);
             border-radius: 8px;
             padding: 0 10px;
             background: white;
             font-size: 14px;
         }
+
         .dt-add-form input[type="color"] {
             width: 38px;
             height: 38px;
@@ -1063,16 +1248,19 @@
             cursor: pointer;
             flex: 0 0 38px;
         }
+
         .dt-add-form label {
             font-size: 12px;
             color: #666;
             white-space: nowrap;
         }
+
         .dt-add-form .dt-field-group {
             display: flex;
             flex-direction: column;
             gap: 4px;
         }
+
         #dtTaskTarget {
             width: 62px;
             min-width: 62px;
@@ -1084,6 +1272,7 @@
             line-height: 1.1;
             font-size: 13px;
         }
+
         .dt-add-advanced {
             display: none;
             width: 100%;
@@ -1091,9 +1280,11 @@
             align-items: center;
             flex-wrap: wrap;
         }
+
         .dt-add-advanced.open {
             display: flex;
         }
+
         .dt-show-more-btn {
             background: transparent;
             color: #9aa4b2;
@@ -1104,10 +1295,12 @@
             border-radius: 0;
             box-shadow: none;
         }
+
         .dt-show-more-btn:hover {
             background: transparent;
             color: #c1c8d2;
         }
+
         .dt-list {
             list-style: none;
             display: flex;
@@ -1115,6 +1308,7 @@
             gap: 6px;
             margin-bottom: 6px;
         }
+
         .dt-item {
             display: flex;
             align-items: center;
@@ -1125,9 +1319,11 @@
             border-radius: 8px;
             transition: box-shadow 0.15s;
         }
+
         .dt-item:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
         }
+
         .dt-color-bar {
             width: 4px;
             min-width: 4px;
@@ -1135,10 +1331,12 @@
             border-radius: 4px;
             flex-shrink: 0;
         }
+
         .dt-info {
             flex: 1;
             min-width: 0;
         }
+
         .dt-name {
             font-size: 14px;
             font-weight: 600;
@@ -1147,29 +1345,36 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
         .dt-meta {
             font-size: 11px;
             color: #999;
             margin-top: 2px;
         }
+
         .dt-end-text {
             font-size: 8px;
             font-weight: 700;
             margin-left: 6px;
         }
+
         .dt-end-text.today {
             font-size: 8px;
             font-weight: 600;
         }
+
         .dt-end-green {
             color: #28a745;
         }
+
         .dt-end-orange {
             color: #fd7e14;
         }
+
         .dt-end-red {
             color: #dc3545;
         }
+
         .dt-weekly-bar-wrap {
             width: 70px;
             flex: 0 0 70px;
@@ -1179,6 +1384,7 @@
             overflow: hidden;
             margin-top: 5px;
         }
+
         .dt-weekly-bar {
             height: 100%;
             border-radius: 999px;
@@ -1186,19 +1392,25 @@
             min-width: 2px;
             transition: width 0.3s;
         }
+
         .dt-actions {
             display: flex;
             gap: 6px;
             align-items: center;
             flex-shrink: 0;
         }
+
         .dt-edit-btn {
             background: #e9ecef;
             color: #555;
             padding: 5px 10px;
             font-size: 12px;
         }
-        .dt-edit-btn:hover { background: #dee2e6; }
+
+        .dt-edit-btn:hover {
+            background: #dee2e6;
+        }
+
         .dt-del-btn {
             background: none;
             border: 1px solid #ddd;
@@ -1206,13 +1418,20 @@
             padding: 5px 10px;
             font-size: 12px;
         }
-        .dt-del-btn:hover { background: #fff0f0; color: #dc3545; border-color: #dc3545; }
+
+        .dt-del-btn:hover {
+            background: #fff0f0;
+            color: #dc3545;
+            border-color: #dc3545;
+        }
+
         .dt-empty {
             color: #bbb;
             font-size: 13px;
             padding: 16px 0;
             text-align: center;
         }
+
         .dt-sub-label {
             font-size: 11px;
             font-weight: 600;
@@ -1221,6 +1440,7 @@
             letter-spacing: 0.5px;
             padding: 10px 4px 4px;
         }
+
         .dt-group-heading {
             font-size: 11px;
             font-weight: 700;
@@ -1229,6 +1449,7 @@
             letter-spacing: 0.6px;
             padding: 10px 4px 2px;
         }
+
         .dtp-group-heading {
             font-size: 10px;
             font-weight: 700;
@@ -1244,18 +1465,21 @@
             border-top: 1px solid #eee;
             padding-top: 14px;
         }
+
         .daily-tasks-panel-title {
             font-size: 13px;
             font-weight: 700;
             color: #555;
             margin-bottom: 10px;
         }
+
         .dtp-list {
             list-style: none;
             display: flex;
             flex-direction: column;
             gap: 6px;
         }
+
         .dtp-item {
             display: flex;
             align-items: center;
@@ -1265,6 +1489,7 @@
             background: #fff;
             border: 1px solid #eee;
         }
+
         .dtp-check {
             width: 18px;
             height: 18px;
@@ -1272,12 +1497,14 @@
             flex-shrink: 0;
             accent-color: #28a745;
         }
+
         .dtp-color-dot {
             width: 9px;
             height: 9px;
             border-radius: 50%;
             flex-shrink: 0;
         }
+
         .dt-complete-check {
             width: 18px;
             min-width: 18px;
@@ -1289,6 +1516,7 @@
             line-height: 1;
             flex-shrink: 0;
         }
+
         .dtp-complete-check {
             width: 14px;
             min-width: 14px;
@@ -1300,6 +1528,7 @@
             line-height: 1;
             flex-shrink: 0;
         }
+
         .dtp-name {
             flex: 1;
             font-size: 13px;
@@ -1309,58 +1538,78 @@
             gap: 4px;
             min-width: 0;
         }
+
         .dtp-name.done {
             color: #8b95a3;
         }
+
         .dtp-repeat-prefix {
             font-size: 8px;
             line-height: 1;
             flex-shrink: 0;
         }
+
         .dtp-main-text {
             min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+
         .dtp-mins-input {
             width: 50px;
             padding: 4px 6px;
             font-size: 12px;
             flex: 0 0 54px;
         }
+
         .dtp-progress {
             font-size: 11px;
             color: #888;
             white-space: nowrap;
         }
+
         .dtp-end-text {
             font-size: 7px;
             font-weight: 700;
             white-space: nowrap;
         }
+
         .dtp-end-text.today {
             font-size: 7px;
             font-weight: 600;
         }
-        .dtp-end-text.dt-end-green { color: #28a745; }
-        .dtp-end-text.dt-end-orange { color: #fd7e14; }
-        .dtp-end-text.dt-end-red { color: #dc3545; }
+
+        .dtp-end-text.dt-end-green {
+            color: #28a745;
+        }
+
+        .dtp-end-text.dt-end-orange {
+            color: #fd7e14;
+        }
+
+        .dtp-end-text.dt-end-red {
+            color: #dc3545;
+        }
+
         .dtp-count-label {
             font-size: 11px;
             color: #8b95a3;
             font-weight: 600;
         }
+
         .dtp-count-value {
             font-size: 10px;
             color: #6f7b89;
             font-weight: 700;
             white-space: nowrap;
         }
+
         .dtp-progress.complete {
             color: #28a745;
             font-weight: 600;
         }
+
         .auth-shell {
             min-height: 100vh;
             display: flex;
@@ -1372,6 +1621,7 @@
                 radial-gradient(900px 500px at 90% 120%, rgba(0, 123, 255, 0.2), transparent 55%),
                 linear-gradient(180deg, #f3f7fb 0%, #edf3fa 100%);
         }
+
         .auth-gate {
             width: min(100%, 700px);
             background: rgba(255, 255, 255, 0.92);
@@ -1381,6 +1631,7 @@
             border: 1px solid rgba(11, 106, 133, 0.18);
             padding: 28px;
         }
+
         .auth-title {
             font-size: 30px;
             font-weight: 700;
@@ -1388,16 +1639,19 @@
             margin-bottom: 6px;
             letter-spacing: -0.02em;
         }
+
         .auth-subtitle {
             color: #38526a;
             margin-bottom: 16px;
             font-size: 15px;
         }
+
         .auth-row {
             display: flex;
             gap: 10px;
             margin-bottom: 10px;
         }
+
         .auth-row input {
             flex: 1;
             height: 42px;
@@ -1405,27 +1659,32 @@
             border: 1px solid #d3dee9;
             background: white;
         }
+
         .auth-actions {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
         }
+
         .auth-divider {
             margin: 12px 0;
             height: 1px;
             background: #e5e7eb;
         }
+
         .auth-note {
             margin-top: 10px;
             color: #4f657c;
             font-size: 12px;
         }
+
         .auth-status {
             min-height: 18px;
             color: #b42318;
             margin-bottom: 8px;
             font-size: 13px;
         }
+
         .auth-user-row {
             display: flex;
             align-items: center;
@@ -1435,6 +1694,7 @@
             font-size: 13px;
             color: #374151;
         }
+
         .auth-help {
             margin-top: 8px;
             padding: 10px 12px;
@@ -1446,22 +1706,35 @@
             line-height: 1.45;
             display: none;
         }
+
         @media (max-width: 700px) {
-            .auth-title { font-size: 25px; }
-            .auth-gate { padding: 20px; }
-            .auth-row { flex-direction: column; }
+            .auth-title {
+                font-size: 25px;
+            }
+
+            .auth-gate {
+                padding: 20px;
+            }
+
+            .auth-row {
+                flex-direction: column;
+            }
+
             .header-right {
                 align-items: stretch;
             }
+
             .app-user-row {
                 justify-content: flex-end;
             }
+
             .app-user-email {
                 max-width: 180px;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="auth-shell" id="authShell">
         <div id="authGate" class="auth-gate">
@@ -1499,7 +1772,8 @@
                     </div>
                     <div class="header-right">
                         <div class="app-user-row" id="appUserRow" style="display:none;">
-                            <button type="button" class="app-sync-btn" id="appSyncBtn" title="Syncing with database" onclick="manualSyncNow()">🔴</button>
+                            <button type="button" class="app-sync-btn" id="appSyncBtn" title="Syncing with database"
+                                onclick="manualSyncNow()">🔴</button>
                             <span class="app-user-email" id="appUserEmail">Signed in</span>
                             <button type="button" class="app-signout-btn" onclick="handleSignOut()">Sign out</button>
                         </div>
@@ -1512,10 +1786,12 @@
                     </div>
                 </div>
                 <div class="tabs">
-                    <button id="tabBtnWeekly" class="tab-button active" onclick="switchTab('weekly', this)">Weekly</button>
+                    <button id="tabBtnWeekly" class="tab-button active"
+                        onclick="switchTab('weekly', this)">Weekly</button>
                     <button id="tabBtnMonthly" class="tab-button" onclick="switchTab('monthly', this)">Monthly</button>
                     <button id="tabBtnTasks" class="tab-button" onclick="switchTab('tasks', this)">Tasks</button>
-                    <button id="tabBtnSettings" class="tab-button" onclick="switchTab('settings', this)">Settings</button>
+                    <button id="tabBtnSettings" class="tab-button"
+                        onclick="switchTab('settings', this)">Settings</button>
                 </div>
 
                 <div id="weekly" class="tab-content active">
@@ -1545,7 +1821,8 @@
                 </div>
 
                 <div id="tasks" class="tab-content">
-                    <div class="dt-section-title">Task Manager <span class="dt-section-badge" id="dtAllBadge">0</span></div>
+                    <div class="dt-section-title">Task Manager <span class="dt-section-badge" id="dtAllBadge">0</span>
+                    </div>
                     <div class="dt-add-form">
                         <div class="dt-field-group">
                             <label>Name</label>
@@ -1575,11 +1852,13 @@
                         <div class="dt-add-advanced" id="dtTaskAdvancedFields">
                             <div class="dt-field-group">
                                 <label>Heading (optional)</label>
-                                <input type="text" id="dtTaskHeading" maxlength="60" placeholder="e.g. Workout" style="width:150px">
+                                <input type="text" id="dtTaskHeading" maxlength="60" placeholder="e.g. Workout"
+                                    style="width:150px">
                             </div>
                             <div class="dt-field-group" id="dtTaskUnitGroup" style="display:none">
                                 <label>Unit (optional)</label>
-                                <input type="text" id="dtTaskUnit" maxlength="20" placeholder="e.g. km" style="width:110px">
+                                <input type="text" id="dtTaskUnit" maxlength="20" placeholder="e.g. km"
+                                    style="width:110px">
                             </div>
                             <div class="dt-field-group">
                                 <label>Due Date (optional)</label>
@@ -1598,7 +1877,8 @@
                         <ul class="dt-list" id="dtUnifiedList"></ul>
                     </div>
 
-                    <div class="calendar-section" style="margin-top: 24px; padding-top: 14px; border-top: 1px solid #ddd;">
+                    <div class="calendar-section"
+                        style="margin-top: 24px; padding-top: 14px; border-top: 1px solid #ddd;">
                         <div class="chart-title">Tasks Calendar</div>
                         <div class="calendar-nav">
                             <button onclick="dtCalendarPrev()">&lsaquo;</button>
@@ -1641,7 +1921,8 @@
                             <div class="settings-field-row">
                                 <span>Show non-work tasks in right chart</span>
                                 <label class="settings-switch" title="Include non-work tasks">
-                                    <input type="checkbox" id="settingsChartIncludeNonWork" onchange="saveChartVisibilitySetting()">
+                                    <input type="checkbox" id="settingsChartIncludeNonWork"
+                                        onchange="saveChartVisibilitySetting()">
                                     <span class="settings-switch-slider"></span>
                                 </label>
                             </div>
@@ -1717,7 +1998,8 @@
         </div>
     </div>
 
-    <script id="appConfig" type="application/json">{{ {'supabase_url': supabase_url, 'supabase_anon_key': supabase_anon_key} | tojson }}</script>
+    <script id="appConfig"
+        type="application/json">{{ {'supabase_url': supabase_url, 'supabase_anon_key': supabase_anon_key} | tojson }}</script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const rawConfig = document.getElementById('appConfig');
@@ -3561,7 +3843,7 @@
             const taskList = document.getElementById(taskListId);
             if (!taskList) return;
             taskList.innerHTML = '';
-            
+
             const sourceTasks = tabType === 'weekly'
                 ? [...tasks.weekly, ...tasks.monthly]
                 : tasks[tabType];
@@ -4034,7 +4316,7 @@
             document.getElementById('dayLogsModal').classList.remove('open');
         }
 
-        document.getElementById('dayLogsModal').addEventListener('click', function(e) {
+        document.getElementById('dayLogsModal').addEventListener('click', function (e) {
             if (e.target === this) closeDayLogsModal();
         });
 
@@ -4665,7 +4947,7 @@
             document.getElementById('dailyTaskLogsModal').classList.remove('open');
         }
 
-        document.getElementById('dailyTaskLogsModal').addEventListener('click', function(e) {
+        document.getElementById('dailyTaskLogsModal').addEventListener('click', function (e) {
             if (e.target === this) closeDailyTaskLogsModal();
         });
 
@@ -4678,4 +4960,5 @@
         });
     </script>
 </body>
+
 </html>
