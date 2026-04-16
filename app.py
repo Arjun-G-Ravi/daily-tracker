@@ -10,6 +10,9 @@ from functools import lru_cache
 
 import flask
 import jwt
+from dotenv import load_dotenv
+
+load_dotenv(override=False)  # Load .env for local dev; no-op when vars are already set (e.g. Vercel)
 
 PSYCOPG2_MODULE = None
 REAL_DICT_CURSOR = None
