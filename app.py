@@ -39,6 +39,7 @@ def should_bootstrap_from_legacy_db():
 
 
 app = flask.Flask(__name__, template_folder='.')
+DISABLE_SIGN_IN = True
 DATABASE_PATH = get_default_database_path()
 LEGACY_DATABASE_PATH = 'weekly_tracker.db'
 POSTGRES_DSN = str(os.getenv('SUPABASE_DB_URL', '')).strip() or str(os.getenv('DATABASE_URL', '')).strip()
@@ -229,6 +230,10 @@ def require_api_authentication():
         return None
 
     if flask.request.path in PUBLIC_API_PATHS:
+        return None
+
+    if DISABLE_SIGN_IN:
+        flask.g.user_id = 'local_dev_user'
         return None
 
     if is_vercel_without_persistent_db():
@@ -1007,6 +1012,7 @@ def hello():
         'index.html',
         supabase_url=str(os.getenv('SUPABASE_URL', '')).strip(),
         supabase_anon_key=str(os.getenv('SUPABASE_ANON_KEY', '')).strip(),
+        disable_sign_in=DISABLE_SIGN_IN,
     )
 
 

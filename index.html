@@ -1044,7 +1044,7 @@ input:focus, select:focus {
     </div>
 
     <script id="appConfig"
-        type="application/json">{{ {'supabase_url': supabase_url, 'supabase_anon_key': supabase_anon_key} | tojson }}</script>
+        type="application/json">{{ {'supabase_url': supabase_url, 'supabase_anon_key': supabase_anon_key, 'disable_sign_in': disable_sign_in} | tojson }}</script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const rawConfig = document.getElementById('appConfig');
@@ -1057,7 +1057,8 @@ input:focus, select:focus {
 
         const SUPABASE_URL = String(parsedConfig.supabase_url || '').trim();
         const SUPABASE_ANON_KEY = String(parsedConfig.supabase_anon_key || '').trim();
-        const SUPABASE_READY = !!(SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase && window.supabase.createClient);
+        const DISABLE_SIGN_IN = !!parsedConfig.disable_sign_in;
+        const SUPABASE_READY = !DISABLE_SIGN_IN && !!(SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase && window.supabase.createClient);
         const supabaseClient = SUPABASE_READY ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
         let authSession = null;
 
@@ -1584,6 +1585,14 @@ input:focus, select:focus {
         }
 
         async function ensureAuthenticatedUser() {
+            if (DISABLE_SIGN_IN) {
+                authSession = { user: { email: 'local_dev_user@localhost' } };
+                refreshAuthUi();
+                setAuthStatus('', false);
+                setAppVisible(true);
+                return true;
+            }
+
             if (!SUPABASE_READY) {
                 setAuthStatus('Missing SUPABASE_URL or SUPABASE_ANON_KEY environment values.', true);
                 updateMissingEnvHelp();
