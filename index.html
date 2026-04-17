@@ -7,1650 +7,1862 @@
     <title>🖼️ The Canvas</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
 
     <style>
-/* ═══════════════════════════════════════════════
+        /* ═══════════════════════════════════════════════
    Signal/Noise Design System — The Canvas
    Aesthetic: Dark Luxury + Swiss Utilitarian
    Fonts: Space Grotesk (UI) + DM Mono (data)
    ═══════════════════════════════════════════════ */
-:root {
-    /* ── Surface Scale ── */
-    --base:                #070c18;
-    --surface:             #0b1120;
-    --surface-low:         #0f1628;
-    --surface-mid:         #141d32;
-    --surface-high:        #1c263c;
-    --surface-highest:     #253048;
-    --surface-lift:        #2e3a56;
-    --surface-hover:       #364360;
+        :root {
+            /* ── Surface Scale ── */
+            --base: #070c18;
+            --surface: #0b1120;
+            --surface-low: #0f1628;
+            --surface-mid: #141d32;
+            --surface-high: #1c263c;
+            --surface-highest: #253048;
+            --surface-lift: #2e3a56;
+            --surface-hover: #364360;
 
-    /* ── Accent ── */
-    --accent:              #00cfaa;
-    --accent-dim:          rgba(0, 207, 170, 0.15);
-    --accent-glow:         0 0 20px rgba(0, 207, 170, 0.25);
+            /* ── Accent ── */
+            --accent: #00cfaa;
+            --accent-dim: rgba(0, 207, 170, 0.15);
+            --accent-glow: 0 0 20px rgba(0, 207, 170, 0.25);
 
-    /* ── Text ── */
-    --text-primary:        #e4ecff;
-    --text-secondary:      #8a94ae;
-    --text-muted:          #4d5870;
-    --text-accent:         #00cfaa;
+            /* ── Text ── */
+            --text-primary: #e4ecff;
+            --text-secondary: #8a94ae;
+            --text-muted: #4d5870;
+            --text-accent: #00cfaa;
 
-    /* ── Semantic ── */
-    --green:               #00cfaa;
-    --green-dim:           rgba(0, 207, 170, 0.12);
-    --red:                 #ff5e5b;
-    --red-dim:             rgba(255, 94, 91, 0.12);
-    --yellow:              #f0a500;
-    --blue-accent:         #5b9cf6;
+            /* ── Semantic ── */
+            --green: #00cfaa;
+            --green-dim: rgba(0, 207, 170, 0.12);
+            --red: #ff5e5b;
+            --red-dim: rgba(255, 94, 91, 0.12);
+            --yellow: #f0a500;
+            --blue-accent: #5b9cf6;
 
-    /* ── Borders ── */
-    --border:              rgba(255, 255, 255, 0.06);
-    --border-focus:        rgba(0, 207, 170, 0.5);
+            /* ── Borders ── */
+            --border: rgba(255, 255, 255, 0.06);
+            --border-focus: rgba(0, 207, 170, 0.5);
 
-    /* ── Legacy aliases (JS uses these) ── */
-    --surface-container-lowest:  var(--base);
-    --surface-container-low:     var(--surface-low);
-    --surface-container:         var(--surface-mid);
-    --surface-container-high:    var(--surface-high);
-    --surface-container-highest: var(--surface-highest);
-    --surface-bright:            var(--surface-lift);
-    --primary:                   var(--accent);
-    --primary-container:         var(--blue-accent);
-    --secondary:                 var(--green);
-    --secondary-container:       var(--green-dim);
-    --tertiary:                  #9b9eff;
-    --on-surface:                var(--text-primary);
-    --on-surface-variant:        var(--text-secondary);
-    --outline-variant:           var(--text-muted);
-    --error:                     var(--red);
-    --error-muted:               var(--red-dim);
+            /* ── Legacy aliases (JS uses these) ── */
+            --surface-container-lowest: var(--base);
+            --surface-container-low: var(--surface-low);
+            --surface-container: var(--surface-mid);
+            --surface-container-high: var(--surface-high);
+            --surface-container-highest: var(--surface-highest);
+            --surface-bright: var(--surface-lift);
+            --primary: var(--accent);
+            --primary-container: var(--blue-accent);
+            --secondary: var(--green);
+            --secondary-container: var(--green-dim);
+            --tertiary: #9b9eff;
+            --on-surface: var(--text-primary);
+            --on-surface-variant: var(--text-secondary);
+            --outline-variant: var(--text-muted);
+            --error: var(--red);
+            --error-muted: var(--red-dim);
 
-    /* ── Typography ── */
-    --font-display: 'Space Grotesk', system-ui, sans-serif;
-    --font-body:    'Space Grotesk', system-ui, sans-serif;
-    --font-mono:    'DM Mono', 'Menlo', monospace;
+            /* ── Typography ── */
+            --font-display: 'Space Grotesk', system-ui, sans-serif;
+            --font-body: 'Space Grotesk', system-ui, sans-serif;
+            --font-mono: 'DM Mono', 'Menlo', monospace;
 
-    /* ── Spacing rhythm ── */
-    --radius-xs:  4px;
-    --radius-sm:  8px;
-    --radius-md:  14px;
-    --radius-lg:  20px;
+            /* ── Spacing rhythm ── */
+            --radius-xs: 4px;
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
 
-    /* ── Motion ── */
-    --ease-out:   cubic-bezier(0.16, 1, 0.3, 1);
-    --duration:   160ms;
-}
+            /* ── Motion ── */
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+            --duration: 160ms;
+        }
 
-/* ─────────────────────────────────────────────
+        /* ─────────────────────────────────────────────
    Reset & Base
    ───────────────────────────────────────────── */
-*, *::before, *::after {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-html { -webkit-font-smoothing: antialiased; }
+        html {
+            -webkit-font-smoothing: antialiased;
+        }
 
-body {
-    font-family: var(--font-body);
-    background: var(--base);
-    color: var(--text-primary);
-    line-height: 1.5;
-    font-size: 14px;
-}
+        body {
+            font-family: var(--font-body);
+            background: var(--base);
+            color: var(--text-primary);
+            line-height: 1.5;
+            font-size: 14px;
+        }
 
-/* ─────────────────────────────────────────────
+        /* ─────────────────────────────────────────────
    Auth Shell
    ───────────────────────────────────────────── */
-.auth-shell {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    background: var(--base);
-    background-image:
-        radial-gradient(ellipse 60% 40% at 25% 20%, rgba(0, 207, 170, 0.06) 0%, transparent 60%),
-        radial-gradient(ellipse 50% 50% at 75% 80%, rgba(91, 156, 246, 0.05) 0%, transparent 60%);
-}
+        .auth-shell {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: var(--base);
+            background-image:
+                radial-gradient(ellipse 60% 40% at 25% 20%, rgba(0, 207, 170, 0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 50% at 75% 80%, rgba(91, 156, 246, 0.05) 0%, transparent 60%);
+        }
 
-.auth-gate {
-    width: min(100%, 520px);
-    background: var(--surface-mid);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.04);
-    padding: 40px;
-}
+        .auth-gate {
+            width: min(100%, 520px);
+            background: var(--surface-mid);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+            padding: 40px;
+        }
 
-.auth-title {
-    font-family: var(--font-display);
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 6px;
-    letter-spacing: -0.03em;
-}
+        .auth-title {
+            font-family: var(--font-display);
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            letter-spacing: -0.03em;
+        }
 
-.auth-title span { color: var(--accent); }
+        .auth-title span {
+            color: var(--accent);
+        }
 
-.auth-subtitle {
-    color: var(--text-secondary);
-    margin-bottom: 28px;
-    font-size: 14px;
-}
+        .auth-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 28px;
+            font-size: 14px;
+        }
 
-.auth-row {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 12px;
-}
+        .auth-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
 
-.auth-row input {
-    flex: 1;
-    height: 44px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
-    background: var(--surface-high);
-    color: var(--text-primary);
-    padding: 0 14px;
-    font-family: var(--font-body);
-    font-size: 14px;
-    transition: border-color var(--duration) var(--ease-out),
+        .auth-row input {
+            flex: 1;
+            height: 44px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--surface-high);
+            color: var(--text-primary);
+            padding: 0 14px;
+            font-family: var(--font-body);
+            font-size: 14px;
+            transition: border-color var(--duration) var(--ease-out),
                 background var(--duration) var(--ease-out);
-}
+        }
 
-.auth-row input:focus {
-    outline: none;
-    border-color: var(--border-focus);
-    background: var(--surface-highest);
-}
+        .auth-row input:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            background: var(--surface-highest);
+        }
 
-.auth-actions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 16px;
-}
+        .auth-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
 
-/* Base button */
-button {
-    font-family: var(--font-display);
-    font-weight: 600;
-    height: 40px;
-    padding: 0 18px;
-    border: none;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: all var(--duration) var(--ease-out);
-    font-size: 13px;
-    letter-spacing: 0.01em;
-    color: var(--text-primary);
-    background: var(--surface-high);
-}
+        /* Base button */
+        button {
+            font-family: var(--font-display);
+            font-weight: 600;
+            height: 40px;
+            padding: 0 18px;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--duration) var(--ease-out);
+            font-size: 13px;
+            letter-spacing: 0.01em;
+            color: var(--text-primary);
+            background: var(--surface-high);
+        }
 
-button:hover { background: var(--surface-highest); }
+        button:hover {
+            background: var(--surface-highest);
+        }
 
-.auth-actions button[onclick="signInWithGoogle()"],
-.auth-actions button[onclick="signInWithPassword()"] {
-    background: var(--accent);
-    color: var(--base);
-}
+        .auth-actions button[onclick="signInWithGoogle()"],
+        .auth-actions button[onclick="signInWithPassword()"] {
+            background: var(--accent);
+            color: var(--base);
+        }
 
-.auth-actions button[onclick="signInWithGoogle()"]:hover,
-.auth-actions button[onclick="signInWithPassword()"]:hover {
-    background: #00e8be;
-    box-shadow: 0 0 20px rgba(0, 207, 170, 0.35);
-}
+        .auth-actions button[onclick="signInWithGoogle()"]:hover,
+        .auth-actions button[onclick="signInWithPassword()"]:hover {
+            background: #00e8be;
+            box-shadow: 0 0 20px rgba(0, 207, 170, 0.35);
+        }
 
-.auth-actions button[onclick="signUpWithPassword()"] {
-    background: transparent;
-    color: var(--accent);
-    border: 1px solid rgba(0, 207, 170, 0.3);
-}
+        .auth-actions button[onclick="signUpWithPassword()"] {
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid rgba(0, 207, 170, 0.3);
+        }
 
-.auth-actions button[onclick="signUpWithPassword()"]:hover {
-    background: var(--green-dim);
-}
+        .auth-actions button[onclick="signUpWithPassword()"]:hover {
+            background: var(--green-dim);
+        }
 
-.auth-divider {
-    margin: 24px 0;
-    height: 1px;
-    background: var(--border);
-}
+        .auth-divider {
+            margin: 24px 0;
+            height: 1px;
+            background: var(--border);
+        }
 
-.auth-note {
-    margin-top: 16px;
-    color: var(--text-muted);
-    font-size: 12px;
-}
+        .auth-note {
+            margin-top: 16px;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
 
-.auth-status {
-    min-height: 18px;
-    color: var(--red);
-    margin-bottom: 10px;
-    font-size: 13px;
-}
+        .auth-status {
+            min-height: 18px;
+            color: var(--red);
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
 
-.auth-user-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 16px;
-    font-size: 14px;
-    color: var(--text-primary);
-}
+        .auth-user-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
 
-.auth-help {
-    margin-top: 12px;
-    padding: 12px 16px;
-    border-radius: var(--radius-sm);
-    background: var(--red-dim);
-    color: var(--red);
-    font-size: 13px;
-    line-height: 1.5;
-    border: 1px solid rgba(255, 94, 91, 0.2);
-    display: none;
-}
+        .auth-help {
+            margin-top: 12px;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            background: var(--red-dim);
+            color: var(--red);
+            font-size: 13px;
+            line-height: 1.5;
+            border: 1px solid rgba(255, 94, 91, 0.2);
+            display: none;
+        }
 
-/* ─────────────────────────────────────────────
+        /* ─────────────────────────────────────────────
    App Shell Layout
    ───────────────────────────────────────────── */
-.app-shell {
-    display: flex;
-    min-height: 100vh;
-    background: var(--base);
-}
+        .app-shell {
+            display: flex;
+            min-height: 100vh;
+            background: var(--base);
+        }
 
-/* ─────────────────────────────────────────────
+        /* ─────────────────────────────────────────────
    Sidebar
    ───────────────────────────────────────────── */
-.sidebar {
-    width: 228px;
-    flex: 0 0 228px;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    padding: 24px 12px;
-    position: relative;
-}
+        .sidebar {
+            width: 228px;
+            flex: 0 0 228px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 12px;
+            position: relative;
+        }
 
-/* Subtle noise texture on sidebar */
-.sidebar::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
-    border-radius: inherit;
-    pointer-events: none;
-}
+        /* Subtle noise texture on sidebar */
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+            border-radius: inherit;
+            pointer-events: none;
+        }
 
-.main-content {
-    flex: 1;
-    min-width: 0;
-    padding: 32px 40px;
-    height: 100vh;
-    overflow-y: auto;
-}
+        .main-content {
+            flex: 1;
+            min-width: 0;
+            padding: 32px 40px;
+            height: 100vh;
+            overflow-y: auto;
+        }
 
-/* ── Sidebar Header ── */
-.sidebar-header {
-    padding: 4px 12px 32px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 20px;
-}
+        /* ── Sidebar Header ── */
+        .sidebar-header {
+            padding: 4px 12px 32px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
 
-.sidebar-header h1 {
-    font-family: var(--font-display);
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    color: var(--text-primary);
-    margin-bottom: 2px;
-}
+        .sidebar-header h1 {
+            font-family: var(--font-display);
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
 
-.sidebar-header h1 span { color: var(--accent); }
+        .sidebar-header h1 span {
+            color: var(--accent);
+        }
 
-.current-day-label {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-}
+        .current-day-label {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
 
-/* ── Nav Items ── */
-.sidebar-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    flex: 1;
-}
+        /* ── Nav Items ── */
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex: 1;
+        }
 
-.sidebar-nav-item {
-    padding: 10px 12px;
-    background: transparent;
-    color: var(--text-secondary);
-    font-family: var(--font-display);
-    font-weight: 500;
-    font-size: 14px;
-    border-radius: var(--radius-xs);
-    cursor: pointer;
-    text-align: left;
-    transition: color var(--duration) var(--ease-out),
+        .sidebar-nav-item {
+            padding: 10px 12px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: var(--font-display);
+            font-weight: 500;
+            font-size: 14px;
+            border-radius: var(--radius-xs);
+            cursor: pointer;
+            text-align: left;
+            transition: color var(--duration) var(--ease-out),
                 background var(--duration) var(--ease-out),
                 transform var(--duration) var(--ease-out);
-    border: none;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    position: relative;
-}
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
 
-.sidebar-nav-item::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%) scaleY(0);
-    width: 3px;
-    height: 65%;
-    background: var(--accent);
-    border-radius: 0 3px 3px 0;
-    transition: transform var(--duration) var(--ease-out),
+        .sidebar-nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%) scaleY(0);
+            width: 3px;
+            height: 65%;
+            background: var(--accent);
+            border-radius: 0 3px 3px 0;
+            transition: transform var(--duration) var(--ease-out),
                 opacity var(--duration) var(--ease-out);
-    opacity: 0;
-}
+            opacity: 0;
+        }
 
-.sidebar-nav-item:hover {
-    background: var(--surface-high);
-    color: var(--text-primary);
-    transform: translateX(2px);
-}
+        .sidebar-nav-item:hover {
+            background: var(--surface-high);
+            color: var(--text-primary);
+            transform: translateX(2px);
+        }
 
-.sidebar-nav-item.active {
-    background: var(--accent-dim);
-    color: var(--text-accent);
-    font-weight: 600;
-}
+        .sidebar-nav-item.active {
+            background: var(--accent-dim);
+            color: var(--text-accent);
+            font-weight: 600;
+        }
 
-.sidebar-nav-item.active::before {
-    transform: translateY(-50%) scaleY(1);
-    opacity: 1;
-}
+        .sidebar-nav-item.active::before {
+            transform: translateY(-50%) scaleY(1);
+            opacity: 1;
+        }
 
-/* ── Sidebar Footer ── */
-.sidebar-footer {
-    margin-top: auto;
-    padding-top: 20px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
+        /* ── Sidebar Footer ── */
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
 
-.today-circle {
-    background: var(--surface-high);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 14px 16px;
-    position: relative;
-    overflow: hidden;
-}
+        .today-circle {
+            background: var(--surface-high);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            position: relative;
+            overflow: hidden;
+        }
 
-/* Accent glow on the today-circle */
-.today-circle::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--accent), transparent);
-}
+        /* Accent glow on the today-circle */
+        .today-circle::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent), transparent);
+        }
 
-.today-label {
-    font-family: var(--font-display);
-    font-size: 10px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 6px;
-}
+        .today-label {
+            font-family: var(--font-display);
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 6px;
+        }
 
-.today-value {
-    font-family: var(--font-mono);
-    font-size: 24px;
-    font-weight: 500;
-    color: var(--accent);
-    line-height: 1;
-    letter-spacing: -0.02em;
-}
+        .today-value {
+            font-family: var(--font-mono);
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--accent);
+            line-height: 1;
+            letter-spacing: -0.02em;
+        }
 
-.app-user-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    padding: 0 4px;
-}
+        .app-user-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            padding: 0 4px;
+        }
 
-.app-sync-btn {
-    width: 8px;
-    height: 8px;
-    padding: 0;
-    border-radius: 50%;
-    min-width: 8px;
-    line-height: 1;
-    background: transparent;
-    cursor: pointer;
-    font-size: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+        .app-sync-btn {
+            width: 8px;
+            height: 8px;
+            padding: 0;
+            border-radius: 50%;
+            min-width: 8px;
+            line-height: 1;
+            background: transparent;
+            cursor: pointer;
+            font-size: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-.app-user-email {
-    flex: 1;
-    color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 11px;
-    font-family: var(--font-mono);
-}
+        .app-user-email {
+            flex: 1;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 11px;
+            font-family: var(--font-mono);
+        }
 
-.app-signout-btn {
-    padding: 4px 10px;
-    font-size: 11px;
-    background: transparent;
-    color: var(--text-muted);
-    height: auto;
-    border: 1px solid var(--border);
-}
+        .app-signout-btn {
+            padding: 4px 10px;
+            font-size: 11px;
+            background: transparent;
+            color: var(--text-muted);
+            height: auto;
+            border: 1px solid var(--border);
+        }
 
-.app-signout-btn:hover {
-    background: var(--surface-high);
-    color: var(--text-primary);
-}
+        .app-signout-btn:hover {
+            background: var(--surface-high);
+            color: var(--text-primary);
+        }
 
-/* ─────────────────────────────────────────────
+        /* ─────────────────────────────────────────────
    Tabs & Tab Content
    ───────────────────────────────────────────── */
-.tabs { display: none; }
+        .tabs {
+            display: none;
+        }
 
-.tab-content {
-    display: none;
-    animation: tabFadeIn 0.25s var(--ease-out) both;
-}
+        .tab-content {
+            display: none;
+            animation: tabFadeIn 0.25s var(--ease-out) both;
+        }
 
-@keyframes tabFadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
+        @keyframes tabFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
 
-.tab-content.active { display: block; }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
-/* ─────────────────────────────────────────────
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ─────────────────────────────────────────────
    Form Controls
    ───────────────────────────────────────────── */
-input[type="text"],
-input[type="number"],
-input[type="date"],
-input[type="time"],
-select {
-    background: var(--surface-high);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    font-family: var(--font-body);
-    font-size: 13px;
-    border-radius: var(--radius-xs);
-    padding: 0 12px;
-    height: 36px;
-    transition: border-color var(--duration), background var(--duration);
-    appearance: none;
-    -webkit-appearance: none;
-}
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        input[type="time"],
+        select {
+            background: var(--surface-high);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 13px;
+            border-radius: var(--radius-xs);
+            padding: 0 12px;
+            height: 36px;
+            transition: border-color var(--duration), background var(--duration);
+            appearance: none;
+            -webkit-appearance: none;
+        }
 
-input:focus, select:focus {
-    outline: none;
-    border-color: var(--border-focus);
-    background: var(--surface-highest);
-}
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            background: var(--surface-highest);
+        }
 
-select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238a94ae' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    padding-right: 28px;
-}
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238a94ae' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 28px;
+        }
 
-input[type="color"] {
-    width: 36px;
-    height: 36px;
-    padding: 4px;
-    border-radius: var(--radius-xs);
-    border: 1px solid var(--border);
-    background: var(--surface-high);
-    cursor: pointer;
-}
+        input[type="color"] {
+            width: 36px;
+            height: 36px;
+            padding: 4px;
+            border-radius: var(--radius-xs);
+            border: 1px solid var(--border);
+            background: var(--surface-high);
+            cursor: pointer;
+        }
 
-/* ─────────────────────────────────────────────
+        /* ─────────────────────────────────────────────
    Section Headers (page-level titles)
    ───────────────────────────────────────────── */
-.page-title {
-    font-family: var(--font-display);
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--text-primary);
-    letter-spacing: -0.02em;
-    margin-bottom: 24px;
-}
+        .page-title {
+            font-family: var(--font-display);
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+            margin-bottom: 24px;
+        }
 
-/* ─────────────────────────────────────────────
+        /* ─────────────────────────────────────────────
    Weekly/Dashboard Layout
    ───────────────────────────────────────────── */
-.weekly-layout {
-    display: grid;
-    grid-template-columns: 1fr 320px;
-    gap: 28px;
-    align-items: start;
-}
+        .weekly-layout {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 28px;
+            align-items: start;
+        }
 
-@media (max-width: 1100px) {
-    .weekly-layout { grid-template-columns: 1fr; }
-}
+        @media (max-width: 1100px) {
+            .weekly-layout {
+                grid-template-columns: 1fr;
+            }
+        }
 
-.right-panel { background: transparent; border: none; padding: 0; }
+        .right-panel {
+            background: transparent;
+            border: none;
+            padding: 0;
+        }
 
-/* ─────────────────────────────────────────────
+        /* ─────────────────────────────────────────────
    Task Cards (Jobs / Weekly tracking)
    ───────────────────────────────────────────── */
-.tasks {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
+        .tasks {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
 
-.tasks li {
-    padding: 14px 18px 14px 22px;
-    background: var(--surface-mid);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    transition: background var(--duration), transform var(--duration) var(--ease-out), box-shadow var(--duration);
-    position: relative;
-    overflow: hidden;
-}
+        .tasks li {
+            padding: 14px 18px 14px 22px;
+            background: var(--surface-mid);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: background var(--duration), transform var(--duration) var(--ease-out), box-shadow var(--duration);
+            position: relative;
+            overflow: hidden;
+        }
 
-/* Left color accent bar — the memorable element */
-.tasks li::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: var(--task-color, var(--accent));
-    border-radius: var(--radius-xs) 0 0 var(--radius-xs);
-}
+        /* Left color accent bar — the memorable element */
+        .tasks li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--task-color, var(--accent));
+            border-radius: var(--radius-xs) 0 0 var(--radius-xs);
+        }
 
-.tasks li:hover {
-    background: var(--surface-high);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
+        .tasks li:hover {
+            background: var(--surface-high);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
 
-.task-main-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-}
+        .task-main-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
 
-.task-info { flex: 1; min-width: 0; }
+        .task-info {
+            flex: 1;
+            min-width: 0;
+        }
 
-.task-name {
-    font-family: var(--font-display);
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
+        .task-name {
+            font-family: var(--font-display);
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-/* Hide the dot — the left bar replaces it */
-.task-color-dot { display: none; }
+        /* Hide the dot — the left bar replaces it */
+        .task-color-dot {
+            display: none;
+        }
 
-.task-time {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-secondary);
-    margin-top: 4px;
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-}
+        .task-time {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
 
-.timer {
-    font-family: var(--font-mono);
-    font-size: 20px;
-    font-weight: 500;
-    color: var(--text-primary);
-    letter-spacing: -0.02em;
-}
+        .timer {
+            font-family: var(--font-mono);
+            font-size: 20px;
+            font-weight: 500;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
 
-.task-time.active-timer .timer {
-    color: var(--accent);
-    text-shadow: 0 0 16px rgba(0, 207, 170, 0.4);
-}
+        .task-time.active-timer .timer {
+            color: var(--accent);
+            text-shadow: 0 0 16px rgba(0, 207, 170, 0.4);
+        }
 
-/* Running animation */
-@keyframes pulse-accent {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
-}
+        /* Running animation */
+        @keyframes pulse-accent {
 
-.task-time.active-timer {
-    animation: pulse-accent 2s ease-in-out infinite;
-}
+            0%,
+            100% {
+                opacity: 1;
+            }
 
-.task-actions {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    flex-shrink: 0;
-}
+            50% {
+                opacity: 0.6;
+            }
+        }
 
-.task-actions button {
-    height: 34px;
-    padding: 0 14px;
-    font-size: 12px;
-    font-weight: 600;
-}
+        .task-time.active-timer {
+            animation: pulse-accent 2s ease-in-out infinite;
+        }
 
-.start-btn {
-    background: var(--green-dim);
-    border: 1px solid rgba(0, 207, 170, 0.3);
-    color: var(--accent);
-}
+        .task-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-shrink: 0;
+        }
 
-.start-btn:hover {
-    background: rgba(0, 207, 170, 0.2);
-    box-shadow: 0 0 12px rgba(0, 207, 170, 0.2);
-}
+        .task-actions button {
+            height: 34px;
+            padding: 0 14px;
+            font-size: 12px;
+            font-weight: 600;
+        }
 
-.stop-btn {
-    background: var(--red-dim);
-    border: 1px solid rgba(255, 94, 91, 0.3);
-    color: var(--red);
-}
+        .start-btn {
+            background: var(--green-dim);
+            border: 1px solid rgba(0, 207, 170, 0.3);
+            color: var(--accent);
+        }
 
-.stop-btn:hover { background: rgba(255, 94, 91, 0.2); }
+        .start-btn:hover {
+            background: rgba(0, 207, 170, 0.2);
+            box-shadow: 0 0 12px rgba(0, 207, 170, 0.2);
+        }
 
-.task-add-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    font-size: 11px;
-}
+        .stop-btn {
+            background: var(--red-dim);
+            border: 1px solid rgba(255, 94, 91, 0.3);
+            color: var(--red);
+        }
 
-.task-add-btn:hover {
-    background: var(--surface-high);
-    color: var(--text-primary);
-}
+        .stop-btn:hover {
+            background: rgba(255, 94, 91, 0.2);
+        }
 
-.delete-btn {
-    background: transparent;
-    color: var(--text-muted);
-    padding: 0 10px;
-    border: none;
-    font-size: 18px;
-}
+        .task-add-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 11px;
+        }
 
-.delete-btn:hover { color: var(--red); }
+        .task-add-btn:hover {
+            background: var(--surface-high);
+            color: var(--text-primary);
+        }
 
-/* ─────────────────────────────────────────────
+        .delete-btn {
+            background: transparent;
+            color: var(--text-muted);
+            padding: 0 10px;
+            border: none;
+            font-size: 18px;
+        }
+
+        .delete-btn:hover {
+            color: var(--red);
+        }
+
+        /* ─────────────────────────────────────────────
    Expand Panels (log time / subtasks)
    ───────────────────────────────────────────── */
-.task-time-log-panel,
-.task-subtasks-panel {
-    background: var(--surface-low);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xs);
-    padding: 12px;
-    margin-top: 4px;
-    gap: 10px;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-}
+        .task-time-log-panel,
+        .task-subtasks-panel {
+            background: var(--surface-low);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xs);
+            padding: 12px;
+            margin-top: 4px;
+            gap: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+        }
 
-.task-time-log-panel input[type="number"] { width: 80px; flex: 0 0 80px; }
-.task-time-log-panel input[type="time"]   { width: 104px; flex: 0 0 104px; }
+        .task-time-log-panel input[type="number"] {
+            width: 80px;
+            flex: 0 0 80px;
+        }
 
-.task-subtask-row {
-    background: var(--surface-high);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xs);
-    padding: 9px 12px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+        .task-time-log-panel input[type="time"] {
+            width: 104px;
+            flex: 0 0 104px;
+        }
 
-.task-subtask-label { color: var(--text-primary); font-size: 13px; flex: 1; }
-.task-subtask-mins  { font-family: var(--font-mono); }
+        .task-subtask-row {
+            background: var(--surface-high);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xs);
+            padding: 9px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-.task-subtask-empty {
-    background: var(--surface-high);
-    border: 1px dashed var(--border);
-    border-radius: var(--radius-xs);
-    padding: 10px 14px;
-    color: var(--text-muted);
-    font-size: 12px;
-    text-align: center;
-}
+        .task-subtask-label {
+            color: var(--text-primary);
+            font-size: 13px;
+            flex: 1;
+        }
 
-.task-subtask-save-btn   { background: var(--green-dim); color: var(--accent); border: 1px solid rgba(0,207,170,0.3); }
-.task-subtask-delete-btn { background: var(--red-dim);   color: var(--red);    border: 1px solid rgba(255,94,91,0.3); }
-.task-subtask-save-btn:hover   { background: rgba(0,207,170,0.2); }
-.task-subtask-delete-btn:hover { background: rgba(255,94,91,0.2); }
+        .task-subtask-mins {
+            font-family: var(--font-mono);
+        }
 
-/* ─────────────────────────────────────────────
+        .task-subtask-empty {
+            background: var(--surface-high);
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-xs);
+            padding: 10px 14px;
+            color: var(--text-muted);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .task-subtask-save-btn {
+            background: var(--green-dim);
+            color: var(--accent);
+            border: 1px solid rgba(0, 207, 170, 0.3);
+        }
+
+        .task-subtask-delete-btn {
+            background: var(--red-dim);
+            color: var(--red);
+            border: 1px solid rgba(255, 94, 91, 0.3);
+        }
+
+        .task-subtask-save-btn:hover {
+            background: rgba(0, 207, 170, 0.2);
+        }
+
+        .task-subtask-delete-btn:hover {
+            background: rgba(255, 94, 91, 0.2);
+        }
+
+        /* ─────────────────────────────────────────────
    Charts
    ───────────────────────────────────────────── */
-.chart-title {
-    font-family: var(--font-display);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+        .chart-title {
+            font-family: var(--font-display);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-.chart-title-badge {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    background: var(--accent-dim);
-    color: var(--accent);
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-weight: 400;
-    letter-spacing: 0;
-    text-transform: none;
-}
+        .chart-title-badge {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            background: var(--accent-dim);
+            color: var(--accent);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 400;
+            letter-spacing: 0;
+            text-transform: none;
+        }
 
-.chart-outer {
-    display: grid;
-    grid-template-columns: 28px 1fr;
-    grid-template-rows: 1fr auto;
-    column-gap: 8px;
-    row-gap: 4px;
-    background: var(--surface-mid);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 16px 16px 8px;
-}
+        .chart-outer {
+            display: grid;
+            grid-template-columns: 28px 1fr;
+            grid-template-rows: 1fr auto;
+            column-gap: 8px;
+            row-gap: 4px;
+            background: var(--surface-mid);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px 16px 8px;
+        }
 
-.chart-y-axis {
-    position: relative;
-    /* grid cell: row 1, col 1 */
-    grid-column: 1;
-    grid-row: 1;
-}
+        .chart-y-axis {
+            position: relative;
+            /* grid cell: row 1, col 1 */
+            grid-column: 1;
+            grid-row: 1;
+        }
 
-.chart-y-tick {
-    position: absolute;
-    left: 0;
-    transform: translateY(50%);
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-muted);
-    text-align: right;
-    width: 24px;
-}
+        .chart-y-tick {
+            position: absolute;
+            left: 0;
+            transform: translateY(50%);
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-muted);
+            text-align: right;
+            width: 24px;
+        }
 
-.chart-body {
-    display: contents; /* Allows its children (bars-area, labels) to act as direct grid items */
-}
+        .chart-body {
+            display: contents;
+            /* Allows its children (bars-area, labels) to act as direct grid items */
+        }
 
-.chart-bars-area {
-    position: relative;
-    grid-column: 2;
-    grid-row: 1;
-    flex: 1;
-    display: flex;
-    align-items: flex-end;
-    gap: 6px;
-    border-bottom: 1px solid var(--border);
-    min-height: 120px;
-}
+        .chart-bars-area {
+            position: relative;
+            grid-column: 2;
+            grid-row: 1;
+            flex: 1;
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+            border-bottom: 1px solid var(--border);
+            min-height: 120px;
+        }
 
-.chart-grid-line {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 1px;
-    border-top: 1px dashed rgba(255,255,255,0.05);
-}
+        .chart-grid-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.05);
+        }
 
-.chart-bar-col {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 4px;
-    cursor: default;
-}
+        .chart-bar-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 4px;
+            cursor: default;
+        }
 
-.chart-bar-col:has(.chart-bar[style*="height"]):not([style*="height: 0"]) {
-    cursor: pointer;
-}
+        .chart-bar-col:has(.chart-bar[style*="height"]):not([style*="height: 0"]) {
+            cursor: pointer;
+        }
 
-.chart-bar-total {
-    font-family: var(--font-mono);
-    font-size: 9px;
-    color: var(--text-muted);
-    text-align: center;
-    white-space: nowrap;
-}
+        .chart-bar-total {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: var(--text-muted);
+            text-align: center;
+            white-space: nowrap;
+        }
 
-.chart-bar {
-    width: 100%;
-    border-radius: var(--radius-xs) var(--radius-xs) 0 0;
-    overflow: hidden;
-    background: var(--surface-high);
-    transition: opacity var(--duration);
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-}
+        .chart-bar {
+            width: 100%;
+            border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+            overflow: hidden;
+            background: var(--surface-high);
+            transition: opacity var(--duration);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
 
-.chart-bar:empty { background: var(--surface-high); }
+        .chart-bar:empty {
+            background: var(--surface-high);
+        }
 
-.chart-segment {
-    width: 100%;
-    min-height: 2px;
-    transition: opacity var(--duration);
-}
+        .chart-segment {
+            width: 100%;
+            min-height: 2px;
+            transition: opacity var(--duration);
+        }
 
-.chart-bar-col:hover .chart-segment { opacity: 0.85; }
+        .chart-bar-col:hover .chart-segment {
+            opacity: 0.85;
+        }
 
-.chart-labels-row {
-    grid-column: 2;
-    grid-row: 2;
-    display: flex;
-    gap: 6px;
-}
+        .chart-labels-row {
+            grid-column: 2;
+            grid-row: 2;
+            display: flex;
+            gap: 6px;
+        }
 
-.chart-label-cell {
-    flex: 1;
-    text-align: center;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-muted);
-    line-height: 1.3;
-    padding: 4px 0;
-}
+        .chart-label-cell {
+            flex: 1;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-muted);
+            line-height: 1.3;
+            padding: 4px 0;
+        }
 
-.chart-day-date {
-    color: var(--text-muted);
-    opacity: 0.6;
-    display: block;
-}
+        .chart-day-date {
+            color: var(--text-muted);
+            opacity: 0.6;
+            display: block;
+        }
 
-/* ─────────────────────────────────────────────
+        /* ─────────────────────────────────────────────
    Calendar
    ───────────────────────────────────────────── */
-.calendar-section { margin-top: 28px; }
+        .calendar-section {
+            margin-top: 28px;
+        }
 
-.calendar-nav {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-}
+        .calendar-nav {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
 
-.calendar-nav-title {
-    font-family: var(--font-display);
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-primary);
-    flex: 1;
-    text-align: center;
-}
+        .calendar-nav-title {
+            font-family: var(--font-display);
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+            text-align: center;
+        }
 
-.calendar-nav button {
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    background: var(--surface-high);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    border-radius: var(--radius-xs);
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+        .calendar-nav button {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            background: var(--surface-high);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: var(--radius-xs);
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-.calendar-nav button:hover {
-    background: var(--surface-highest);
-    border-color: rgba(255,255,255,0.1);
-}
+        .calendar-nav button:hover {
+            background: var(--surface-highest);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
 
-.calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-    background: var(--surface-mid);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 12px;
-}
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            background: var(--surface-mid);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+        }
 
-.calendar-dow-header {
-    font-family: var(--font-display);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-muted);
-    text-align: center;
-    padding: 4px 0 8px;
-}
+        .calendar-dow-header {
+            font-family: var(--font-display);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 4px 0 8px;
+        }
 
-.calendar-day {
-    background: var(--surface-high);
-    border: 1px solid transparent;
-    border-radius: var(--radius-xs);
-    padding: 6px 5px 5px;
-    min-height: 56px;
-    cursor: pointer;
-    transition: background var(--duration), border-color var(--duration);
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
+        .calendar-day {
+            background: var(--surface-high);
+            border: 1px solid transparent;
+            border-radius: var(--radius-xs);
+            padding: 6px 5px 5px;
+            min-height: 56px;
+            cursor: pointer;
+            transition: background var(--duration), border-color var(--duration);
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
 
-.calendar-day:hover {
-    background: var(--surface-highest);
-    border-color: var(--border);
-}
+        .calendar-day:hover {
+            background: var(--surface-highest);
+            border-color: var(--border);
+        }
 
-.calendar-day.today {
-    background: var(--accent-dim);
-    border-color: rgba(0, 207, 170, 0.3);
-}
+        .calendar-day.today {
+            background: var(--accent-dim);
+            border-color: rgba(0, 207, 170, 0.3);
+        }
 
-.calendar-day.empty {
-    background: transparent;
-    border-color: transparent;
-    cursor: default;
-    pointer-events: none;
-}
+        .calendar-day.empty {
+            background: transparent;
+            border-color: transparent;
+            cursor: default;
+            pointer-events: none;
+        }
 
-.calendar-day-num {
-    font-family: var(--font-display);
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    line-height: 1;
-}
+        .calendar-day-num {
+            font-family: var(--font-display);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            line-height: 1;
+        }
 
-.calendar-day.today .calendar-day-num {
-    color: var(--accent);
-}
+        .calendar-day.today .calendar-day-num {
+            color: var(--accent);
+        }
 
-.calendar-day-time {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-secondary);
-}
+        .calendar-day-time {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
 
-.calendar-day-colors {
-    display: flex;
-    gap: 2px;
-    flex-wrap: wrap;
-    margin-top: 2px;
-}
+        .calendar-day-colors {
+            display: flex;
+            gap: 2px;
+            flex-wrap: wrap;
+            margin-top: 2px;
+        }
 
-.calendar-day-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    opacity: 0.8;
-}
+        .calendar-day-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            opacity: 0.8;
+        }
 
-/* ─────────────────────────────────────────────
+        /* ─────────────────────────────────────────────
    Settings Tab
    ───────────────────────────────────────────── */
-.settings-layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    align-items: start;
-}
+        .settings-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: start;
+        }
 
-@media (max-width: 900px) {
-    .settings-layout { grid-template-columns: 1fr; }
-}
+        @media (max-width: 900px) {
+            .settings-layout {
+                grid-template-columns: 1fr;
+            }
+        }
 
-.settings-card {
-    background: var(--surface-mid);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 22px 24px;
-}
+        .settings-card {
+            background: var(--surface-mid);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 22px 24px;
+        }
 
-.settings-card-title {
-    font-family: var(--font-display);
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text-primary);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
-}
+        .settings-card-title {
+            font-family: var(--font-display);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
 
-.settings-section-title {
-    font-family: var(--font-display);
-    font-size: 11px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 8px;
-    margin-top: 16px;
-}
+        .settings-section-title {
+            font-family: var(--font-display);
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 8px;
+            margin-top: 16px;
+        }
 
-.settings-section-title:first-of-type { margin-top: 0; }
+        .settings-section-title:first-of-type {
+            margin-top: 0;
+        }
 
-.settings-field-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
+        .settings-field-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
 
-.settings-field-row span {
-    color: var(--text-secondary);
-    font-size: 13px;
-}
+        .settings-field-row span {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
 
-.settings-divider {
-    height: 1px;
-    background: var(--border);
-    margin: 20px 0;
-}
+        .settings-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 20px 0;
+        }
 
-.settings-past-log-form {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-}
+        .settings-past-log-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
 
-.settings-create-form {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-}
+        .settings-create-form {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
 
-.settings-create-form input[type="text"] {
-    flex: 1;
-    min-width: 120px;
-}
+        .settings-create-form input[type="text"] {
+            flex: 1;
+            min-width: 120px;
+        }
 
-.settings-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-top: 4px;
-}
+        .settings-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 4px;
+        }
 
-.settings-list li {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    background: var(--surface-high);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xs);
-    color: var(--text-primary);
-}
+        .settings-list li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: var(--surface-high);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xs);
+            color: var(--text-primary);
+        }
 
-.settings-task-name  { flex: 1; font-size: 14px; font-weight: 500; }
-.settings-task-type  { color: var(--text-muted); font-size: 12px; font-family: var(--font-mono); }
-.settings-task-color { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .settings-task-name {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+        }
 
-.settings-switch {
-    position: relative;
-    display: inline-block;
-    width: 38px;
-    height: 22px;
-    flex-shrink: 0;
-}
+        .settings-task-type {
+            color: var(--text-muted);
+            font-size: 12px;
+            font-family: var(--font-mono);
+        }
 
-.settings-switch input { opacity: 0; width: 0; height: 0; }
+        .settings-task-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
 
-.settings-switch-slider {
-    position: absolute;
-    cursor: pointer;
-    inset: 0;
-    background-color: var(--surface-highest);
-    border-radius: 22px;
-    transition: background var(--duration);
-    border: 1px solid var(--border);
-}
+        .settings-switch {
+            position: relative;
+            display: inline-block;
+            width: 38px;
+            height: 22px;
+            flex-shrink: 0;
+        }
 
-.settings-switch-slider::before {
-    content: '';
-    position: absolute;
-    left: 3px;
-    top: 3px;
-    width: 14px;
-    height: 14px;
-    background: var(--text-muted);
-    border-radius: 50%;
-    transition: transform var(--duration) var(--ease-out), background var(--duration);
-}
+        .settings-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
 
-.settings-switch input:checked + .settings-switch-slider {
-    background-color: var(--accent-dim);
-    border-color: rgba(0, 207, 170, 0.4);
-}
+        .settings-switch-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: var(--surface-highest);
+            border-radius: 22px;
+            transition: background var(--duration);
+            border: 1px solid var(--border);
+        }
 
-.settings-switch input:checked + .settings-switch-slider::before {
-    transform: translateX(16px);
-    background: var(--accent);
-}
+        .settings-switch-slider::before {
+            content: '';
+            position: absolute;
+            left: 3px;
+            top: 3px;
+            width: 14px;
+            height: 14px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            transition: transform var(--duration) var(--ease-out), background var(--duration);
+        }
 
-/* Day-start / week-start form */
-.settings-day-start-form { gap: 8px; }
+        .settings-switch input:checked+.settings-switch-slider {
+            background-color: var(--accent-dim);
+            border-color: rgba(0, 207, 170, 0.4);
+        }
 
-/* ─────────────────────────────────────────────
+        .settings-switch input:checked+.settings-switch-slider::before {
+            transform: translateX(16px);
+            background: var(--accent);
+        }
+
+        /* Day-start / week-start form */
+        .settings-day-start-form {
+            gap: 8px;
+        }
+
+        /* ─────────────────────────────────────────────
    Daily Tasks Tab
    ───────────────────────────────────────────── */
-.dt-section-title {
-    font-family: var(--font-display);
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 16px;
-}
+        .dt-section-title {
+            font-family: var(--font-display);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
 
-.dt-section-badge {
-    background: var(--surface-high);
-    color: var(--text-primary);
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 400;
-    padding: 2px 7px;
-    border-radius: 20px;
-    border: 1px solid var(--border);
-}
+        .dt-section-badge {
+            background: var(--surface-high);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 400;
+            padding: 2px 7px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+        }
 
-.dt-add-form {
-    background: var(--surface-mid);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 18px 20px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: flex-end;
-    margin-bottom: 20px;
-}
+        .dt-add-form {
+            background: var(--surface-mid);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 18px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
 
-.dt-field-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
+        .dt-field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
 
-.dt-add-form label {
-    font-family: var(--font-display);
-    font-size: 10px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-}
+        .dt-add-form label {
+            font-family: var(--font-display);
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
 
-.dt-add-advanced {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: flex-end;
-    width: 100%;
-}
+        .dt-add-advanced {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-end;
+            width: 100%;
+        }
 
-.dt-show-more-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    height: 36px;
-    padding: 0 12px;
-    font-size: 11px;
-    align-self: flex-end;
-}
+        .dt-show-more-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            height: 36px;
+            padding: 0 12px;
+            font-size: 11px;
+            align-self: flex-end;
+        }
 
-.dt-show-more-btn:hover {
-    background: var(--surface-high);
-    color: var(--text-primary);
-}
+        .dt-show-more-btn:hover {
+            background: var(--surface-high);
+            color: var(--text-primary);
+        }
 
-.dt-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
+        .dt-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
 
-.dt-item {
-    background: var(--surface-mid);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    transition: background var(--duration), transform var(--duration) var(--ease-out);
-    position: relative;
-}
+        .dt-item {
+            background: var(--surface-mid);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: background var(--duration), transform var(--duration) var(--ease-out);
+            position: relative;
+        }
 
-.dt-item::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 3px;
-    border-radius: var(--radius-xs) 0 0 var(--radius-xs);
-    background: var(--task-color, var(--border));
-}
+        .dt-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            border-radius: var(--radius-xs) 0 0 var(--radius-xs);
+            background: var(--task-color, var(--border));
+        }
 
-.dt-item:hover {
-    background: var(--surface-high);
-    transform: translateX(2px);
-}
+        .dt-item:hover {
+            background: var(--surface-high);
+            transform: translateX(2px);
+        }
 
-.dt-info { flex: 1; min-width: 0; }
-.dt-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-.dt-meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-.dt-empty { color: var(--text-muted); font-size: 13px; padding: 20px 0; text-align: center; }
+        .dt-info {
+            flex: 1;
+            min-width: 0;
+        }
 
-.dt-edit-btn {
-    background: var(--surface-high);
-    color: var(--text-secondary);
-    border: 1px solid var(--border);
-    height: 30px;
-    padding: 0 12px;
-    font-size: 11px;
-}
+        .dt-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
 
-.dt-edit-btn:hover { background: var(--surface-highest); color: var(--text-primary); }
+        .dt-meta {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
 
-.dt-del-btn {
-    background: transparent;
-    border: 1px solid transparent;
-    color: var(--text-muted);
-    height: 30px;
-    padding: 0 10px;
-    font-size: 11px;
-}
+        .dt-empty {
+            color: var(--text-muted);
+            font-size: 13px;
+            padding: 20px 0;
+            text-align: center;
+        }
 
-.dt-del-btn:hover { border-color: rgba(255,94,91,0.3); color: var(--red); }
+        .dt-edit-btn {
+            background: var(--surface-high);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            height: 30px;
+            padding: 0 12px;
+            font-size: 11px;
+        }
 
-/* ── Daily Tasks Panel (sidebar of dashboard view) ── */
-.daily-tasks-panel { margin-top: 24px; }
+        .dt-edit-btn:hover {
+            background: var(--surface-highest);
+            color: var(--text-primary);
+        }
 
-.daily-tasks-panel-title {
-    font-family: var(--font-display);
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 10px;
-}
+        .dt-del-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            height: 30px;
+            padding: 0 10px;
+            font-size: 11px;
+        }
 
-.dtp-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
+        .dt-del-btn:hover {
+            border-color: rgba(255, 94, 91, 0.3);
+            color: var(--red);
+        }
 
-.dtp-item {
-    background: var(--surface-mid);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xs);
-    padding: 10px 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    transition: background var(--duration);
-}
+        /* ── Daily Tasks Panel (sidebar of dashboard view) ── */
+        .daily-tasks-panel {
+            margin-top: 24px;
+        }
 
-.dtp-item:hover { background: var(--surface-high); }
+        .daily-tasks-panel-title {
+            font-family: var(--font-display);
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 10px;
+        }
 
-.dtp-info { flex: 1; min-width: 0; }
-.dtp-name { font-size: 13px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dtp-name.done { color: var(--text-muted); text-decoration: line-through; }
-.dtp-progress { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-.dtp-count-label { font-size: 10px; color: var(--text-muted); }
-.dtp-count-value { font-family: var(--font-mono); font-size: 12px; color: var(--text-primary); }
+        .dtp-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
 
-/* ─────────────────────────────────────────────
+        .dtp-item {
+            background: var(--surface-mid);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xs);
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background var(--duration);
+        }
+
+        .dtp-item:hover {
+            background: var(--surface-high);
+        }
+
+        .dtp-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .dtp-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dtp-name.done {
+            color: var(--text-muted);
+            text-decoration: line-through;
+        }
+
+        .dtp-progress {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .dtp-count-label {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .dtp-count-value {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+
+        /* ─────────────────────────────────────────────
    Modals
    ───────────────────────────────────────────── */
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(4, 8, 18, 0.8);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    z-index: 200;
-    display: none;
-}
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(4, 8, 18, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 200;
+            display: none;
+        }
 
-.modal-overlay.active { display: flex; }
+        .modal-overlay.active {
+            display: flex;
+        }
 
-/* The modal-overlay is shown/hidden via JS style — keep display:flex when shown */
-.modal-overlay[style*="display: flex"],
-.modal-overlay[style*="display:flex"] {
-    animation: modalIn 0.2s var(--ease-out) both;
-}
+        /* The modal-overlay is shown/hidden via JS style — keep display:flex when shown */
+        .modal-overlay[style*="display: flex"],
+        .modal-overlay[style*="display:flex"] {
+            animation: modalIn 0.2s var(--ease-out) both;
+        }
 
-@keyframes modalIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-}
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+            }
 
-.modal-box {
-    background: var(--surface-mid);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: var(--radius-md);
-    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6),
-                0 0 0 1px rgba(255,255,255,0.04),
-                inset 0 1px 0 rgba(255,255,255,0.05);
-    color: var(--text-primary);
-    max-width: 560px;
-    width: 100%;
-    max-height: 80vh;
-    overflow-y: auto;
-    padding: 0;
-}
+            to {
+                opacity: 1;
+            }
+        }
 
-.modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 24px 16px;
-    border-bottom: 1px solid var(--border);
-}
+        .modal-box {
+            background: var(--surface-mid);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-md);
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(255, 255, 255, 0.04),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            max-width: 560px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 0;
+        }
 
-.modal-title {
-    font-family: var(--font-display);
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text-primary);
-    letter-spacing: -0.01em;
-}
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid var(--border);
+        }
 
-.modal-close {
-    width: 28px;
-    height: 28px;
-    padding: 0;
-    background: var(--surface-high);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    border-radius: 50%;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-}
+        .modal-title {
+            font-family: var(--font-display);
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
 
-.modal-close:hover { background: var(--surface-highest); color: var(--text-primary); }
+        .modal-close {
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            background: var(--surface-high);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            border-radius: 50%;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
 
-.modal-total {
-    padding: 10px 24px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-muted);
-    border-bottom: 1px solid var(--border);
-}
+        .modal-close:hover {
+            background: var(--surface-highest);
+            color: var(--text-primary);
+        }
 
-.modal-empty {
-    padding: 32px 24px;
-    text-align: center;
-    color: var(--text-muted);
-    font-size: 13px;
-}
+        .modal-total {
+            padding: 10px 24px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
 
-.log-entry {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 24px;
-    border-bottom: 1px solid var(--border);
-    transition: background var(--duration);
-}
+        .modal-empty {
+            padding: 32px 24px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
 
-.log-entry:hover { background: var(--surface-high); }
+        .log-entry {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            border-bottom: 1px solid var(--border);
+            transition: background var(--duration);
+        }
 
-.log-entry-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
+        .log-entry:hover {
+            background: var(--surface-high);
+        }
 
-.log-entry-name {
-    flex: 1;
-    font-size: 13px;
-    color: var(--text-primary);
-}
+        .log-entry-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
 
-.log-entry-total {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    color: var(--accent);
-}
+        .log-entry-name {
+            flex: 1;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
 
-.modal-add-wrap {
-    padding: 12px 24px 20px;
-    border-top: 1px solid var(--border);
-    margin-top: 0;
-}
+        .log-entry-total {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--accent);
+        }
 
-.modal-add-toggle {
-    background: var(--surface-high);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    font-size: 12px;
-    height: 32px;
-    padding: 0 14px;
-    border-radius: var(--radius-xs);
-}
+        .modal-add-wrap {
+            padding: 12px 24px 20px;
+            border-top: 1px solid var(--border);
+            margin-top: 0;
+        }
 
-.modal-add-toggle:hover {
-    background: var(--surface-highest);
-    color: var(--text-primary);
-}
+        .modal-add-toggle {
+            background: var(--surface-high);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 12px;
+            height: 32px;
+            padding: 0 14px;
+            border-radius: var(--radius-xs);
+        }
 
-.modal-add-form {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 12px;
-    align-items: center;
-}
+        .modal-add-toggle:hover {
+            background: var(--surface-highest);
+            color: var(--text-primary);
+        }
 
-/* ─────────────────────────────────────────────
+        .modal-add-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+            align-items: center;
+        }
+
+        /* ─────────────────────────────────────────────
    Shared Action Buttons
    ───────────────────────────────────────────── */
-.task-log-save-btn, .modal-add-save-btn, .log-entry-save-btn {
-    background: var(--green-dim);
-    color: var(--accent);
-    border: 1px solid rgba(0, 207, 170, 0.3);
-    height: 34px;
-    padding: 0 14px;
-    font-size: 12px;
-}
+        .task-log-save-btn,
+        .modal-add-save-btn,
+        .log-entry-save-btn {
+            background: var(--green-dim);
+            color: var(--accent);
+            border: 1px solid rgba(0, 207, 170, 0.3);
+            height: 34px;
+            padding: 0 14px;
+            font-size: 12px;
+        }
 
-.task-log-save-btn:hover, .modal-add-save-btn:hover, .log-entry-save-btn:hover {
-    background: rgba(0, 207, 170, 0.22);
-}
+        .task-log-save-btn:hover,
+        .modal-add-save-btn:hover,
+        .log-entry-save-btn:hover {
+            background: rgba(0, 207, 170, 0.22);
+        }
 
-.task-log-cancel-btn, .modal-add-cancel-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    height: 34px;
-    padding: 0 14px;
-    font-size: 12px;
-}
+        .task-log-cancel-btn,
+        .modal-add-cancel-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            height: 34px;
+            padding: 0 14px;
+            font-size: 12px;
+        }
 
-.task-log-cancel-btn:hover, .modal-add-cancel-btn:hover {
-    background: var(--surface-high);
-    color: var(--text-primary);
-}
+        .task-log-cancel-btn:hover,
+        .modal-add-cancel-btn:hover {
+            background: var(--surface-high);
+            color: var(--text-primary);
+        }
 
-.log-entry-del-btn {
-    background: transparent;
-    border: 1px solid rgba(255, 94, 91, 0.3);
-    color: var(--red);
-    height: 30px;
-    padding: 0 12px;
-    font-size: 12px;
-}
+        .log-entry-del-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 94, 91, 0.3);
+            color: var(--red);
+            height: 30px;
+            padding: 0 12px;
+            font-size: 12px;
+        }
 
-.log-entry-del-btn:hover { background: var(--red-dim); }
+        .log-entry-del-btn:hover {
+            background: var(--red-dim);
+        }
 
-/* ─────────────────────────────────────────────
+        /* ─────────────────────────────────────────────
    Chart Tooltip
    ───────────────────────────────────────────── */
-#chartTooltip {
-    position: fixed;
-    background: var(--surface-highest);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: var(--radius-xs);
-    padding: 8px 12px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-primary);
-    pointer-events: none;
-    z-index: 1000;
-    display: none;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-    white-space: nowrap;
-}
+        #chartTooltip {
+            position: fixed;
+            background: var(--surface-highest);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-xs);
+            padding: 8px 12px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-primary);
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            white-space: nowrap;
+        }
 
-/* ─────────────────────────────────────────────
+        /* ─────────────────────────────────────────────
    Monthly section container
    ───────────────────────────────────────────── */
-.monthly-chart-section {
-    background: transparent;
-    margin-bottom: 28px;
-}
+        .monthly-chart-section {
+            background: transparent;
+            margin-bottom: 28px;
+        }
 
-/* ─────────────────────────────────────────────
+        /* ─────────────────────────────────────────────
    Responsive
    ───────────────────────────────────────────── */
-@media (max-width: 900px) {
-    .app-shell { flex-direction: column; }
+        @media (max-width: 900px) {
+            .app-shell {
+                flex-direction: column;
+            }
 
-    .sidebar {
-        width: 100%;
-        flex: 0 0 auto;
-        flex-direction: row;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        padding: 14px 16px;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-    }
+            .sidebar {
+                width: 100%;
+                flex: 0 0 auto;
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: space-between;
+                padding: 14px 16px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
 
-    .sidebar::before { display: none; }
+            .sidebar::before {
+                display: none;
+            }
 
-    .sidebar-header {
-        padding: 0;
-        border-bottom: none;
-        margin-bottom: 0;
-    }
+            .sidebar-header {
+                padding: 0;
+                border-bottom: none;
+                margin-bottom: 0;
+            }
 
-    .sidebar-nav {
-        flex-direction: row;
-        overflow-x: auto;
-        flex: 0 0 100%;
-        margin-top: 12px;
-        gap: 4px;
-    }
+            .sidebar-nav {
+                flex-direction: row;
+                overflow-x: auto;
+                flex: 0 0 100%;
+                margin-top: 12px;
+                gap: 4px;
+            }
 
-    .sidebar-nav-item::before { display: none; }
-    .sidebar-nav-item.active { transform: none; }
-    .sidebar-nav-item:hover  { transform: none; }
+            .sidebar-nav-item::before {
+                display: none;
+            }
 
-    .sidebar-footer {
-        padding-top: 0;
-        border-top: none;
-        flex-direction: row;
-        align-items: center;
-        gap: 16px;
-        flex: 1;
-        justify-content: flex-end;
-        margin-top: 0;
-    }
+            .sidebar-nav-item.active {
+                transform: none;
+            }
 
-    .today-circle {
-        padding: 8px 14px;
-        flex-direction: row;
-        align-items: center;
-        gap: 10px;
-    }
-    .today-circle::after { display: none; }
-    .today-label { margin-bottom: 0; }
-    .today-value { font-size: 18px; }
+            .sidebar-nav-item:hover {
+                transform: none;
+            }
 
-    .main-content {
-        padding: 20px 16px;
-        height: auto;
-    }
+            .sidebar-footer {
+                padding-top: 0;
+                border-top: none;
+                flex-direction: row;
+                align-items: center;
+                gap: 16px;
+                flex: 1;
+                justify-content: flex-end;
+                margin-top: 0;
+            }
 
-    .settings-layout { grid-template-columns: 1fr; }
-}
+            .today-circle {
+                padding: 8px 14px;
+                flex-direction: row;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .today-circle::after {
+                display: none;
+            }
+
+            .today-label {
+                margin-bottom: 0;
+            }
+
+            .today-value {
+                font-size: 18px;
+            }
+
+            .main-content {
+                padding: 20px 16px;
+                height: auto;
+            }
+
+            .settings-layout {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 
@@ -1687,22 +1899,26 @@ input[type="color"] {
                 <h1>The Canvas</h1>
                 <div class="current-day-label" id="currentDayLabel">Current Day: --</div>
             </div>
-            
+
             <div class="sidebar-nav">
-                <button id="tabBtnWeekly" class="sidebar-nav-item active" onclick="switchTab('weekly', this)">Dashboard</button>
-                <button id="tabBtnMonthly" class="sidebar-nav-item" onclick="switchTab('monthly', this)">Monthly</button>
+                <button id="tabBtnWeekly" class="sidebar-nav-item active"
+                    onclick="switchTab('weekly', this)">Dashboard</button>
+                <button id="tabBtnMonthly" class="sidebar-nav-item"
+                    onclick="switchTab('monthly', this)">Monthly</button>
                 <button id="tabBtnTasks" class="sidebar-nav-item" onclick="switchTab('tasks', this)">Tasks</button>
-                <button id="tabBtnSettings" class="sidebar-nav-item" onclick="switchTab('settings', this)">Settings</button>
+                <button id="tabBtnSettings" class="sidebar-nav-item"
+                    onclick="switchTab('settings', this)">Settings</button>
             </div>
-            
+
             <div class="sidebar-footer">
                 <div class="today-circle" id="todayCircle">
                     <div class="today-label">Today Total</div>
                     <div class="today-value" id="todayTotal">00:00:00</div>
                 </div>
-                
+
                 <div class="app-user-row" id="appUserRow" style="display:none;">
-                    <button type="button" class="app-sync-btn" id="appSyncBtn" title="Syncing with database" onclick="manualSyncNow()">🔴</button>
+                    <button type="button" class="app-sync-btn" id="appSyncBtn" title="Syncing with database"
+                        onclick="manualSyncNow()">🔴</button>
                     <span class="app-user-email" id="appUserEmail">Signed in</span>
                     <button type="button" class="app-signout-btn" onclick="handleSignOut()">Sign out</button>
                 </div>
@@ -1710,186 +1926,185 @@ input[type="color"] {
         </div>
         <div class="main-content">
 
-                <div id="weekly" class="tab-content active">
-                    <div class="weekly-layout">
-                        <ul class="tasks" id="weeklyTaskList"></ul>
-                        
-                        <!-- Right Panel moved here -->
-                        <div class="right-panel" id="weeklyRightPanel">
-                            <div class="chart-title" id="weeklyChartTitle">This Week</div>
-                            <div class="chart-outer">
-                                <div class="chart-y-axis" id="chartYAxis"></div>
-                                <div class="chart-body">
-                                    <div class="chart-bars-area" id="weeklyChart"></div>
-                                    <div class="chart-labels-row" id="chartLabelsRow"></div>
-                                </div>
-                            </div>
-                            <div class="daily-tasks-panel" id="weeklyTasksPanel">
-                                <div class="daily-tasks-panel-title">Tasks (due soon first)</div>
-                                <ul class="dtp-list" id="dtpUnifiedList"></ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div id="weekly" class="tab-content active">
+                <div class="weekly-layout">
+                    <ul class="tasks" id="weeklyTaskList"></ul>
 
-                <div id="monthly" class="tab-content">
-                    <div class="monthly-chart-section">
-                        <div class="chart-title">Monthly Hours (last 6 months)</div>
+                    <!-- Right Panel moved here -->
+                    <div class="right-panel" id="weeklyRightPanel">
+                        <div class="chart-title" id="weeklyChartTitle">This Week</div>
                         <div class="chart-outer">
-                            <div class="chart-y-axis" id="monthlyChartYAxis"></div>
+                            <div class="chart-y-axis" id="chartYAxis"></div>
                             <div class="chart-body">
-                                <div class="chart-bars-area" id="monthlyBarChart"></div>
-                                <div class="chart-labels-row" id="monthlyChartLabelsRow"></div>
+                                <div class="chart-bars-area" id="weeklyChart"></div>
+                                <div class="chart-labels-row" id="chartLabelsRow"></div>
                             </div>
                         </div>
-                    </div>
-                    <div class="calendar-section">
-                        <div class="chart-title">Calendar</div>
-                        <div class="calendar-nav">
-                            <button onclick="calendarPrev()">&lsaquo;</button>
-                            <div class="calendar-nav-title" id="calendarNavTitle">--</div>
-                            <button onclick="calendarNext()">&rsaquo;</button>
+                        <div class="daily-tasks-panel" id="weeklyTasksPanel">
+                            <div class="daily-tasks-panel-title">Tasks (due soon first)</div>
+                            <ul class="dtp-list" id="dtpUnifiedList"></ul>
                         </div>
-                        <div class="calendar-grid" id="calendarGrid"></div>
                     </div>
                 </div>
+            </div>
 
-                <div id="tasks" class="tab-content">
-                    <div class="dt-section-title">Task Manager <span class="dt-section-badge" id="dtAllBadge">0</span>
+            <div id="monthly" class="tab-content">
+                <div class="monthly-chart-section">
+                    <div class="chart-title">Monthly Hours (last 6 months)</div>
+                    <div class="chart-outer">
+                        <div class="chart-y-axis" id="monthlyChartYAxis"></div>
+                        <div class="chart-body">
+                            <div class="chart-bars-area" id="monthlyBarChart"></div>
+                            <div class="chart-labels-row" id="monthlyChartLabelsRow"></div>
+                        </div>
                     </div>
-                    <div class="dt-add-form">
+                </div>
+                <div class="calendar-section">
+                    <div class="chart-title">Calendar</div>
+                    <div class="calendar-nav">
+                        <button onclick="calendarPrev()">&lsaquo;</button>
+                        <div class="calendar-nav-title" id="calendarNavTitle">--</div>
+                        <button onclick="calendarNext()">&rsaquo;</button>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid"></div>
+                </div>
+            </div>
+
+            <div id="tasks" class="tab-content">
+                <div class="dt-section-title">Task Manager <span class="dt-section-badge" id="dtAllBadge">0</span>
+                </div>
+                <div class="dt-add-form">
+                    <div class="dt-field-group">
+                        <label>Name</label>
+                        <input type="text" id="dtTaskName" placeholder="Task name" style="width:150px">
+                    </div>
+                    <div class="dt-field-group">
+                        <label>Repeats</label>
+                        <select id="dtTaskRecurrence">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="one_time">One-time</option>
+                        </select>
+                    </div>
+                    <div class="dt-field-group">
+                        <label>Mode</label>
+                        <select id="dtTaskKind">
+                            <option value="checkbox">Tick</option>
+                            <option value="integer">Number</option>
+                        </select>
+                    </div>
+                    <div class="dt-field-group" id="dtTaskTargetGroup" style="display:none">
+                        <label>Target</label>
+                        <input type="number" min="1" id="dtTaskTarget" placeholder="">
+                    </div>
+                    <button class="dt-show-more-btn" id="dtTaskAdvancedToggle" type="button">Show</button>
+                    <div class="dt-add-advanced" id="dtTaskAdvancedFields">
                         <div class="dt-field-group">
-                            <label>Name</label>
-                            <input type="text" id="dtTaskName" placeholder="Task name" style="width:150px">
+                            <label>Heading (optional)</label>
+                            <input type="text" id="dtTaskHeading" maxlength="60" placeholder="e.g. Workout"
+                                style="width:150px">
+                        </div>
+                        <div class="dt-field-group" id="dtTaskUnitGroup" style="display:none">
+                            <label>Unit (optional)</label>
+                            <input type="text" id="dtTaskUnit" maxlength="20" placeholder="e.g. km" style="width:110px">
                         </div>
                         <div class="dt-field-group">
-                            <label>Repeats</label>
-                            <select id="dtTaskRecurrence">
-                                <option value="daily">Daily</option>
-                                <option value="weekly">Weekly</option>
-                                <option value="monthly">Monthly</option>
-                                <option value="one_time">One-time</option>
+                            <label>Due Date (optional)</label>
+                            <input type="date" id="dtTaskDueDate">
+                        </div>
+                        <div class="dt-field-group">
+                            <label>Color</label>
+                            <input type="color" id="dtTaskColor" value="#007bff" title="Task color">
+                        </div>
+                    </div>
+                    <button onclick="addUnifiedTask()">Add Task</button>
+                </div>
+
+                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
+                    <div class="dt-section-title">All Tasks (sorted by days left)</div>
+                    <ul class="dt-list" id="dtUnifiedList"></ul>
+                </div>
+
+                <div class="calendar-section"
+                    style="margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--border);">
+                    <div class="chart-title">Tasks Calendar</div>
+                    <div class="calendar-nav">
+                        <button onclick="dtCalendarPrev()">&lsaquo;</button>
+                        <div class="calendar-nav-title" id="dtCalendarNavTitle">--</div>
+                        <button onclick="dtCalendarNext()">&rsaquo;</button>
+                    </div>
+                    <div class="calendar-grid" id="dtCalendarGrid"></div>
+                </div>
+            </div>
+
+            <div id="settings" class="tab-content">
+                <div class="settings-layout">
+                    <div class="settings-card">
+                        <div class="settings-card-title">General</div>
+
+                        <div class="settings-section-title">Day Start</div>
+                        <div class="settings-field-row settings-day-start-form">
+                            <span>New day starts at</span>
+                            <input type="number" min="0" max="23" step="1" id="settingsDayStartHour">
+                            <span>:00</span>
+                            <button onclick="saveDayStartHour()">Save</button>
+                        </div>
+
+                        <div class="settings-section-title">Week Start</div>
+                        <div class="settings-field-row">
+                            <span>New week starts on</span>
+                            <select id="settingsWeekStartDay">
+                                <option value="sunday">Sunday</option>
+                                <option value="monday">Monday</option>
+                                <option value="tuesday">Tuesday</option>
+                                <option value="wednesday">Wednesday</option>
+                                <option value="thursday">Thursday</option>
+                                <option value="friday">Friday</option>
+                                <option value="saturday">Saturday</option>
                             </select>
+                            <button onclick="saveWeekStartDay()">Save</button>
                         </div>
-                        <div class="dt-field-group">
-                            <label>Mode</label>
-                            <select id="dtTaskKind">
-                                <option value="checkbox">Tick</option>
-                                <option value="integer">Number</option>
-                            </select>
+
+                        <div class="settings-section-title">Weekly Chart Filter</div>
+                        <div class="settings-field-row">
+                            <span>Show non-work tasks in right chart</span>
+                            <label class="settings-switch" title="Include non-work tasks">
+                                <input type="checkbox" id="settingsChartIncludeNonWork"
+                                    onchange="saveChartVisibilitySetting()">
+                                <span class="settings-switch-slider"></span>
+                            </label>
                         </div>
-                        <div class="dt-field-group" id="dtTaskTargetGroup" style="display:none">
-                            <label>Target</label>
-                            <input type="number" min="1" id="dtTaskTarget" placeholder="">
+
+                        <div class="settings-divider"></div>
+
+                        <div class="settings-section-title">Add Time for Any Day</div>
+                        <div class="settings-past-log-form">
+                            <select id="settingsPastTaskSelect"></select>
+                            <input type="date" id="settingsPastDate">
+                            <input type="number" min="1" step="1" id="settingsPastMinutes" placeholder="Minutes">
+                            <button onclick="addTimeForAnyDay()">Add Time</button>
                         </div>
-                        <button class="dt-show-more-btn" id="dtTaskAdvancedToggle" type="button">Show</button>
-                        <div class="dt-add-advanced" id="dtTaskAdvancedFields">
-                            <div class="dt-field-group">
-                                <label>Heading (optional)</label>
-                                <input type="text" id="dtTaskHeading" maxlength="60" placeholder="e.g. Workout"
-                                    style="width:150px">
-                            </div>
-                            <div class="dt-field-group" id="dtTaskUnitGroup" style="display:none">
-                                <label>Unit (optional)</label>
-                                <input type="text" id="dtTaskUnit" maxlength="20" placeholder="e.g. km"
-                                    style="width:110px">
-                            </div>
-                            <div class="dt-field-group">
-                                <label>Due Date (optional)</label>
-                                <input type="date" id="dtTaskDueDate">
-                            </div>
-                            <div class="dt-field-group">
-                                <label>Color</label>
-                                <input type="color" id="dtTaskColor" value="#007bff" title="Task color">
-                            </div>
-                        </div>
-                        <button onclick="addUnifiedTask()">Add Task</button>
                     </div>
 
-                    <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
-                        <div class="dt-section-title">All Tasks (sorted by days left)</div>
-                        <ul class="dt-list" id="dtUnifiedList"></ul>
+                    <div class="settings-card">
+                        <div class="settings-card-title">Jobs</div>
+
+                        <div class="settings-section-title">Create Job</div>
+                        <div class="settings-create-form">
+                            <input type="text" id="settingsTaskInput" placeholder="Add reusable job...">
+                            <input type="color" id="settingsTaskColor" value="#007bff" title="Task color">
+                            <button onclick="addTaskFromSettings()">Add Job</button>
+                        </div>
                     </div>
 
-                    <div class="calendar-section"
-                        style="margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--border);">
-                        <div class="chart-title">Tasks Calendar</div>
-                        <div class="calendar-nav">
-                            <button onclick="dtCalendarPrev()">&lsaquo;</button>
-                            <div class="calendar-nav-title" id="dtCalendarNavTitle">--</div>
-                            <button onclick="dtCalendarNext()">&rsaquo;</button>
-                        </div>
-                        <div class="calendar-grid" id="dtCalendarGrid"></div>
+                    <div class="settings-card">
+                        <div class="settings-card-title">Job List</div>
+                        <ul class="settings-list" id="settingsTaskList"></ul>
                     </div>
                 </div>
-
-                <div id="settings" class="tab-content">
-                    <div class="settings-layout">
-                        <div class="settings-card">
-                            <div class="settings-card-title">General</div>
-
-                            <div class="settings-section-title">Day Start</div>
-                            <div class="settings-field-row settings-day-start-form">
-                                <span>New day starts at</span>
-                                <input type="number" min="0" max="23" step="1" id="settingsDayStartHour">
-                                <span>:00</span>
-                                <button onclick="saveDayStartHour()">Save</button>
-                            </div>
-
-                            <div class="settings-section-title">Week Start</div>
-                            <div class="settings-field-row">
-                                <span>New week starts on</span>
-                                <select id="settingsWeekStartDay">
-                                    <option value="sunday">Sunday</option>
-                                    <option value="monday">Monday</option>
-                                    <option value="tuesday">Tuesday</option>
-                                    <option value="wednesday">Wednesday</option>
-                                    <option value="thursday">Thursday</option>
-                                    <option value="friday">Friday</option>
-                                    <option value="saturday">Saturday</option>
-                                </select>
-                                <button onclick="saveWeekStartDay()">Save</button>
-                            </div>
-
-                            <div class="settings-section-title">Weekly Chart Filter</div>
-                            <div class="settings-field-row">
-                                <span>Show non-work tasks in right chart</span>
-                                <label class="settings-switch" title="Include non-work tasks">
-                                    <input type="checkbox" id="settingsChartIncludeNonWork"
-                                        onchange="saveChartVisibilitySetting()">
-                                    <span class="settings-switch-slider"></span>
-                                </label>
-                            </div>
-
-                            <div class="settings-divider"></div>
-
-                            <div class="settings-section-title">Add Time for Any Day</div>
-                            <div class="settings-past-log-form">
-                                <select id="settingsPastTaskSelect"></select>
-                                <input type="date" id="settingsPastDate">
-                                <input type="number" min="1" step="1" id="settingsPastMinutes" placeholder="Minutes">
-                                <button onclick="addTimeForAnyDay()">Add Time</button>
-                            </div>
-                        </div>
-
-                        <div class="settings-card">
-                            <div class="settings-card-title">Jobs</div>
-
-                            <div class="settings-section-title">Create Job</div>
-                            <div class="settings-create-form">
-                                <input type="text" id="settingsTaskInput" placeholder="Add reusable job...">
-                                <input type="color" id="settingsTaskColor" value="#007bff" title="Task color">
-                                <button onclick="addTaskFromSettings()">Add Job</button>
-                            </div>
-                        </div>
-
-                        <div class="settings-card">
-                            <div class="settings-card-title">Job List</div>
-                            <ul class="settings-list" id="settingsTaskList"></ul>
-                        </div>
-                    </div>
-                </div>
-    </div>
+            </div>
+        </div>
     </div>
 
     <div id="chartTooltip"></div>
