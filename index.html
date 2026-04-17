@@ -789,10 +789,7 @@
             flex: 0 0 80px;
         }
 
-        .task-time-log-panel input[type="time"] {
-            width: 104px;
-            flex: 0 0 104px;
-        }
+
 
         .task-subtask-row {
             background: var(--surface-high);
@@ -1330,7 +1327,7 @@
             padding: 18px 20px;
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 16px;
             align-items: flex-end;
             margin-bottom: 20px;
         }
@@ -1350,26 +1347,48 @@
         }
 
         .dt-add-advanced {
-            display: flex;
+            display: none; /* Hidden by default */
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 16px;
             align-items: flex-end;
-            width: 100%;
         }
 
-        .dt-show-more-btn {
+        .dt-add-advanced.open {
+            display: flex;
+        }
+
+        .dt-show-more-btn,
+        .dt-save-btn {
             background: transparent;
             border: 1px solid var(--border);
+            border-radius: var(--radius-xs);
             color: var(--text-muted);
-            height: 36px;
-            padding: 0 12px;
+            height: 38px;
+            padding: 0 16px;
             font-size: 11px;
+            font-family: var(--font-display);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
             align-self: flex-end;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .dt-save-btn {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            font-weight: 600;
         }
 
         .dt-show-more-btn:hover {
             background: var(--surface-high);
             color: var(--text-primary);
+        }
+
+        .dt-save-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
         }
 
         .dt-list {
@@ -1551,7 +1570,7 @@
             display: none;
         }
 
-        .modal-overlay.active {
+        .modal-overlay.open {
             display: flex;
         }
 
@@ -2018,7 +2037,7 @@
                             <input type="color" id="dtTaskColor" value="#007bff" title="Task color">
                         </div>
                     </div>
-                    <button onclick="addUnifiedTask()">Add Task</button>
+                    <button class="dt-save-btn" onclick="addUnifiedTask()">Add Task</button>
                 </div>
 
                 <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
@@ -2786,7 +2805,7 @@
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
-            document.querySelectorAll('.tab-button').forEach(btn => {
+            document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
                 btn.classList.remove('active');
             });
 
@@ -3321,28 +3340,7 @@
             return `${year}-${month}-${day}`;
         }
 
-        function getRangeSeconds(fromValue, toValue) {
-            if (!fromValue || !toValue) return 0;
-            const [fromHour, fromMinute] = fromValue.split(':').map(Number);
-            const [toHour, toMinute] = toValue.split(':').map(Number);
 
-            if (
-                Number.isNaN(fromHour) || Number.isNaN(fromMinute)
-                || Number.isNaN(toHour) || Number.isNaN(toMinute)
-            ) {
-                return 0;
-            }
-
-            const fromTotal = (fromHour * 60) + fromMinute;
-            const toTotal = (toHour * 60) + toMinute;
-            if (fromTotal === toTotal) return 0;
-
-            if (toTotal > fromTotal) {
-                return (toTotal - fromTotal) * 60;
-            }
-
-            return ((toTotal + (24 * 60)) - fromTotal) * 60;
-        }
 
         function formatTime(seconds) {
             const hrs = Math.floor(seconds / 3600);
@@ -4060,15 +4058,7 @@
                 minutesInput.type = 'number';
                 minutesInput.min = '0';
                 minutesInput.step = '1';
-                minutesInput.placeholder = 'Minutes';
-
-                const fromInput = document.createElement('input');
-                fromInput.type = 'time';
-                fromInput.title = 'From';
-
-                const toInput = document.createElement('input');
-                toInput.type = 'time';
-                toInput.title = 'To';
+                minutesInput.placeholder = 'mins';
 
                 const saveButton = document.createElement('button');
                 saveButton.className = 'task-log-save-btn';
@@ -4086,8 +4076,6 @@
 
                 function closePanel() {
                     minutesInput.value = '';
-                    fromInput.value = '';
-                    toInput.value = '';
                     timeLogControls.classList.remove('open');
                     startStopButton.style.display = '';
                     addToggleButton.style.display = '';
@@ -4102,20 +4090,12 @@
                         closePanel();
                         return;
                     }
-                    const secondsFromRange = getRangeSeconds(fromInput.value, toInput.value);
-                    if (secondsFromRange > 0) {
-                        await addManualSeconds(task.id, secondsFromRange);
-                        closePanel();
-                        return;
-                    }
-                    alert('Enter minutes, or choose valid From and To times.');
+                    alert('Enter minutes.');
                 };
 
                 cancelButton.onclick = closePanel;
 
                 timeLogControls.appendChild(minutesInput);
-                timeLogControls.appendChild(fromInput);
-                timeLogControls.appendChild(toInput);
                 timeLogControls.appendChild(saveButton);
                 timeLogControls.appendChild(cancelButton);
 

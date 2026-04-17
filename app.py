@@ -39,7 +39,7 @@ def should_bootstrap_from_legacy_db():
 
 
 app = flask.Flask(__name__, template_folder='.')
-DISABLE_SIGN_IN = False
+DISABLE_SIGN_IN = True
 DATABASE_PATH = get_default_database_path()
 LEGACY_DATABASE_PATH = 'weekly_tracker.db'
 POSTGRES_DSN = str(os.getenv('SUPABASE_DB_URL', '')).strip() or str(os.getenv('DATABASE_URL', '')).strip()
