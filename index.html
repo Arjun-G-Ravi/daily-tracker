@@ -798,8 +798,11 @@ input[type="color"] {
 }
 
 .chart-outer {
-    display: flex;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    grid-template-rows: 1fr auto;
+    column-gap: 8px;
+    row-gap: 4px;
     background: var(--surface-mid);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
@@ -808,8 +811,9 @@ input[type="color"] {
 
 .chart-y-axis {
     position: relative;
-    width: 28px;
-    flex-shrink: 0;
+    /* grid cell: row 1, col 1 */
+    grid-column: 1;
+    grid-row: 1;
 }
 
 .chart-y-tick {
@@ -824,14 +828,13 @@ input[type="color"] {
 }
 
 .chart-body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    display: contents; /* Allows its children (bars-area, labels) to act as direct grid items */
 }
 
 .chart-bars-area {
     position: relative;
+    grid-column: 2;
+    grid-row: 1;
     flex: 1;
     display: flex;
     align-items: flex-end;
@@ -892,6 +895,8 @@ input[type="color"] {
 .chart-bar-col:hover .chart-segment { opacity: 0.85; }
 
 .chart-labels-row {
+    grid-column: 2;
+    grid-row: 2;
     display: flex;
     gap: 6px;
 }
@@ -1801,13 +1806,13 @@ input[type="color"] {
                         <button onclick="addUnifiedTask()">Add Task</button>
                     </div>
 
-                    <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #ddd;">
+                    <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
                         <div class="dt-section-title">All Tasks (sorted by days left)</div>
                         <ul class="dt-list" id="dtUnifiedList"></ul>
                     </div>
 
                     <div class="calendar-section"
-                        style="margin-top: 24px; padding-top: 14px; border-top: 1px solid #ddd;">
+                        style="margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--border);">
                         <div class="chart-title">Tasks Calendar</div>
                         <div class="calendar-nav">
                             <button onclick="dtCalendarPrev()">&lsaquo;</button>
@@ -3639,6 +3644,7 @@ input[type="color"] {
             const labelsRow = document.getElementById('chartLabelsRow');
             const yAxis = document.getElementById('chartYAxis');
             barsArea.innerHTML = '';
+            barsArea.style.height = `${CHART_AREA_PX}px`;
             labelsRow.innerHTML = '';
             yAxis.innerHTML = '';
 
@@ -3770,6 +3776,21 @@ input[type="color"] {
             const sourceTasks = tabType === 'weekly'
                 ? [...tasks.weekly, ...tasks.monthly]
                 : tasks[tabType];
+
+            if (sourceTasks.length === 0) {
+                const empty = document.createElement('li');
+                empty.className = 'dt-item';
+                empty.style.justifyContent = 'center';
+                empty.style.border = '1px dashed var(--border)';
+                empty.style.background = 'transparent';
+                empty.innerHTML = `
+                    <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px 0; width: 100%;">
+                        No trackers active. <br>Go to Settings to add recurring jobs.
+                    </div>
+                `;
+                taskList.appendChild(empty);
+                return;
+            }
 
             sourceTasks.forEach(task => {
                 const li = document.createElement('li');
@@ -3921,6 +3942,7 @@ input[type="color"] {
             const labelsRow = document.getElementById('monthlyChartLabelsRow');
             const yAxis = document.getElementById('monthlyChartYAxis');
             barsArea.innerHTML = '';
+            barsArea.style.height = `${CHART_AREA_PX}px`;
             labelsRow.innerHTML = '';
             yAxis.innerHTML = '';
 
@@ -4279,6 +4301,19 @@ input[type="color"] {
             const settingsPastDate = document.getElementById('settingsPastDate');
             if (!settingsPastDate.value) {
                 settingsPastDate.value = currentLogicalDate || getCurrentLogicalDateClient();
+            }
+
+            if (allTasks.length === 0) {
+                const empty = document.createElement('li');
+                empty.style.justifyContent = 'center';
+                empty.style.border = '1px dashed var(--border)';
+                empty.style.background = 'transparent';
+                empty.innerHTML = `
+                    <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px 0; width: 100%;">
+                        No jobs created yet.
+                    </div>
+                `;
+                settingsTaskList.appendChild(empty);
             }
 
             allTasks.forEach(task => {
@@ -4700,8 +4735,15 @@ input[type="color"] {
             ul.innerHTML = '';
             if (list.length === 0) {
                 const empty = document.createElement('li');
-                empty.className = 'dt-empty';
-                empty.textContent = 'No tasks yet.';
+                empty.className = 'dt-item';
+                empty.style.justifyContent = 'center';
+                empty.style.border = '1px dashed var(--border)';
+                empty.style.background = 'transparent';
+                empty.innerHTML = `
+                    <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px 0; width: 100%;">
+                        No tasks yet.
+                    </div>
+                `;
                 ul.appendChild(empty);
                 return;
             }
@@ -4726,8 +4768,16 @@ input[type="color"] {
             const list = dailyTasks.items || [];
             if (list.length === 0) {
                 const empty = document.createElement('li');
-                empty.style.cssText = 'color:#bbb;font-size:12px;padding:8px 2px;';
-                empty.textContent = 'No recurring/one-time tasks yet.';
+                empty.className = 'dtp-item';
+                empty.style.justifyContent = 'center';
+                empty.style.border = '1px dashed var(--border)';
+                empty.style.background = 'transparent';
+                empty.style.margin = '0 -4px'; // Match default padding offset if any
+                empty.innerHTML = `
+                    <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px 0;">
+                        No daily tasks yet.
+                    </div>
+                `;
                 panel.appendChild(empty);
                 return;
             }
