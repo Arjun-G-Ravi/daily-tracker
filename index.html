@@ -407,39 +407,48 @@
         }
 
         .today-circle {
-            background: var(--surface-high);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 14px 16px;
+            width: 180px;
+            height: 180px;
+            margin: 20px auto;
+            border-radius: 50%;
             position: relative;
-            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--surface-highest);
+            transition: background 0.4s var(--ease-out);
+            /* This will be the donut ring */
+            padding: 10px; 
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
         }
 
-        /* Accent glow on the today-circle */
-        .today-circle::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, var(--accent), transparent);
+        .today-circle-inner {
+            background: var(--surface-low);
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
         .today-label {
             font-family: var(--font-display);
-            font-size: 10px;
+            font-size: 9px;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 6px;
+            letter-spacing: 0.12em;
+            margin-bottom: 4px;
         }
 
         .today-value {
             font-family: var(--font-mono);
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 500;
-            color: var(--accent);
+            color: var(--text-primary);
             line-height: 1;
             letter-spacing: -0.02em;
         }
@@ -1931,8 +1940,10 @@
 
             <div class="sidebar-footer">
                 <div class="today-circle" id="todayCircle">
-                    <div class="today-label">Today Total</div>
-                    <div class="today-value" id="todayTotal">00:00:00</div>
+                    <div class="today-circle-inner">
+                        <div class="today-label">Today Total</div>
+                        <div class="today-value" id="todayTotal">00:00:00</div>
+                    </div>
                 </div>
 
                 <div class="app-user-row" id="appUserRow" style="display:none;">
@@ -3357,7 +3368,7 @@
         function updateTodayCircle() {
             const todayCircle = document.getElementById('todayCircle');
             if (todayTotalSeconds <= 0 || todayColorBreakdown.length === 0) {
-                todayCircle.style.background = '#e9ecef';
+                todayCircle.style.background = 'var(--surface-highest)';
                 return;
             }
 
